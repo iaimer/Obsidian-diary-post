@@ -173,8 +173,10 @@ export default function DiaryView() {
     );
   }
 
-  // 过滤有效内容
-  const quickNotes = diary?.sections.quick_notes.filter(l => l.trim() && !l.includes('<!--')) || [];
+  // 过滤有效内容（排除空行、HTML注释、分隔线、模板示例）
+  const quickNotes = diary?.sections.quick_notes.filter(l =>
+    l.trim() && !l.includes('<!--') && l.trim() !== '---' && !l.includes('- **HH:MM** 内容 #标签')
+  ) || [];
   const happiness = diary?.sections.happiness.filter(l => l.trim() && l.startsWith('> ') && !l.includes('[!')) || [];
   const reflection = diary?.sections.reflection.filter(l => l.trim() && l !== '- ' && !l.includes('<!--')) || [];
   const lizhiSays = diary?.sections.lizhi_says.filter(l => l.trim() && l !== '- ' && !l.includes('<!--')) || [];
