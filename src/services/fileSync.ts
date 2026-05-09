@@ -191,8 +191,8 @@ export class FileSyncService {
     await cacheDiary(entry);
   }
 
-  // 读取文件
-  private async readFile(date: Date): Promise<string> {
+  // 读取文件（公开方法，用于统计页面读取历史数据）
+  async readFile(date: Date): Promise<string> {
     if (!this.vaultHandle) {
       throw new Error('Vault not connected');
     }
