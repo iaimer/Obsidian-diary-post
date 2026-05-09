@@ -173,13 +173,19 @@ export default function DiaryView() {
     );
   }
 
-  // 过滤有效内容（排除空行、HTML注释、模板示例）
+  // 过滤有效内容（排除空行、HTML注释、模板示例、空引用）
   const quickNotes = diary?.sections.quick_notes.filter(l =>
     l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签')
   ) || [];
-  const happiness = diary?.sections.happiness.filter(l => l.trim() && l.startsWith('> ') && !l.includes('[!')) || [];
-  const reflection = diary?.sections.reflection.filter(l => l.trim() && l !== '- ' && !l.includes('<!--')) || [];
-  const lizhiSays = diary?.sections.lizhi_says.filter(l => l.trim() && l !== '- ' && !l.includes('<!--')) || [];
+  const happiness = diary?.sections.happiness.filter(l =>
+    l.trim() && l.startsWith('> ') && !l.includes('[!') && l.slice(2).trim()
+  ) || [];
+  const reflection = diary?.sections.reflection.filter(l =>
+    l.trim() && l !== '- ' && !l.includes('<!--')
+  ) || [];
+  const lizhiSays = diary?.sections.lizhi_says.filter(l =>
+    l.trim() && l !== '- ' && !l.includes('<!--')
+  ) || [];
 
   return (
     <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
