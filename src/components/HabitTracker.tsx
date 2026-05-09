@@ -42,20 +42,23 @@ function HabitEditModal({ type, currentValue, onClose, onSave }: HabitEditModalP
           />
         </div>
 
-        {/* 快捷调整 */}
+        {/* 快捷累加 */}
         <div className="flex gap-2 mb-4">
           {type === 'water' ? (
             <>
-              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm" onClick={() => setValue(250)}>+250</button>
-              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm" onClick={() => setValue(500)}>+500</button>
-              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm" onClick={() => setValue(750)}>+750</button>
-              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm" onClick={() => setValue(goal)}>目标</button>
+              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm hover:bg-blue-100" onClick={() => setValue(Math.max(0, value - 250))}>-250</button>
+              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm hover:bg-blue-100" onClick={() => setValue(value + 250)}>+250</button>
+              <button className="px-3 py-2 bg-blue-50 rounded-lg text-sm hover:bg-blue-100" onClick={() => setValue(value + 500)}>+500</button>
+              <button className="px-3 py-2 bg-blue-100 rounded-lg text-sm font-medium" onClick={() => setValue(goal)}>目标</button>
+              <button className="px-3 py-2 bg-gray-50 rounded-lg text-sm hover:bg-gray-100" onClick={() => setValue(0)}>清零</button>
             </>
           ) : (
             <>
-              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm" onClick={() => setValue(1000)}>+1000</button>
-              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm" onClick={() => setValue(3000)}>+3000</button>
-              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm" onClick={() => setValue(goal)}>目标</button>
+              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm hover:bg-orange-100" onClick={() => setValue(Math.max(0, value - 1000))}>-1000</button>
+              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm hover:bg-orange-100" onClick={() => setValue(value + 1000)}>+1000</button>
+              <button className="px-3 py-2 bg-orange-50 rounded-lg text-sm hover:bg-orange-100" onClick={() => setValue(value + 3000)}>+3000</button>
+              <button className="px-3 py-2 bg-orange-100 rounded-lg text-sm font-medium" onClick={() => setValue(goal)}>目标</button>
+              <button className="px-3 py-2 bg-gray-50 rounded-lg text-sm hover:bg-gray-100" onClick={() => setValue(0)}>清零</button>
             </>
           )}
         </div>
