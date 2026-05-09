@@ -303,3 +303,33 @@ function getTimestamp(): string {
 - Wiki维护、标签系统维护等复杂任务
 
 核心价值：减少打开Obsidian的操作成本，手机也能快速记录和查看。
+
+---
+
+## 十、习惯统计页面（Phase 4） ✅ 已完成
+
+### 实现状态
+- ✅ 趋势图：饮水+运动双Y轴折线图（显示近7天数据）
+- ✅ 热力图：阅读/学语言/补充剂标签式切换（微信读书风格）
+- ✅ 渐变绿色：连续打卡越久颜色越深
+- ✅ 从Obsidian文件读取历史数据并缓存到IndexedDB
+- ✅ 统计汇总基于30天计算（平均值、达标率）
+
+### 最终组件结构
+
+```
+src/components/
+├── StatsPage.tsx           # 统计页面容器（固定30天）
+├── HabitStats.tsx          # 习惯统计总览（趋势7天+热力图30天）
+├── CombinedTrendChart.tsx  # 合并趋势图（双Y轴折线图）
+└── HabitHeatmap.tsx        # 热力图（微信读书风格）
+```
+
+### 关键文件
+
+| 文件 | 说明 |
+|------|------|
+| `src/services/habitStats.ts` | 历史数据提取、解析习惯区块 |
+| `src/services/fileSync.ts` | readFile公开方法供统计页面调用 |
+| `src/components/CombinedTrendChart.tsx` | Recharts双Y轴折线图 |
+| `src/components/HabitHeatmap.tsx` | 微信读书风格热力图（渐变绿） |
