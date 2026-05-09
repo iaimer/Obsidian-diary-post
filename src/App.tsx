@@ -6,6 +6,7 @@ import { ReflectionModal } from './components/ReflectionModal';
 import { HappinessModal } from './components/HappinessModal';
 import HabitTracker from './components/HabitTracker';
 import DiaryView from './components/DiaryView';
+import { SettingsPage } from './components/SettingsPage';
 
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
@@ -14,13 +15,12 @@ function App() {
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
-  // 初始化时，如果之前连接过但现在没连接，提示重新连接
   useEffect(() => {
     if (wasConnected && !vaultConnected) {
       // 可以自动尝试重新连接，但File System API需要用户交互
-      // 所以我们显示一个提示
     }
   }, [wasConnected, vaultConnected]);
 
@@ -42,6 +42,11 @@ function App() {
   const handleDisconnect = () => {
     setVaultConnected(false);
   };
+
+  // 如果显示设置页面，直接返回设置页面
+  if (showSettings) {
+    return <SettingsPage onClose={() => setShowSettings(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
@@ -116,9 +121,14 @@ function App() {
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
         <div className="flex justify-around max-w-md mx-auto">
           <button className="px-4 py-2 text-indigo-600 font-medium">今天</button>
-          <button className="px-4 py-2 text-gray-400">历史</button>
-          <button className="px-4 py-2 text-gray-400">统计</button>
-          <button className="px-4 py-2 text-gray-400">设置</button>
+          <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
+          <button className="px-4 py-2 text-gray-400 hover:text-gray-600">统计</button>
+          <button
+            className="px-4 py-2 text-gray-400 hover:text-gray-600"
+            onClick={() => setShowSettings(true)}
+          >
+            设置
+          </button>
         </div>
       </nav>
 
