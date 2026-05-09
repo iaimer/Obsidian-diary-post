@@ -14,9 +14,12 @@ export function getDiaryPath(date: Date, basePath: string): string {
   return `${basePath}/${year}/${month.toString().padStart(2, '0')}.${monthNames[month - 1]}/${day}.md`;
 }
 
-// 获取日期字符串 YYYY-MM-DD
+// 获取日期字符串 YYYY-MM-DD（使用本地时间，非UTC）
 export function getDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // 获取中文星期名

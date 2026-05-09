@@ -1,6 +1,6 @@
 import { DiaryEntry, DiarySection, HabitData } from '../types';
 import { parseDiary } from '../utils/markdown';
-import { getDateString, getTimestamp } from '../utils/date';
+import { getDateString, getTimestamp, getWeekdayName } from '../utils/date';
 import { formatQuickNote, formatHappiness, formatReflection, formatHabitData } from '../utils/template';
 import { cacheDiary } from '../db';
 
@@ -15,6 +15,85 @@ const sectionHeaders: Record<DiarySection, string> = {
   [DiarySection.TOMORROW]: '### 🌙 明日寄语',
   [DiarySection.IMAGES]: '## 📸 影像记录'
 };
+
+// 创建符合Obsidian模板的日记内容
+function createObsidianDiaryContent(date: Date): string {
+  const weekday = getWeekdayName(date);
+  const lines: string[] = [];
+
+  // YAML frontmatter
+  lines.push('---');
+  lines.push('tags:');
+  lines.push('  - 日记');
+  lines.push('---');
+
+  // 标题
+  lines.push(`# 🌿 ${weekday} · 此时此刻`);
+  lines.push('> [!quote] 2026 年，如果只选一件事：**让健康和记录成为习惯。**');
+  lines.push('');
+
+  // 习惯打卡
+  lines.push('---');
+  lines.push(sectionHeaders[DiarySection.HABITS]);
+  lines.push('- 🥛饮水 0 mL');
+  lines.push('- 🧘 运动/拉伸/快走 0 步');
+  lines.push('- [ ] 📖 阅读/亲子共读');
+  lines.push('- [ ] 🇬🇧 学语言');
+  lines.push('- [ ] 💊 鱼油/植物甾醇');
+  lines.push('');
+
+  // 随手记
+  lines.push('---');
+  lines.push(sectionHeaders[DiarySection.QUICK_NOTES]);
+  lines.push('<!-- 随手记和灵感，文案喵会自动添加合适的标签 -->');
+  lines.push('- **HH:MM** 内容 #标签');
+  lines.push('');
+
+  // 小确幸
+  lines.push('---');
+  lines.push(sectionHeaders[DiarySection.HAPPINESS]);
+  lines.push('> [!success] 总有事件值得感恩🙏♥️');
+  lines.push('> ');
+  lines.push('');
+
+  // 焦虑时刻
+  lines.push('---');
+  lines.push(sectionHeaders[DiarySection.ANXIETY]);
+  lines.push('- 今天什么时候我感到焦虑/紧张？');
+  lines.push('> ');
+  lines.push('- 当时我在担心什么？（具体到一句话)');
+  lines.push('> ');
+  lines.push('- 我做了什么？');
+  lines.push('> ');
+  lines.push('- 这个应对是帮我面对了，还是帮我躲开了？');
+  lines.push('>  ');
+  lines.push('');
+
+  // 每日复盘
+  lines.push('---');
+  lines.push('## 📈 每日复盘');
+  lines.push(sectionHeaders[DiarySection.REFLECTION]);
+  lines.push('<!-- 这里是你的观点和思考，荔枝喵会重点提取 -->');
+  lines.push('- ');
+  lines.push('');
+
+  // 荔枝喵说
+  lines.push(sectionHeaders[DiarySection.LIZHI_SAYS]);
+  lines.push('<!-- 基于当天日记的客观反馈：模式识别、矛盾指出、批判性问题 -->');
+  lines.push('- ');
+  lines.push('');
+
+  // 明日寄语
+  lines.push(sectionHeaders[DiarySection.TOMORROW]);
+  lines.push('- ');
+  lines.push('');
+
+  // 影像记录
+  lines.push('---');
+  lines.push(sectionHeaders[DiarySection.IMAGES]);
+
+  return lines.join('\n');
+}
 
 // 文件同步服务
 export class FileSyncService {
@@ -32,7 +111,7 @@ export class FileSyncService {
     }
   }
 
-  // 获取日记（用于读取和显示）
+  // 获取日记（用于读取和显示，文件不存在则创建）
   async getOrCreateDiary(date: Date): Promise<DiaryEntry> {
     const dateString = getDateString(date);
     console.log('Getting diary for:', dateString);
@@ -51,8 +130,15 @@ export class FileSyncService {
       await cacheDiary(entry);
       return entry;
     } catch (error) {
-      console.error('Failed to read diary file:', error);
-      throw error;
+      console.log('File not found, creating new diary...');
+      const newContent = createObsidianDiaryContent(date);
+      await this.writeFile(date, newContent);
+
+      const entry = parseDiary(newContent);
+      entry.date = dateString;
+
+      await cacheDiary(entry);
+      return entry;
     }
   }
 
@@ -66,8 +152,16 @@ export class FileSyncService {
       throw new Error('Vault not connected');
     }
 
-    // 读取原文件内容
-    const originalContent = await this.readFile(date);
+    // 尝试读取原文件内容，不存在则创建
+    let originalContent: string;
+    try {
+      originalContent = await this.readFile(date);
+    } catch (error) {
+      console.log('File not found, creating new diary...');
+      originalContent = createObsidianDiaryContent(date);
+      await this.writeFile(date, originalContent);
+    }
+
     const lines = originalContent.split('\n');
 
     // 找到区块位置
@@ -85,6 +179,16 @@ export class FileSyncService {
 
     if (sectionStartIndex === -1) {
       throw new Error(`Section not found: ${section}`);
+    }
+
+    // 如果是随手记区块，删除模板中的示例行
+    if (section === DiarySection.QUICK_NOTES) {
+      for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+        if (lines[i].includes('- **HH:MM** 内容 #标签')) {
+          lines.splice(i, 1);
+          break;
+        }
+      }
     }
 
     // 找到下一个区块的位置（用于确定插入点）
@@ -148,7 +252,16 @@ export class FileSyncService {
     }
 
     const date = new Date();
-    const originalContent = await this.readFile(date);
+    // 尝试读取原文件内容，不存在则创建
+    let originalContent: string;
+    try {
+      originalContent = await this.readFile(date);
+    } catch (error) {
+      console.log('File not found, creating new diary...');
+      originalContent = createObsidianDiaryContent(date);
+      await this.writeFile(date, originalContent);
+    }
+
     const lines = originalContent.split('\n');
 
     const header = sectionHeaders[DiarySection.HABITS];
