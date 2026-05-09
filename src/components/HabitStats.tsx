@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react';
-import TrendChart from './TrendChart';
+import CombinedTrendChart from './CombinedTrendChart';
 import HabitHeatmap from './HabitHeatmap';
 import {
   getHabitStats,
   getTrendData,
   getHeatmapData,
-  DailyHabitStats,
-  HABIT_GOALS
+  calculateSummary,
+  DailyHabitStats
 } from '../services/habitStats';
 
 interface HabitStatsProps {
   days: number;
 }
 
+const HABIT_TABS = [
+  { key: 'reading', label: '📖 阅读' },
+  { key: 'language', label: '🇬🇧 语言' },
+  { key: 'supplements', label: '💊 补充剂' }
+];
+
 export default function HabitStats({ days }: HabitStatsProps) {
   const [stats, setStats] = useState<DailyHabitStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('reading');
 
   useEffect(() => {
     async function loadStats() {
@@ -49,59 +56,70 @@ export default function HabitStats({ days }: HabitStatsProps) {
     );
   }
 
-  // 获取趋势数据
-  const waterData = getTrendData(stats, 'water');
-  const stepsData = getTrendData(stats, 'steps');
+  // 获取趋势数据（只取最近7天）
+  const recentStats = stats.slice(-7);
+  const waterData = getTrendData(recentStats, 'water');
+  const stepsData = getTrendData(recentStats, 'steps');
 
-  // 获取热力图数据
-  const readingData = getHeatmapData(stats, 'reading');
-  const languageData = getHeatmapData(stats, 'language');
-  const supplementsData = getHeatmapData(stats, 'supplements');
+  // 计算30天统计汇总
+  const summary = calculateSummary(stats);
+
+  // 获取热力图数据（30天）
+  const heatmapData = {
+    reading: getHeatmapData(stats, 'reading'),
+    language: getHeatmapData(stats, 'language'),
+    supplements: getHeatmapData(stats, 'supplements')
+  };
+
+  const titles = {
+    reading: '阅读',
+    language: '学语言',
+    supplements: '补充剂'
+  };
+
+  const icons = {
+    reading: '📖',
+    language: '🇬🇧',
+    supplements: '💊'
+  };
 
   return (
     <div>
-      {/* 饮水趋势 */}
-      <TrendChart
-        data={waterData}
-        title="饮水趋势"
-        unit="mL"
-        goal={HABIT_GOALS.water}
-        color="#3b82f6"
-        icon="💧"
+      {/* 饮水+运动趋势合并图 */}
+      <CombinedTrendChart
+        waterData={waterData}
+        stepsData={stepsData}
+        avgWater={summary.avgWater}
+        avgSteps={summary.avgSteps}
+        waterGoalRate={summary.waterGoalRate}
+        stepsGoalRate={summary.stepsGoalRate}
       />
 
-      {/* 运动趋势 */}
-      <TrendChart
-        data={stepsData}
-        title="运动趋势"
-        unit="步"
-        goal={HABIT_GOALS.steps}
-        color="#f97316"
-        icon="🏃"
-      />
+      {/* 标签切换 */}
+      <div className="bg-white rounded-xl shadow-sm mb-4">
+        <div className="flex border-b">
+          {HABIT_TABS.map(tab => (
+            <button
+              key={tab.key}
+              className={`flex-1 py-3 text-sm text-center transition-colors ${
+                activeTab === tab.key
+                  ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      {/* 勾选习惯热力图 */}
-      <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
-          打卡习惯
-        </h3>
-
-        {/* 垂直堆叠 */}
-        <div className="space-y-3">
+        {/* 热力图内容 */}
+        <div className="p-4">
           <HabitHeatmap
-            data={readingData}
-            title="阅读"
-            icon="📖"
-          />
-          <HabitHeatmap
-            data={languageData}
-            title="学语言"
-            icon="🇬🇧"
-          />
-          <HabitHeatmap
-            data={supplementsData}
-            title="补充剂"
-            icon="💊"
+            data={heatmapData[activeTab as keyof typeof heatmapData]}
+            title={titles[activeTab as keyof typeof titles]}
+            icon={icons[activeTab as keyof typeof icons]}
+            days={days}
           />
         </div>
       </div>

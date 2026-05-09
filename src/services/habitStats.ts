@@ -1,7 +1,9 @@
 // 习惯统计数据服务
 
 import { HabitData, DiaryEntry } from '../types';
-import { getAllCachedDiaries } from '../db';
+import { getAllCachedDiaries, cacheDiary } from '../db';
+import { getFileSyncService } from './fileSync';
+import { parseDiary } from '../utils/markdown';
 
 // 日习惯统计
 export interface DailyHabitStats {
@@ -89,6 +91,27 @@ function entryToStats(entry: DiaryEntry): DailyHabitStats {
   };
 }
 
+// 从文件读取指定日期的习惯数据
+async function readHabitFromFile(dateStr: string): Promise<DailyHabitStats | null> {
+  try {
+    const fileSync = getFileSyncService();
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+    const content = await fileSync.readFile(date);
+    const entry = parseDiary(content);
+    entry.date = dateStr;
+
+    // 缓存到IndexedDB
+    await cacheDiary(entry);
+
+    return entryToStats(entry);
+  } catch (error) {
+    console.log(`No diary file for ${dateStr}:`, error);
+    return null;
+  }
+}
+
 // 获取指定日期范围的习惯统计
 export async function getHabitStats(days: number): Promise<DailyHabitStats[]> {
   // 获取日期范围
@@ -105,20 +128,29 @@ export async function getHabitStats(days: number): Promise<DailyHabitStats[]> {
 
   // 生成统计数据
   const stats: DailyHabitStats[] = [];
+
   for (const date of targetDates) {
-    const entry = diaryMap.get(date);
-    if (entry) {
-      stats.push(entryToStats(entry));
+    // 先检查缓存
+    const cachedEntry = diaryMap.get(date);
+
+    if (cachedEntry) {
+      stats.push(entryToStats(cachedEntry));
     } else {
-      // 无数据的日期填充默认值
-      stats.push({
-        date,
-        water: 0,
-        steps: 0,
-        reading: false,
-        language: false,
-        supplements: false
-      });
+      // 尝试从文件读取
+      const fileStats = await readHabitFromFile(date);
+      if (fileStats) {
+        stats.push(fileStats);
+      } else {
+        // 无数据的日期填充默认值
+        stats.push({
+          date,
+          water: 0,
+          steps: 0,
+          reading: false,
+          language: false,
+          supplements: false
+        });
+      }
     }
   }
 
