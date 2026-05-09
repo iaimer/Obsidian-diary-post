@@ -9,6 +9,8 @@ import DiaryView from './components/DiaryView';
 import { SettingsPage } from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
 
+type PageView = 'home' | 'stats' | 'settings';
+
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const wasConnected = useDiaryStore(state => state.wasConnected);
@@ -16,8 +18,7 @@ function App() {
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showStats, setShowStats] = useState(false);
+  const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
@@ -45,14 +46,58 @@ function App() {
     setVaultConnected(false);
   };
 
-  // 如果显示设置页面，直接返回设置页面
-  if (showSettings) {
-    return <SettingsPage onClose={() => setShowSettings(false)} />;
+  // 设置页面
+  if (currentView === 'settings') {
+    return (
+      <>
+        <SettingsPage />
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
+          <div className="flex justify-around max-w-md mx-auto">
+            <button
+              className="px-4 py-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setCurrentView('home')}
+            >
+              今天
+            </button>
+            <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
+            <button
+              className="px-4 py-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setCurrentView('stats')}
+            >
+              统计
+            </button>
+            <button className="px-4 py-2 text-indigo-600 font-medium">设置</button>
+          </div>
+        </nav>
+      </>
+    );
   }
 
-  // 如果显示统计页面，直接返回统计页面
-  if (showStats) {
-    return <StatsPage onBack={() => setShowStats(false)} />;
+  // 统计页面
+  if (currentView === 'stats') {
+    return (
+      <>
+        <StatsPage />
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
+          <div className="flex justify-around max-w-md mx-auto">
+            <button
+              className="px-4 py-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setCurrentView('home')}
+            >
+              今天
+            </button>
+            <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
+            <button className="px-4 py-2 text-indigo-600 font-medium">统计</button>
+            <button
+              className="px-4 py-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setCurrentView('settings')}
+            >
+              设置
+            </button>
+          </div>
+        </nav>
+      </>
+    );
   }
 
   return (
@@ -131,13 +176,13 @@ function App() {
           <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
           <button
             className="px-4 py-2 text-gray-400 hover:text-gray-600"
-            onClick={() => setShowStats(true)}
+            onClick={() => setCurrentView('stats')}
           >
             统计
           </button>
           <button
             className="px-4 py-2 text-gray-400 hover:text-gray-600"
-            onClick={() => setShowSettings(true)}
+            onClick={() => setCurrentView('settings')}
           >
             设置
           </button>

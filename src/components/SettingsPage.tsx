@@ -42,11 +42,7 @@ const presets = [
   { name: '本地Ollama', baseUrl: 'http://localhost:11434', model: 'qwen2.5:7b' },
 ];
 
-interface SettingsPageProps {
-  onClose: () => void;
-}
-
-export function SettingsPage({ onClose }: SettingsPageProps) {
+export function SettingsPage() {
   const [aiConfig, setAIConfig] = useState<AIConfig>(getSavedAIConfig());
   const [saving, setSaving] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -80,17 +76,7 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
       <header className="bg-white shadow-sm px-4 py-3">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <button
-              className="text-gray-400 hover:text-gray-600"
-              onClick={onClose}
-            >
-              ← 返回
-            </button>
-            <h1 className="text-lg font-semibold text-gray-800">⚙️ 设置</h1>
-          </div>
-        </div>
+        <h1 className="text-lg font-semibold text-gray-800">⚙️ 设置</h1>
       </header>
 
       {/* Main Content */}
