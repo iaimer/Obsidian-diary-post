@@ -181,6 +181,16 @@ export class FileSyncService {
       throw new Error(`Section not found: ${section}`);
     }
 
+    // 如果是随手记区块，删除模板中的示例行
+    if (section === DiarySection.QUICK_NOTES) {
+      for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+        if (lines[i].includes('- **HH:MM** 内容 #标签')) {
+          lines.splice(i, 1);
+          break;
+        }
+      }
+    }
+
     // 找到下一个区块的位置（用于确定插入点）
     const allHeaders = Object.values(sectionHeaders);
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
