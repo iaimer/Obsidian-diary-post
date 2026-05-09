@@ -182,7 +182,7 @@ export default function QuickInput() {
             {parseTagsFromPolished(polishedContent).content}
           </div>
           {/* AI生成的标签 */}
-          <div className="flex gap-1 mb-2">
+          <div className="flex gap-1 mb-2 flex-wrap items-center">
             <span className="text-xs text-gray-500">AI标签：</span>
             {selectedDomain && (
               <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded text-xs">
@@ -199,12 +199,18 @@ export default function QuickInput() {
                 #{selectedMethod}
               </span>
             )}
+            {/* 缺少能力标签警告 */}
+            {selectedDomain && !selectedCapability && (
+              <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">
+                ⚠️ 缺少能力标签，请手动选择
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <button
-              className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium"
+              className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:bg-indigo-300"
               onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedDomain || !selectedCapability}
             >
               {isSubmitting ? '发送中...' : '发送润色结果'}
             </button>
