@@ -7,6 +7,7 @@ import { HappinessModal } from './components/HappinessModal';
 import HabitTracker from './components/HabitTracker';
 import DiaryView from './components/DiaryView';
 import { SettingsPage } from './components/SettingsPage';
+import StatsPage from './components/StatsPage';
 
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
@@ -16,6 +17,7 @@ function App() {
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
@@ -46,6 +48,11 @@ function App() {
   // 如果显示设置页面，直接返回设置页面
   if (showSettings) {
     return <SettingsPage onClose={() => setShowSettings(false)} />;
+  }
+
+  // 如果显示统计页面，直接返回统计页面
+  if (showStats) {
+    return <StatsPage onBack={() => setShowStats(false)} />;
   }
 
   return (
@@ -122,7 +129,12 @@ function App() {
         <div className="flex justify-around max-w-md mx-auto">
           <button className="px-4 py-2 text-indigo-600 font-medium">今天</button>
           <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
-          <button className="px-4 py-2 text-gray-400 hover:text-gray-600">统计</button>
+          <button
+            className="px-4 py-2 text-gray-400 hover:text-gray-600"
+            onClick={() => setShowStats(true)}
+          >
+            统计
+          </button>
           <button
             className="px-4 py-2 text-gray-400 hover:text-gray-600"
             onClick={() => setShowSettings(true)}
