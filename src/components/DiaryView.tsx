@@ -11,10 +11,11 @@ function renderMarkdown(line: string): React.ReactNode {
 
   // 处理引用块 `> 内容`
   if (line.startsWith('> ') && !line.startsWith('> [!')) {
+    let content = line.slice(2);
+    // 处理粗体
+    content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     return (
-      <span className="text-gray-600 italic pl-2 border-l-2 border-green-200">
-        {line.slice(2)}
-      </span>
+      <span className="text-gray-600 italic pl-2 border-l-2 border-green-200" dangerouslySetInnerHTML={{ __html: content }} />
     );
   }
 
@@ -31,13 +32,16 @@ function renderMarkdown(line: string): React.ReactNode {
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
 
+    // 处理剩余的粗体标记
+    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
     return (
       <div className="text-sm text-gray-700">
         <div className="flex items-start gap-2">
           {time && (
             <span className="text-indigo-600 font-medium shrink-0">{time}</span>
           )}
-          <span className="flex-1">{textContent}</span>
+          <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
@@ -86,7 +90,11 @@ function renderMarkdown(line: string): React.ReactNode {
     );
   }
 
-  // 普通文本
+  // 普通文本 - 处理粗体标记
+  let plainText = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  if (plainText !== line) {
+    return <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: plainText }} />;
+  }
   return <span className="text-sm text-gray-700">{line}</span>;
 }
 
