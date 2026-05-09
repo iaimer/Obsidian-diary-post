@@ -45,7 +45,7 @@ function createObsidianDiaryContent(date: Date): string {
   // 随手记
   lines.push('---');
   lines.push(sectionHeaders[DiarySection.QUICK_NOTES]);
-  lines.push('<!-- 手记和灵感，文案喵会自动添加合适的标签 -->');
+  lines.push('<!-- 随手记和灵感，文案喵会自动添加合适的标签 -->');
   lines.push('- **HH:MM** 内容 #标签');
   lines.push('');
 
@@ -111,7 +111,7 @@ export class FileSyncService {
     }
   }
 
-  // 获取日记（用于读取和显示）
+  // 获取日记（用于读取和显示，文件不存在则创建）
   async getOrCreateDiary(date: Date): Promise<DiaryEntry> {
     const dateString = getDateString(date);
     console.log('Getting diary for:', dateString);
@@ -130,8 +130,15 @@ export class FileSyncService {
       await cacheDiary(entry);
       return entry;
     } catch (error) {
-      console.error('Failed to read diary file:', error);
-      throw error;
+      console.log('File not found, creating new diary...');
+      const newContent = createObsidianDiaryContent(date);
+      await this.writeFile(date, newContent);
+
+      const entry = parseDiary(newContent);
+      entry.date = dateString;
+
+      await cacheDiary(entry);
+      return entry;
     }
   }
 
