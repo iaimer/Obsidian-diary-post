@@ -81,6 +81,10 @@ export function parseDiary(content: string): DiaryEntry {
 
     // 如果有当前区块且行不为空，添加内容
     if (currentSection && line.trim()) {
+      // 跳过分隔线
+      if (line.trim() === '---') {
+        continue;
+      }
       // 跳过区块的引导文字（如 "> [!success]"）
       if (line.startsWith('> [!') && !line.startsWith('> [!quote]')) {
         continue;
