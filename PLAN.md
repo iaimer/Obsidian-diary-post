@@ -333,3 +333,159 @@ src/components/
 | `src/services/fileSync.ts` | readFile公开方法供统计页面调用 |
 | `src/components/CombinedTrendChart.tsx` | Recharts双Y轴折线图 |
 | `src/components/HabitHeatmap.tsx` | 微信读书风格热力图（渐变绿） |
+
+---
+
+## 十一、历史日记页面（Phase 5） 📋 待开发
+
+### 功能概述
+
+用户可以查看历史日记，通过日历视图选择日期，查看该天的日记内容（不含习惯追踪模块）。
+
+### 核心功能
+
+1. **日历视图**
+   - 月度日历展示（类似iOS日历风格）
+   - 当前日期高亮显示
+   - 有日记的日期可点击
+   - 月份切换（左右箭头或下拉选择）
+
+2. **影像缩略图**
+   - 日历中每个日期格子显示该天的影像缩略图（如果有）
+   - 缩略图来源：日记文件中的 `## 📸 影像记录` 区块
+   - 支持的图片格式：Obsidian内嵌图片 `![[image.png]]`
+   - 缩略图尺寸：小圆形或方形（约20-30px）
+
+3. **日记详情页**
+   - 点击日期后展开/跳转到详情视图
+   - 显示区块（不含习惯追踪）：
+     - ✍️ 随手记 & 灵感
+     - ✨ 每日小确幸
+     - 💡 觉察与迭代
+     - 🧠 荔枝喵说
+     - 📸 影像记录（如果有）
+   - 阅读模式渲染（无Markdown标记）
+
+### 组件结构
+
+```
+src/components/
+├── HistoryPage.tsx        # 历史页面容器
+├── CalendarView.tsx       # 日历组件（月视图）
+├── CalendarCell.tsx       # 日历格子（含缩略图）
+├── DiaryDetail.tsx        # 日记详情视图
+└── ImageThumbnail.tsx     # 图片缩略图组件
+```
+
+### 技术要点
+
+#### 日历数据加载
+
+```typescript
+// 扫描月度目录获取该月所有日记文件
+async function getMonthDiaries(year: number, month: number): Promise<DiaryMeta[]> {
+  const path = `workspace/生活/日记/${year}/${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
+  // 获取目录下所有 YYYY-MM-DD.md 文件
+  // 解析文件元数据：是否有影像、是否有随手记等
+}
+```
+
+#### 影像缩略图提取
+
+```typescript
+// 从日记文件提取图片引用
+function extractImages(diary: DiaryEntry): string[] {
+  return diary.sections.images
+    .filter(line => line.includes('![['))
+    .map(line => {
+      const match = line.match(/!\[\[(.*?)\]\]/);
+      return match ? match[1] : null;
+    })
+    .filter(Boolean);
+}
+
+// 图片路径处理
+function getImagePath(imageName: string, diaryDate: string): string {
+  // Obsidian图片路径：workspace/生活/日记/YYYY/assets/imageName
+  // 或 Vault 根目录的 attachments 文件夹
+}
+```
+
+#### 日历格子UI
+
+```tsx
+// 日历格子组件
+function CalendarCell({ date, diary, images }) {
+  return (
+    <div className="relative">
+      <span className="text-sm">{date.getDate()}</span>
+      {images.length > 0 && (
+        <img 
+          src={images[0]} 
+          className="absolute bottom-0 right-0 w-6 h-6 rounded-full object-cover"
+          alt="thumbnail"
+        />
+      )}
+    </div>
+  );
+}
+```
+
+### UI设计草图
+
+```
+┌─────────────────────────────────────┐
+│  📅 2026年5月                    < > │
+├─────────────────────────────────────┤
+│  日  一  二  三  四  五  六         │
+│                                    │
+│      1   2   3   4   5   6         │
+│  7   8   9  [10] 11  12  13        │
+│ 14  15  16  17  18  19  20         │
+│ 21  22  23  24  25  26  27         │
+│ 28  29  30  31                     │
+│                                    │
+│  [img] 表示有影像记录的日期          │
+├─────────────────────────────────────┤
+│  📅 2026-05-09 星期四               │
+│  ─────────────────────────          │
+│  ✍️ 手记 (3条)                     │
+│  • 10:30 晨间播客感悟...            │
+│  • 14:20 下午会议记录...            │
+│  • 20:00 夜间阅读心得...            │
+│  ─────────────────────────          │
+│  ✨ 小确幸                           │
+│  早上阳光洒进窗户，温暖又惬意        │
+│  ─────────────────────────          │
+│  💡 觉察与迭代                       │
+│  今天发现自己在压力下容易拖延...     │
+│  ─────────────────────────          │
+│  🧠 荔枝喵说                         │
+│  你今天的工作节奏有点不规律...       │
+│  ─────────────────────────          │
+│  📸 影像记录 (2张)                   │
+│  [图片1缩略图] [图片2缩略图]         │
+└─────────────────────────────────────┘
+```
+
+### 数据流
+
+1. 用户进入历史页面 → 加载当前月份日历
+2. 扫描月度目录 → 获取该月所有日记文件列表
+3. 解析每个文件 → 提取元数据（是否有影像、随手记数量）
+4. 渲染日历 → 有日记的日期可点击，有影像的显示缩略图
+5. 点击日期 → 加载完整日记内容 → 渲染详情视图
+
+### 性能优化
+
+- 月度文件列表缓存到 IndexedDB
+- 影像缩略图按需加载（懒加载）
+- 详情页只在点击时才完整解析日记
+- 使用虚拟滚动处理大月份列表
+
+### 待定问题
+
+- [ ] 图片路径解析：Obsidian可能有多种图片存储位置
+- [ ] 图片读取权限：File System API是否能直接读取图片文件
+- [ ] 日历与详情页的切换方式：内嵌展开还是独立页面
+- [ ] 月份切换时的加载动画
