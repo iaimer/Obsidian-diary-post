@@ -28,9 +28,10 @@ export function CalendarDayCell({
       setError(false);
       
       const year = date.getFullYear();
+      const month = date.getMonth() + 1; // 月份从0开始，需要+1
       const historyService = getHistoryService();
       
-      historyService.loadImage(imageName, year)
+      historyService.loadImage(imageName, year, month)
         .then(url => {
           if (url) {
             setImageUrl(url);

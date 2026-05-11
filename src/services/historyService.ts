@@ -123,38 +123,63 @@ export class HistoryService {
     }
   }
 
-  async loadImage(imageName: string, year: number): Promise<string | null> {
+  async loadImage(imageName: string, year: number, month?: number): Promise<string | null> {
     if (!this.vaultHandle) {
       throw new Error('Vault not connected');
     }
 
-    // 检查缓存
+    // 检查缓存（使用year/imageName作为键）
     const cacheKey = `${year}/${imageName}`;
     if (this.imageCache.has(cacheKey)) {
       return this.imageCache.get(cacheKey)!;
     }
 
-    const basePath = `workspace/生活/日记/${year}/assets`;
-    const pathParts = basePath.split('/').filter(p => p);
-
-    try {
-      let currentHandle = this.vaultHandle;
-      for (const part of pathParts) {
-        currentHandle = await currentHandle.getDirectoryHandle(part);
+    // 优先级1：检查月份assets（YYYY/MM.EnglishMonth/assets）
+    if (month) {
+      const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
+      const monthAssetsPath = `workspace/生活/日记/${year}/${monthDirName}/assets`;
+      
+      try {
+        const url = await this.tryLoadImageFromPath(monthAssetsPath, imageName, cacheKey);
+        if (url) return url;
+      } catch (error) {
+        console.log(`Image not found in month assets: ${monthDirName}/assets`);
       }
-
-      const fileHandle = await currentHandle.getFileHandle(imageName);
-      const file = await fileHandle.getFile();
-      const url = URL.createObjectURL(file);
-      
-      // 缓存图片URL
-      this.imageCache.set(cacheKey, url);
-      
-      return url;
-    } catch (error) {
-      console.log(`Image not found: ${imageName}`);
-      return null;
     }
+
+    // 优先级2：检查年份assets（YYYY/assets）
+    const yearAssetsPath = `workspace/生活/日记/${year}/assets`;
+    try {
+      const url = await this.tryLoadImageFromPath(yearAssetsPath, imageName, cacheKey);
+      if (url) return url;
+    } catch (error) {
+      console.log(`Image not found in year assets: ${year}/assets`);
+    }
+
+    return null;
+  }
+
+  // 尝试从指定路径加载图片
+  private async tryLoadImageFromPath(
+    basePath: string, 
+    imageName: string, 
+    cacheKey: string
+  ): Promise<string | null> {
+    const pathParts = basePath.split('/').filter(p => p);
+    
+    let currentHandle = this.vaultHandle!;
+    for (const part of pathParts) {
+      currentHandle = await currentHandle.getDirectoryHandle(part);
+    }
+
+    const fileHandle = await currentHandle.getFileHandle(imageName);
+    const file = await fileHandle.getFile();
+    const url = URL.createObjectURL(file);
+    
+    // 缓存图片URL
+    this.imageCache.set(cacheKey, url);
+    
+    return url;
   }
 
   // 清除图片缓存
