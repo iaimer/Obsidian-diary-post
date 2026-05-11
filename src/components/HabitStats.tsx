@@ -28,19 +28,19 @@ export default function HabitStats({ days }: HabitStatsProps) {
   // 监听refreshKey，当日记数据更新时刷新统计
   const refreshKey = useDiaryStore(state => state.refreshKey);
 
-  useEffect(() => {
-    async function loadStats() {
-      setIsLoading(true);
-      try {
-        const data = await getHabitStats(days);
-        setStats(data);
-      } catch (error) {
-        console.error('Failed to load habit stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  const loadStats = async (forceReload = false) => {
+    setIsLoading(true);
+    try {
+      const data = await getHabitStats(days, forceReload);
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to load habit stats:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     loadStats();
   }, [days, refreshKey]); // 添加refreshKey到依赖数组
 
@@ -89,6 +89,17 @@ export default function HabitStats({ days }: HabitStatsProps) {
 
   return (
     <div>
+      {/* 刷新按钮 */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => loadStats(true)}
+          disabled={isLoading}
+          className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50"
+        >
+          {isLoading ? '刷新中...' : '🔄 强制刷新'}
+        </button>
+      </div>
+
       {/* 饮水+运动趋势合并图 */}
       <CombinedTrendChart
         waterData={waterData}
