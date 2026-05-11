@@ -8,6 +8,7 @@ import {
   calculateSummary,
   DailyHabitStats
 } from '../services/habitStats';
+import { useDiaryStore } from '../stores/diaryStore';
 
 interface HabitStatsProps {
   days: number;
@@ -23,6 +24,9 @@ export default function HabitStats({ days }: HabitStatsProps) {
   const [stats, setStats] = useState<DailyHabitStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('reading');
+  
+  // 监听refreshKey，当日记数据更新时刷新统计
+  const refreshKey = useDiaryStore(state => state.refreshKey);
 
   useEffect(() => {
     async function loadStats() {
@@ -38,7 +42,7 @@ export default function HabitStats({ days }: HabitStatsProps) {
     }
 
     loadStats();
-  }, [days]);
+  }, [days, refreshKey]); // 添加refreshKey到依赖数组
 
   if (isLoading) {
     return (
