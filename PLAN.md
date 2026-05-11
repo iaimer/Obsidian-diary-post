@@ -567,6 +567,7 @@ function CalendarCell({ date, diary, images }) {
 
 ### 待开发功能
 
+- [ ] **应用图标设计**（Phase 7）：添加完整的图标系统
 - [ ] **多设备同步**（Phase 6）：支持手机和电脑数据同步
 - [ ] PWA离线支持（manifest.json + service worker）
 - [ ] 习惯月度汇总表生成
@@ -575,6 +576,637 @@ function CalendarCell({ date, diary, images }) {
 - [ ] 焦虑时刻区块输入
 - [ ] 图片懒加载优化（虚拟滚动）
 - [ ] 月份数据IndexedDB缓存
+
+---
+
+## 十四、应用图标系统（Phase 7） 📋 待开发
+
+### 功能概述
+
+为应用添加完整的图标系统，包括应用图标、功能图标、导航图标等，提升视觉体验和品牌识别度。
+
+### 图标分类
+
+#### 1. 应用图标（App Icon）
+
+**用途：**
+- PWA安装后的桌面图标
+- 浏览器标签页favicon
+- iOS/Android主屏幕图标
+- 应用启动图标
+
+**要求：**
+- 尺寸：192px, 512px（PWA标准）
+- 格式：PNG（透明背景）
+- 风格：简洁、现代、符合日记主题
+- 设计元素：
+  - 主色调：indigo-600 (#4F46E5)
+  - 图标元素：日历、笔、叶子（参考现有emoji风格）
+  - 圆角：适应iOS/Android风格
+
+**设计参考：**
+```
+┌─────────────┐
+│             │
+│   📅 ✍️     │ ← 日历 + 笔记符号
+│             │
+│  Diary Post │ ← 应用名称
+│             │
+└─────────────┘
+
+或更简洁：
+┌─────────────┐
+│             │
+│    🌿       │ ← 叶子（代表日记）
+│             │
+│             │
+└─────────────┘
+```
+
+---
+
+#### 2. 功能图标（Feature Icons）
+
+**用途：**
+- 功能按钮图标
+- 操作提示图标
+- 状态指示图标
+
+**现有使用emoji：**
+- 📅 日历
+- ✍️ 随手记
+- ✨ 小确幸
+- 💡 觉察
+- 🧠 荔枝喵说
+- 📸 影像记录
+- 🏃 习惯追踪
+- 💧 饮水
+- 📖 阅读
+- 🇬🇧 学语言
+- 💊 补充剂
+- 📊 统计
+
+**优化方向：**
+- 保留emoji风格（用户习惯）
+- 或替换为自定义SVG图标（更专业）
+- 考虑图标库：Lucide Icons, Heroicons, Phosphor Icons
+
+---
+
+#### 3. 导航图标（Navigation Icons）
+
+**用途：**
+- 底部导航栏图标
+- 页面切换指示
+
+**当前导航：**
+- "今天" - 无图标（纯文字）
+- "历史" - 无图标（纯文字）
+- "统计" - 无图标（纯文字）
+- "设置" - 无图标（纯文字）
+
+**建议图标：**
+```
+今天：🏠 Home (home icon)
+历史：📅 History (calendar icon)
+统计：📊 Stats (chart icon)
+设置：⚙️ Settings (settings icon)
+```
+
+---
+
+#### 4. 操作图标（Action Icons）
+
+**用途：**
+- 按钮操作指示
+- 状态反馈
+
+**需要图标：**
+- ➕ 添加/新建
+- ✅ 完成/确认
+- ❌ 删除/取消
+- 🔄 刷新/同步
+- 💾 保存
+- 🔗 连接
+- 🔍 搜索
+- ↩️ 返回/关闭
+- 📤 分享
+- ⬇️ 下载
+
+---
+
+### 实现方案
+
+#### 方案A：保留Emoji + 关键图标优化（推荐）✅
+
+**设计思路：**
+- 大部分功能继续使用emoji（用户习惯）
+- 应用图标和导航图标使用专业SVG图标
+- 降低开发成本，保持现有风格
+
+**优点：**
+- ✅ 用户已经熟悉emoji风格
+- ✅ 无需大量图标设计
+- ✅ emoji跨平台兼容性好
+- ✅ 开发成本低
+
+**缺点：**
+- ❌ emoji在不同平台显示不一致
+- ❌ 应用图标不够专业
+
+**实现重点：**
+- 应用图标：设计专业PNG图标
+- 导航图标：使用Lucide Icons等图标库
+- 功能图标：保留现有emoji
+
+---
+
+#### 方案B：全面替换为SVG图标系统
+
+**设计思路：**
+- 所有图标替换为统一SVG图标
+- 建立图标组件库
+- 统一风格和尺寸
+
+**优点：**
+- ✅ 视觉统一专业
+- ✅ 可定制颜色和尺寸
+- ✅ 跨平台显示一致
+- ✅ 符合现代设计规范
+
+**缺点：**
+- ❌ 需要设计大量图标
+- ❌ 开发成本高
+- ❌ 用户需要适应新图标
+
+**实现复杂度：**
+- 高：需要设计30+图标，建立图标系统
+
+---
+
+#### 方案C：混合方案（Emoji + 关键SVG）
+
+**设计思路：**
+- 功能区块使用emoji（保持亲切感）
+- UI操作使用SVG图标（提升专业性）
+- 应用图标专业设计
+
+**优点：**
+- ✅ 平衡用户习惯和专业性
+- ✅ 适度开发成本
+- ✅ 关键UI更专业
+
+**缺点：**
+- ❌ 风格不够完全统一
+
+---
+
+### 推荐方案实现细节
+
+#### 采用方案A：保留Emoji + 关键图标优化
+
+**Phase 7.1：应用图标设计**（2天）
+
+**设计要求：**
+- 尺寸：192x192px, 512x512px
+- 格式：PNG（透明背景）
+- 风格：Material Design或iOS风格
+- 主色调：indigo-600 (#4F46E5)
+
+**设计工具：**
+- Figma（免费）
+- Canva（简单快速）
+- 或AI生成图标
+
+**设计元素建议：**
+```
+方案1：日历 + 笔记
+- 日历形状（圆角矩形）
+- 笔记线条
+- indigo渐变背景
+
+方案2：叶子符号
+- 简洁叶子图形
+- 代表日记/记录
+- 绿色/indigo配色
+
+方案3：字母D
+- 大写字母"D"（Diary）
+- 圆角背景
+- indigo主色
+```
+
+**输出文件：**
+```
+public/icons/
+├── icon-192.png    # PWA标准图标
+├── icon-512.png    # 高清图标
+├── icon-maskable.png # 适配图标（有边距）
+├── favicon.ico      # 浏览器标签图标
+└── apple-touch-icon.png # iOS图标
+```
+
+---
+
+**Phase 7.2：导航图标添加**（1天）
+
+**使用Lucide Icons图标库：**
+
+**安装：**
+```bash
+npm install lucide-react
+```
+
+**图标映射：**
+```typescript
+import { Home, Calendar, BarChart2, Settings } from 'lucide-react';
+
+const NAV_ICONS = {
+  home: Home,
+  history: Calendar,
+  stats: BarChart2,
+  settings: Settings
+};
+```
+
+**导航按钮设计：**
+```tsx
+function BottomNav() {
+  const navItems = [
+    { label: '今天', view: 'home', icon: Home },
+    { label: '历史', view: 'history', icon: Calendar },
+    { label: '统计', view: 'stats', icon: BarChart2 },
+    { label: '设置', view: 'settings', icon: Settings }
+  ];
+
+  return (
+    <nav>
+      {navItems.map(item => (
+        <button key={item.view}>
+          <item.icon size={20} />
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+```
+
+---
+
+**Phase 7.3：操作图标优化**（1天）
+
+**关键操作图标替换：**
+
+**刷新/同步图标：**
+```tsx
+import { RefreshCw } from 'lucide-react';
+
+// 替换现有的emoji 🔄
+<RefreshCw size={16} className="animate-spin" />
+```
+
+**连接图标：**
+```tsx
+import { Link2, Link2Off } from 'lucide-react';
+
+// 连接状态指示
+{vaultConnected ? <Link2 size={16} /> : <Link2Off size={16} />}
+```
+
+**添加/新建图标：**
+```tsx
+import { Plus, X } from 'lucide-react';
+
+// 弹窗关闭按钮
+<button onClick={onClose}>
+  <X size={20} />
+</button>
+```
+
+---
+
+**Phase 7.4：PWA manifest配置**（1天）
+
+**manifest.json配置：**
+```json
+{
+  "name": "Diary Post - 日记记录应用",
+  "short_name": "Diary",
+  "description": "快速记录日记，追踪习惯，连接Obsidian",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+**HTML配置：**
+```html
+<link rel="icon" type="image/png" href="/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="theme-color" content="#4F46E5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+```
+
+---
+
+### 图标设计清单
+
+#### 必须实现（高优先级）
+
+- [ ] 应用图标（192x192, 512x512）
+- [ ] Favicon（浏览器标签图标）
+- [ ] 导航图标（底部导航4个图标）
+- [ ] 刷新/同步图标
+- [ ] 连接/断开图标
+
+#### 可选实现（中优先级）
+
+- [ ] 关闭/取消图标（弹窗）
+- [ ] 添加/新建图标
+- [ ] 保存图标
+- [ ] 分享图标
+- [ ] 搜索图标
+
+#### 延后实现（低优先级）
+
+- [ ] 功能区块图标替换（保留emoji）
+- [ ] 习惯追踪图标替换
+- [ ] 日记区块图标替换
+
+---
+
+### 图标库选择
+
+#### Lucide Icons（推荐）✅
+
+**优点：**
+- ✅ 300+高质量图标
+- ✅ React组件形式
+- ✅ 可定制尺寸和颜色
+- ✅ 开源免费（MIT）
+- ✅ 轻量级（无依赖）
+
+**使用示例：**
+```tsx
+import { Home, Calendar, Settings } from 'lucide-react';
+
+<Home size={24} color="#4F46E5" />
+<Calendar size={20} strokeWidth={1.5} />
+```
+
+---
+
+#### Heroicons
+
+**优点：**
+- ✅ Tailwind CSS官方图标
+- ✅ SVG和React组件形式
+- ✅ 多种风格（outline, solid）
+
+**缺点：**
+- ❌ 图标数量较少
+
+---
+
+#### Phosphor Icons
+
+**优点：**
+- ✅ 1000+图标
+- ✅ 多种粗细风格
+- ✅ 开源免费
+
+**缺点：**
+- ❌ 包体积较大
+
+---
+
+#### Emoji（当前使用）
+
+**优点：**
+- ✅ 无需额外依赖
+- ✅ 用户熟悉亲切
+- ✅ 跨平台兼容（大部分）
+
+**缺点：**
+- ❌ 显示效果不统一
+- ❌ 部分设备不支持
+- ❌ 不够专业
+
+---
+
+### 实现步骤
+
+#### Step 1：设计应用图标（2天）
+
+**任务：**
+- 设计主图标（192x192, 512x512）
+- 生成favicon.ico
+- 生成apple-touch-icon.png
+- 设计maskable版本（带边距）
+
+**工具：**
+- Figma在线设计
+- 或使用Canva快速制作
+- 或AI图标生成工具
+
+**验收标准：**
+- ✅ 符合PWA标准尺寸
+- ✅ indigo主色调
+- ✅ 简洁现代风格
+- ✅ 透明PNG格式
+
+---
+
+#### Step 2：安装Lucide Icons（半天）
+
+**操作：**
+```bash
+npm install lucide-react
+```
+
+**验证：**
+- ✅ 包安装成功
+- ✅ 可正常导入图标组件
+- ✅ 图标渲染正常
+
+---
+
+#### Step 3：替换导航图标（半天）
+
+**修改文件：**
+- `src/App.tsx` - 底部导航栏
+
+**实现：**
+```tsx
+import { Home, Calendar, BarChart2, Settings } from 'lucide-react';
+
+{navItems.map(item => (
+  <button>
+    <item.icon size={20} className={currentView === item.view ? 'text-indigo-600' : 'text-gray-400'} />
+    <span>{item.label}</span>
+  </button>
+))}
+```
+
+**验收：**
+- ✅ 底部导航显示图标
+- ✅ 当前页面图标高亮
+- ✅ 图标和文字对齐美观
+
+---
+
+#### Step 4：替换关键操作图标（1天）
+
+**修改文件：**
+- `src/components/PullToRefresh.tsx` - 刷新图标
+- `src/App.tsx` - 连接按钮
+- `src/components/ReflectionModal.tsx` - 关闭按钮
+- `src/components/HappinessModal.tsx` - 关闭按钮
+
+**实现：**
+```tsx
+import { RefreshCw, Link2, X } from 'lucide-react';
+
+// 下拉刷新
+<RefreshCw size={24} className="animate-spin" />
+
+// 连接状态
+<Link2 size={16} /> // 已连接
+<Link2Off size={16} /> // 未连接
+
+// 关闭按钮
+<X size={20} />
+```
+
+---
+
+#### Step 5：配置manifest.json（1天）
+
+**创建文件：**
+- `public/manifest.json`
+- `public/icons/`目录
+
+**修改文件：**
+- `index.html` - 添加图标链接
+
+**验证：**
+- ✅ PWA安装时显示自定义图标
+- ✅ 浏览器标签显示favicon
+- ✅ iOS添加到主屏幕显示图标
+
+---
+
+### 时间估算
+
+**总开发周期：5天**
+
+- Phase 7.1：应用图标设计 → 2天
+- Phase 7.2：导航图标添加 → 1天
+- Phase 7.3：操作图标优化 → 1天
+- Phase 7.4：PWA manifest配置 → 1天
+
+---
+
+### 技术风险评估
+
+| 风险 | 影响 | 应对措施 |
+|------|------|----------|
+| 图标设计质量不高 | 应用不够专业 | 使用专业设计工具或外包设计 |
+| Lucide包体积过大 | 性能影响 | 实测包体积（约50KB，可接受） |
+| PWA图标显示不正确 | 用户体验差 | 测试多平台（iOS/Android/Chrome） |
+| emoji在某些设备不显示 | 功能图标缺失 | 关键图标用SVG，emoji仅辅助 |
+
+---
+
+### 最终用户体验
+
+**安装PWA后：**
+```
+手机主屏幕：
+┌─────────────┐
+│             │
+│   [自定义图标] │ ← 专业应用图标
+│             │
+│  Diary Post │ ← 应用名称
+└─────────────┘
+```
+
+**应用内导航：**
+```
+底部导航栏：
+┌─────────────────────────┐
+│ [🏠] 今天               │ ← SVG图标 + 文字
+│ [📅] 历史               │
+│ [📊] 统计               │
+│ [⚙️] 设置               │
+└─────────────────────────┘
+```
+
+**功能区块：**
+```
+日记区块：
+┌─────────────────────────┐
+│ ✍️ 随手记              │ ← 保留emoji（亲切）
+│ ✨ 每日小确幸           │
+│ 💡 觉察与迭代           │
+└─────────────────────────┘
+```
+
+---
+
+### 实现优先级
+
+**Phase 7.1（必须实现）：**
+- ✅ 应用图标设计
+- ✅ Favicon配置
+
+**Phase 7.2（高优先级）：**
+- ✅ 导航图标添加
+- ✅ PWA manifest配置
+
+**Phase 7.3（中优先级）：**
+- ✅ 操作图标优化
+- ✅ 连接/刷新图标
+
+**Phase 7.4（低优先级）：**
+- 📋 功能区块图标替换
+- 📋 图标主题系统
+
+---
+
+### 后续优化方向
+
+- 图标主题切换（跟随系统暗色模式）
+- 图标动画效果（加载、成功状态）
+- 图标尺寸自适应（响应式）
+- 图标颜色定制（用户主题）
+- 更多图标设计（后续功能）
 
 ---
 
