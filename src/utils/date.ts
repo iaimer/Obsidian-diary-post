@@ -42,8 +42,3 @@ export function getTimestamp(): string {
 export function isToday(dateStr: string): boolean {
   return dateStr === getDateString(new Date());
 }
-
-// 解析日期字符串
-export function parseDateString(dateStr: string): Date {
-  return new Date(dateStr);
-}
