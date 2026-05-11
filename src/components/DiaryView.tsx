@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { DiaryEntry } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getFileSyncService } from '../services/fileSync';
@@ -12,27 +12,24 @@ function renderMarkdown(line: string): React.ReactNode {
   // 处理引用块 `> 内容`
   if (line.startsWith('> ') && !line.startsWith('> [!')) {
     let content = line.slice(2);
-    // 处理粗体
     content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     return (
-      <span className="text-gray-600 italic pl-2 border-l-2 border-green-200" dangerouslySetInnerHTML={{ __html: content }} />
+      <span 
+        className="text-gray-600 italic pl-2 border-l-2 border-green-200" 
+        dangerouslySetInnerHTML={{ __html: content }} 
+      />
     );
   }
 
   // 处理列表项 `- **HH:MM** 内容 #标签`
   if (line.startsWith('- ')) {
     const content = line.slice(2);
-
-    // 提取时间戳 **HH:MM**
     const timeMatch = content.match(/\*\*(\d{2}:\d{2})\*\*/);
     const time = timeMatch ? timeMatch[1] : null;
     let textContent = timeMatch ? content.replace(/\*\*\d{2}:\d{2}\*\*/, '').trim() : content;
 
-    // 提取标签 #xxx
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-
-    // 处理剩余的粗体标记
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     return (
@@ -59,7 +56,6 @@ function renderMarkdown(line: string): React.ReactNode {
   // 处理复选框 `[x]` 或 `[ ]`
   if (line.includes('[x]') || line.includes('[ ]')) {
     const checked = line.includes('[x]');
-    // 提取emoji和内容
     const emojiMatch = line.match(/([🥛🧘📖🇬🇧💊])/);
     const emoji = emojiMatch ? emojiMatch[1] : '';
     const rest = line.replace(/\[(x| )\]/, '').replace(emoji, '').trim();
@@ -77,7 +73,6 @@ function renderMarkdown(line: string): React.ReactNode {
 
   // 处理饮水/运动特殊格式（含🥤）
   if (line.includes('🥤') || line.includes('饮水') || line.includes('步')) {
-    // 提取emoji
     const emojiMatch = line.match(/([🥛🧘🥤])/);
     const emoji = emojiMatch ? emojiMatch[1] : '';
     const text = line.replace(emoji, '').replace(/[🥛🧘🥤]/g, '').trim();
@@ -90,7 +85,7 @@ function renderMarkdown(line: string): React.ReactNode {
     );
   }
 
-  // 普通文本 - 处理粗体标记
+  // 普通文本
   let plainText = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   if (plainText !== line) {
     return <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: plainText }} />;
@@ -98,7 +93,13 @@ function renderMarkdown(line: string): React.ReactNode {
   return <span className="text-sm text-gray-700">{line}</span>;
 }
 
-export default function DiaryView() {
+interface DiaryViewProps {}
+
+export interface DiaryViewRef {
+  reload: () => Promise<void>;
+}
+
+const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const refreshKey = useDiaryStore(state => state.refreshKey);
   const setCurrentDiary = useDiaryStore(state => state.setCurrentDiary);
@@ -152,6 +153,11 @@ export default function DiaryView() {
     }
   };
 
+  // 暴露reload方法给父组件
+  useImperativeHandle(ref, () => ({
+    reload: loadDiary
+  }));
+
   useEffect(() => {
     if (vaultConnected) loadDiary();
   }, [vaultConnected, refreshKey]); // 监听refreshKey变化
@@ -189,16 +195,8 @@ export default function DiaryView() {
 
   return (
     <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
-      {/* 刷新按钮 */}
-      <div className="flex justify-between items-center px-4 py-2 border-b bg-gray-50">
+      <div className="px-4 py-2 border-b bg-gray-50">
         <h2 className="text-sm font-medium text-gray-500">今日日记</h2>
-        <button
-          className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50"
-          onClick={loadDiary}
-          disabled={loading}
-        >
-          {loading ? '同步中...' : '🔄 同步'}
-        </button>
       </div>
 
       {error && (
@@ -257,10 +255,14 @@ export default function DiaryView() {
       {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && (
         <div className="p-4">
           <div className="text-center py-6 text-gray-400 text-sm">
-            {error ? '加载失败，点击同步重试' : '暂无记录'}
+            {error ? '加载失败' : '暂无记录'}
           </div>
         </div>
       )}
     </section>
   );
-}
+});
+
+DiaryView.displayName = 'DiaryView';
+
+export default DiaryView;

@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from './stores/diaryStore';
 import { getFileSyncService } from './services/fileSync';
 import QuickInput from './components/QuickInput';
 import { ReflectionModal } from './components/ReflectionModal';
 import { HappinessModal } from './components/HappinessModal';
 import HabitTracker from './components/HabitTracker';
-import DiaryView from './components/DiaryView';
+import DiaryView, { DiaryViewRef } from './components/DiaryView';
 import { SettingsPage } from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
 import { HistoryPage } from './components/HistoryPage';
+import { PullToRefresh } from './components/PullToRefresh';
 
 type PageView = 'home' | 'history' | 'stats' | 'settings';
 
@@ -21,6 +22,7 @@ function App() {
   const [showHappiness, setShowHappiness] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
+  const diaryViewRef = useRef<DiaryViewRef>(null);
 
   const renderBottomNav = () => {
     const navItems: { label: string; view: PageView }[] = [
@@ -148,32 +150,36 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="px-4 py-6 max-w-md mx-auto">
-        {/* Quick Input */}
-        <QuickInput />
+      <PullToRefresh onRefresh={async () => {
+        await diaryViewRef.current?.reload();
+      }}>
+        <main className="px-4 py-6 max-w-md mx-auto">
+          {/* Quick Input */}
+          <QuickInput />
 
-        {/* Quick Actions */}
-        <section className="flex gap-3 mb-4">
-          <button
-            className="flex-1 py-3 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-medium hover:bg-yellow-100"
-            onClick={() => setShowReflection(true)}
-          >
-            💡 觉察
-          </button>
-          <button
-            className="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100"
-            onClick={() => setShowHappiness(true)}
-          >
-            ✨ 小确幸
-          </button>
-        </section>
+          {/* Quick Actions */}
+          <section className="flex gap-3 mb-4">
+            <button
+              className="flex-1 py-3 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-medium hover:bg-yellow-100"
+              onClick={() => setShowReflection(true)}
+            >
+              💡 觉察
+            </button>
+            <button
+              className="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100"
+              onClick={() => setShowHappiness(true)}
+            >
+              ✨ 小确幸
+            </button>
+          </section>
 
-        {/* Habits */}
-        <HabitTracker />
+          {/* Habits */}
+          <HabitTracker />
 
-        {/* Diary View */}
-        <DiaryView />
-      </main>
+          {/* Diary View */}
+          <DiaryView ref={diaryViewRef} />
+        </main>
+      </PullToRefresh>
 
       {/* Bottom Navigation */}
       {renderBottomNav()}
