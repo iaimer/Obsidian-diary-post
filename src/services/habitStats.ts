@@ -113,12 +113,12 @@ async function readHabitFromFile(dateStr: string): Promise<DailyHabitStats | nul
 }
 
 // 获取指定日期范围的习惯统计
-export async function getHabitStats(days: number): Promise<DailyHabitStats[]> {
+export async function getHabitStats(days: number, forceReload = false): Promise<DailyHabitStats[]> {
   // 获取日期范围
   const targetDates = getRecentDates(days);
 
-  // 从缓存获取所有日记
-  const cachedDiaries = await getAllCachedDiaries();
+  // 从缓存获取所有日记（如果forceReload=true，跳过缓存）
+  const cachedDiaries = forceReload ? [] : await getAllCachedDiaries();
 
   // 创建日期到日记的映射
   const diaryMap = new Map<string, DiaryEntry>();
@@ -130,27 +130,30 @@ export async function getHabitStats(days: number): Promise<DailyHabitStats[]> {
   const stats: DailyHabitStats[] = [];
 
   for (const date of targetDates) {
-    // 先检查缓存
-    const cachedEntry = diaryMap.get(date);
+    if (!forceReload) {
+      // 先检查缓存
+      const cachedEntry = diaryMap.get(date);
 
-    if (cachedEntry) {
-      stats.push(entryToStats(cachedEntry));
-    } else {
-      // 尝试从文件读取
-      const fileStats = await readHabitFromFile(date);
-      if (fileStats) {
-        stats.push(fileStats);
-      } else {
-        // 无数据的日期填充默认值
-        stats.push({
-          date,
-          water: 0,
-          steps: 0,
-          reading: false,
-          language: false,
-          supplements: false
-        });
+      if (cachedEntry) {
+        stats.push(entryToStats(cachedEntry));
+        continue; // 使用缓存，跳过文件读取
       }
+    }
+
+    // 强制从文件读取（或缓存中没有）
+    const fileStats = await readHabitFromFile(date);
+    if (fileStats) {
+      stats.push(fileStats);
+    } else {
+      // 无数据的日期填充默认值
+      stats.push({
+        date,
+        water: 0,
+        steps: 0,
+        reading: false,
+        language: false,
+        supplements: false
+      });
     }
   }
 
