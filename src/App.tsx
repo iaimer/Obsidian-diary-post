@@ -137,14 +137,8 @@ function App() {
       {/* 重新连接提示 */}
       {wasConnected && !vaultConnected && (
         <div className="px-4 py-2 bg-orange-50 border-b">
-          <div className="text-sm text-orange-700 flex items-center justify-between">
-            <span>页面刷新后需要重新授权Vault访问</span>
-            <button
-              className="text-xs bg-orange-600 text-white px-2 py-1 rounded"
-              onClick={handleConnect}
-            >
-              重新连接
-            </button>
+          <div className="text-sm text-orange-700 text-center">
+            页面刷新后需要重新授权Vault访问
           </div>
         </div>
       )}
