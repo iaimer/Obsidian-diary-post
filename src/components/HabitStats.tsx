@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import CombinedTrendChart from './CombinedTrendChart';
 import HabitHeatmap from './HabitHeatmap';
 import {
@@ -14,13 +14,17 @@ interface HabitStatsProps {
   days: number;
 }
 
+export interface HabitStatsRef {
+  forceRefresh: () => Promise<void>;
+}
+
 const HABIT_TABS = [
   { key: 'reading', label: '📖 阅读' },
   { key: 'language', label: '🇬🇧 语言' },
   { key: 'supplements', label: '💊 补充剂' }
 ];
 
-export default function HabitStats({ days }: HabitStatsProps) {
+const HabitStats = forwardRef<HabitStatsRef, HabitStatsProps>(({ days }, ref) => {
   const [stats, setStats] = useState<DailyHabitStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('reading');
@@ -40,9 +44,16 @@ export default function HabitStats({ days }: HabitStatsProps) {
     }
   };
 
+  // 暴露强制刷新方法给父组件
+  useImperativeHandle(ref, () => ({
+    forceRefresh: async () => {
+      await loadStats(true);
+    }
+  }));
+
   useEffect(() => {
     loadStats();
-  }, [days, refreshKey]); // 添加refreshKey到依赖数组
+  }, [days, refreshKey]);
 
   if (isLoading) {
     return (
@@ -89,17 +100,6 @@ export default function HabitStats({ days }: HabitStatsProps) {
 
   return (
     <div>
-      {/* 刷新按钮 */}
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => loadStats(true)}
-          disabled={isLoading}
-          className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 disabled:opacity-50"
-        >
-          {isLoading ? '刷新中...' : '🔄 强制刷新'}
-        </button>
-      </div>
-
       {/* 饮水+运动趋势合并图 */}
       <CombinedTrendChart
         waterData={waterData}
@@ -140,4 +140,8 @@ export default function HabitStats({ days }: HabitStatsProps) {
       </div>
     </div>
   );
-}
+});
+
+HabitStats.displayName = 'HabitStats';
+
+export default HabitStats;
