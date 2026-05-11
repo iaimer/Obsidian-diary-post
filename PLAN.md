@@ -567,6 +567,7 @@ function CalendarCell({ date, diary, images }) {
 
 ### 待开发功能
 
+- [ ] **多设备同步**（Phase 6）：支持手机和电脑数据同步
 - [ ] PWA离线支持（manifest.json + service worker）
 - [ ] 习惯月度汇总表生成
 - [ ] 标签统计可视化
@@ -574,6 +575,444 @@ function CalendarCell({ date, diary, images }) {
 - [ ] 焦虑时刻区块输入
 - [ ] 图片懒加载优化（虚拟滚动）
 - [ ] 月份数据IndexedDB缓存
+
+---
+
+## 十三、多设备同步方案（Phase 6） 📋 待开发
+
+### 功能概述
+
+支持在手机和电脑之间同步日记数据，确保多设备访问时数据一致性。
+
+### 问题分析
+
+**当前限制：**
+- File System Access API 仅在桌面浏览器完全支持
+- 移动端浏览器支持有限（iOS Safari不支持）
+- 每次打开App需要重新授权Vault访问
+- 无法在手机上直接写入Obsidian文件
+
+**核心挑战：**
+1. **移动端写入困难**：File System API在移动端受限
+2. **权限临时性**：页面刷新后需要重新授权
+3. **数据一致性**：多设备同时修改的冲突处理
+4. **离线场景**：无网络时的数据暂存和同步
+
+---
+
+### 解决方案
+
+#### 方案A：Obsidian Sync + 双向缓存（推荐）
+
+**设计思路：**
+- 依赖Obsidian官方同步服务（Obsidian Sync或iCloud）
+- 手机端只读取已同步的文件，不直接写入
+- 使用IndexedDB作为本地缓存层
+- 在电脑端定期同步缓存数据到Obsidian文件
+
+**优点：**
+- ✅ 无需开发同步服务器
+- ✅ 利用Obsidian现有的可靠同步机制
+- ✅ 减少技术复杂度
+- ✅ 数据安全性高（由Obsidian保障）
+
+**缺点：**
+- ❌ 需要Obsidian Sync订阅（$8/月）
+- ❌ 手机端不能实时写入
+- ❌ 数据同步延迟（依赖Obsidian Sync频率）
+
+**实现步骤：**
+```
+1. 电脑端：直接写入Obsidian文件（当前已实现）
+2. 手机端：读取IndexedDB缓存 + 定期拉取Obsidian文件
+3. 同步策略：
+   - 电脑端写入后，自动更新IndexedDB
+   - 手机端从Obsidian读取最新文件（通过Obsidian Sync）
+   - 手机端修改暂存到IndexedDB，标记为"待同步"
+   - 电脑端检测"待同步"数据，合并写入Obsidian文件
+```
+
+---
+
+#### 方案B：第三方云存储同步
+
+**设计思路：**
+- 使用第三方云存储（如Google Drive、Dropbox）
+- App直接读写云端文件
+- 通过云服务商API实现跨平台访问
+
+**优点：**
+- ✅ 移动端完全支持
+- ✅ 实时写入能力
+- ✅ 跨平台统一体验
+
+**缺点：**
+- ❌ 需要开发云存储集成
+- ❌ 不直接写入Obsidian Vault
+- ❌ 需要额外的云服务账号
+- ❌ 数据隐私风险
+
+**实现复杂度：**
+- 高：需要OAuth认证、文件API集成、冲突解决
+
+---
+
+#### 方案C：自建同步服务器
+
+**设计思路：**
+- 开发简单的同步服务器（Node.js + SQLite）
+- App通过REST API同步数据
+- 服务器作为Obsidian文件的中转层
+
+**优点：**
+- ✅ 完全自主控制
+- ✅ 移动端实时写入
+- ✅ 可定制同步策略
+
+**缺点：**
+- ❌ 需要服务器运维成本
+- ❌ 开发工作量最大
+- ❌ 需要处理数据安全和隐私
+- ❌ 增加用户配置复杂度
+
+**实现复杂度：**
+- 最高：需要后端开发、数据库设计、API安全、部署运维
+
+---
+
+### 推荐方案实现细节
+
+#### 采用方案A：Obsidian Sync + 双向缓存
+
+**技术架构：**
+
+```
+┌──────────────┐              ┌──────────────┐
+│  电脑端 App  │              │  手机端 App  │
+│              │              │              │
+│ ┌──────────┐ │              │ ┌──────────┐ │
+│ │ Obsidian │ │              │ │IndexedDB │ │
+│ │  文件    │ │              │ │  缓存    │ │
+│ └──────────┘ │              │ └──────────┘ │
+│      ↕       │              │      ↕       │
+│ ┌──────────┐ │              │ ┌──────────┐ │
+│ │IndexedDB │ │              │ │ 网络     │ │
+│ │  缓存    │ │              │ │ 拉取     │ │
+│ └──────────┘ │              │ └──────────┘ │
+└──────────────┘              └──────────────┘
+       ↕                              ↕
+       └──────────────────────────────┘
+                  Obsidian Sync
+                  (官方同步服务)
+```
+
+**数据流程：**
+
+**电脑端写入流程：**
+```
+1. 用户在电脑端添加随手记
+2. 直接写入Obsidian文件
+3. 同时更新IndexedDB缓存
+4. Obsidian Sync自动推送到云端
+```
+
+**手机端读取流程：**
+```
+1. 手机App打开
+2. 尝试连接Obsidian Vault（移动端可能失败）
+3. 读取IndexedDB缓存数据
+4. 如果网络可用，从云端拉取最新文件（通过Obsidian Sync）
+5. 更新IndexedDB缓存
+```
+
+**手机端写入流程（暂存模式）：**
+```
+1. 用户在手机端添加随手记
+2. 写入IndexedDB缓存，标记为"待同步"
+3. 显示"已暂存，等待同步到Obsidian"
+4. 用户在电脑端打开App
+5. 电脑端检测"待同步"数据
+6. 合并写入Obsidian文件
+7. 清除"待同步"标记
+```
+
+---
+
+### 实现功能清单
+
+#### Phase 6.1：缓存层增强（1周）
+
+**IndexedDB扩展：**
+- [ ] 添加"待同步"标记字段
+- [ ] 实现增量同步队列
+- [ ] 添加同步状态管理
+- [ ] 实现冲突检测机制
+
+**同步状态类型：**
+```typescript
+interface SyncStatus {
+  localModified: boolean;    // 本地已修改
+  syncedAt: Date;            // 最后同步时间
+  pendingChanges: number;   // 待同步数量
+  conflicts: ConflictItem[]; // 冲突条目
+}
+
+interface ConflictItem {
+  date: string;
+  section: DiarySection;
+  localContent: string;
+  remoteContent: string;
+  resolvedAt?: Date;
+}
+```
+
+---
+
+#### Phase 6.2：同步检测和合并（1周）
+
+**电脑端功能：**
+- [ ] 检测IndexedDB中的"待同步"数据
+- [ ] 实现数据合并逻辑（追加而非覆盖）
+- [ ] 冲突解决UI（显示冲突条目，用户选择）
+- [ ] 自动同步触发（定时或手动）
+
+**合并策略：**
+```
+原则：追加优先，避免覆盖
+
+场景1：手机端添加随手记 → 电脑端合并追加
+  - 手机：添加"10:30 播客感悟 #学习"
+  - 电脑：检测到新增 → 追加到对应区块
+
+场景2：手机和电脑同时修改同一区块
+  - 冲突检测：时间戳对比
+  - UI提示："手机端新增3条，电脑端新增2条，全部保留？"
+  - 用户确认后合并
+
+场景3：习惯数据冲突
+  - 优先保留最新值（时间戳）
+  - 或提供选择界面
+```
+
+---
+
+#### Phase 6.3：移动端优化（1周）
+
+**手机端功能：**
+- [ ] 离线模式增强（完全依赖IndexedDB）
+- [ ] 网络状态检测（Online/Offline）
+- [ ] 尝试拉取最新文件（通过Obsidian Sync）
+- [ ] 暂存写入提示（"已暂存，等待同步"）
+- [ ] 同步状态显示（待同步数量）
+
+**UI优化：**
+```
+┌─────────────────────────────┐
+│ 📅 今天 · 3条待同步          │ ← 显示同步状态
+├─────────────────────────────┤
+│ [添加随手记]                │
+│                             │
+│ ✅ 已暂存到本地             │ ← 暂存提示
+│ ⏳ 等待同步到Obsidian       │
+│                             │
+│ [手动同步] [查看待同步]     │ ← 操作按钮
+└─────────────────────────────┘
+```
+
+---
+
+#### Phase 6.4：PWA离线支持（1周）
+
+**PWA配置：**
+- [ ] 创建 manifest.json
+- [ ] 实现Service Worker
+- [ ] 离线资源缓存
+- [ ] 后台同步API（Background Sync）
+- [ ] 推送通知（可选）
+
+**manifest.json示例：**
+```json
+{
+  "name": "Diary Post",
+  "short_name": "日记",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+---
+
+### 数据同步API设计
+
+#### 同步服务接口
+
+```typescript
+// src/services/syncService.ts
+
+export interface SyncService {
+  // 检查同步状态
+  checkSyncStatus(): Promise<SyncStatus>;
+  
+  // 拉取远程数据（从Obsidian Sync）
+  pullRemoteData(): Promise<void>;
+  
+  // 推送本地数据（到Obsidian文件）
+  pushLocalData(): Promise<void>;
+  
+  // 合并冲突数据
+  mergeConflicts(conflicts: ConflictItem[]): Promise<void>;
+  
+  // 自动同步（定时）
+  autoSync(): Promise<void>;
+  
+  // 手动同步触发
+  manualSync(): Promise<void>;
+}
+```
+
+#### IndexedDB扩展
+
+```typescript
+// src/db/syncDB.ts
+
+export interface SyncEntry extends DiaryEntry {
+  syncStatus: SyncStatus;
+  pendingChanges: PendingChange[];
+}
+
+export interface PendingChange {
+  id: string;
+  section: DiarySection;
+  content: string;
+  timestamp: Date;
+  synced: boolean;
+}
+
+// 新增数据库表
+class SyncDatabase extends Dexie {
+  entries!: Table<SyncEntry, string>;
+  pendingChanges!: Table<PendingChange, string>;
+  syncLog!: Table<SyncLogItem, number>;
+}
+```
+
+---
+
+### 用户使用流程
+
+#### 电脑端使用（完整功能）
+
+```
+1. 打开App，授权Obsidian Vault
+2. 直接添加随手记、习惯打卡等
+3. 数据实时写入Obsidian文件
+4. Obsidian Sync自动推送到云端
+5. IndexedDB缓存同步更新
+```
+
+#### 手机端使用（缓存模式）
+
+```
+1. 打开App（PWA离线可用）
+2. 读取IndexedDB缓存数据
+3. 尝试网络连接：
+   - ✅ 有网络：从Obsidian Sync拉取最新文件
+   - ❌ 无网络：使用缓存数据
+4. 添加新内容：
+   - 写入IndexedDB，标记"待同步"
+   - 显示"已暂存"
+5. 回到电脑端：
+   - App检测"待同步"数据
+   - 自动或手动合并到Obsidian文件
+```
+
+---
+
+### 技术风险评估
+
+| 风险 | 影响 | 应对措施 |
+|------|------|----------|
+| Obsidian Sync不可用 | 手机端无法拉取最新数据 | 完全依赖IndexedDB缓存 |
+| 数据冲突频繁 | 用户需要频繁手动合并 | 智能合并策略，减少冲突 |
+| IndexedDB存储限制 | 大量历史数据占用空间 | 实现数据清理策略（只保留近90天） |
+| Service Worker缓存失效 | 离线功能不稳定 | 多层缓存策略 + 失败重试 |
+| 手机端权限问题 | 无法访问Obsidian Vault | 完全切换到缓存模式 |
+
+---
+
+### 实现优先级
+
+**Phase 6.1（必须实现）：**
+- ✅ IndexedDB缓存增强（当前已实现基础版）
+- ✅ "待同步"标记机制
+- ✅ 基础同步状态显示
+
+**Phase 6.2（高优先级）：**
+- ✅ 数据合并逻辑
+- ✅ 冲突检测和解决UI
+- ✅ 电脑端自动同步
+
+**Phase 6.3（中优先级）：**
+- ✅ 手机端暂存模式优化
+- ✅ 网络状态检测
+- ✅ 暂存提示UI
+
+**Phase 6.4（低优先级）：**
+- ✅ PWA离线支持
+- ✅ Service Worker
+- ✅ 后台同步API
+
+---
+
+### 时间估算
+
+**总开发周期：4-5周**
+
+- Phase 6.1：缓存层增强 → 1周
+- Phase 6.2：同步检测合并 → 1周
+- Phase 6.3：移动端优化 → 1周
+- Phase 6.4：PWA离线支持 → 1周
+- 测试和优化 → 1周
+
+---
+
+### 最终用户体验
+
+**理想使用场景：**
+
+**早晨（手机端）：**
+- 手机打开App，查看今天日记
+- 添加晨间随手记（暂存到IndexedDB）
+- 标记习惯打卡（暂存）
+
+**上午（电脑端）：**
+- 电脑打开App，检测到3条待同步
+- 自动合并到Obsidian文件
+- Obsidian Sync推送到云端
+
+**下午（手机端）：**
+- 手机App拉取最新数据（从Obsidian Sync）
+- 看到上午添加的内容已同步
+- 继续添加新的随手记
+
+**晚上（电脑端）：**
+- 电脑端最终汇总和查看
+- 所有数据完整同步
+
+---
 
 ### 功能增强建议
 
