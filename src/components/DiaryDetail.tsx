@@ -83,6 +83,7 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
           
           if (entry.sections.images && entry.sections.images.length > 0) {
             const year = date.getFullYear();
+            const month = date.getMonth() + 1; // 月份从0开始，需要+1
             const imageUrls: string[] = [];
             
             for (const line of entry.sections.images) {
@@ -90,7 +91,7 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
                 const match = line.match(/!\[\[(.*?)\]\]/);
                 if (match) {
                   const imageName = match[1];
-                  const url = await historyService.loadImage(imageName, year);
+                  const url = await historyService.loadImage(imageName, year, month);
                   if (url) imageUrls.push(url);
                 }
               }
