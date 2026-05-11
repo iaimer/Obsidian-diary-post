@@ -2,6 +2,7 @@ import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { DiaryEntry } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getFileSyncService } from '../services/fileSync';
+import { getHistoryService } from '../services/historyService';
 import { getCachedDiary } from '../db';
 
 // 简单的Markdown渲染（阅读模式）
@@ -108,6 +109,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [diary, setDiary] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -143,6 +145,32 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       setDiary(entry);
       setCurrentDiary(entry);
       if (entry.sections.habits) parseHabitData(entry.sections.habits);
+      
+      // 加载图片
+      if (entry.sections.images && entry.sections.images.length > 0) {
+        const historyService = getHistoryService();
+        const vaultHandle = fileSync.getVaultHandle();
+        if (vaultHandle) {
+          historyService.setVaultHandle(vaultHandle);
+          
+          const year = new Date().getFullYear();
+          const month = new Date().getMonth() + 1;
+          const urls: string[] = [];
+          
+          for (const line of entry.sections.images) {
+            if (line.includes('![[')) {
+              const match = line.match(/!\[\[(.*?)\]\]/);
+              if (match) {
+                const imageName = match[1];
+                const url = await historyService.loadImage(imageName, year, month);
+                if (url) urls.push(url);
+              }
+            }
+          }
+          
+          setImageUrls(urls);
+        }
+      }
     } catch (err) {
       setError((err as Error).message);
       const today = new Date().toISOString().split('T')[0];
@@ -179,18 +207,30 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     );
   }
 
-  // 过滤有效内容（排除空行、HTML注释、模板示例、空引用）
+  // 过滤有效内容（排除空行、HTML注释、模板示例）
   const quickNotes = diary?.sections.quick_notes.filter(l =>
     l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签')
   ) || [];
+  
+  // 小确幸：过滤引导文字和空引用，保留实际内容
   const happiness = diary?.sections.happiness.filter(l =>
-    l.trim() && l.startsWith('> ') && !l.includes('[!') && l.slice(2).trim()
+    l.trim() && 
+    !l.includes('[!success]') && 
+    !l.includes('[!') && 
+    !(l.startsWith('> ') && l.slice(2).trim() === '')
   ) || [];
+  
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--')
   ) || [];
+  
   const lizhiSays = diary?.sections.lizhi_says.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--')
+  ) || [];
+  
+  // 影像记录：过滤空行
+  const images = diary?.sections.images.filter(l =>
+    l.trim() && l.includes('![[')
   ) || [];
 
   return (
@@ -251,8 +291,26 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         </div>
       )}
 
-      {/* 空状态 */}
-      {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && (
+      {/* 影像记录 */}
+      {images.length > 0 && (
+        <div className="p-4 border-t">
+          <h3 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {imageUrls.map((url, i) => (
+              <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <img
+                  src={url}
+                  alt={`Image ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+{/* 空状态 */}
+      {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
         <div className="p-4">
           <div className="text-center py-6 text-gray-400 text-sm">
             {error ? '加载失败' : '暂无记录'}
