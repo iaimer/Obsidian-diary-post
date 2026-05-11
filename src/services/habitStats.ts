@@ -4,6 +4,7 @@ import { HabitData, DiaryEntry } from '../types';
 import { getAllCachedDiaries, cacheDiary } from '../db';
 import { getFileSyncService } from './fileSync';
 import { parseDiary } from '../utils/markdown';
+import { getDateString } from '../utils/date';
 
 // 日习惯统计
 export interface DailyHabitStats {
@@ -75,7 +76,7 @@ function getRecentDates(days: number): string[] {
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getDateString(date); // 使用本地时间
     dates.push(dateStr);
   }
 
