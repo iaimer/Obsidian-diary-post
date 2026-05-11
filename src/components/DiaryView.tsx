@@ -4,6 +4,7 @@ import { useDiaryStore } from '../stores/diaryStore';
 import { getFileSyncService } from '../services/fileSync';
 import { getHistoryService } from '../services/historyService';
 import { getCachedDiary } from '../db';
+import { getDateString } from '../utils/date';
 
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string): React.ReactNode {
@@ -173,7 +174,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       }
     } catch (err) {
       setError((err as Error).message);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getDateString(new Date());
       const cached = await getCachedDiary(today);
       if (cached) setDiary(cached);
     } finally {

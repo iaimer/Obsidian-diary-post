@@ -5,6 +5,7 @@ import { DiaryDetail } from './DiaryDetail';
 import { getHistoryService } from '../services/historyService';
 import { getFileSyncService } from '../services/fileSync';
 import { DiaryMeta } from '../types/history';
+import { PullToRefresh } from './PullToRefresh';
 
 export function HistoryPage() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
@@ -40,44 +41,54 @@ export function HistoryPage() {
     }
   };
 
+  const handleRefresh = async () => {
+    if (monthData) {
+      await loadMonthData(monthData.year, monthData.month);
+    }
+  };
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      <header className="bg-white shadow-sm px-4 py-3 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-gray-800">📅 历史日记</h1>
-          <span className="text-sm text-gray-500">
-            {vaultConnected ? '✓ 已连接' : '未连接'}
-          </span>
-        </div>
-      </header>
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="min-h-screen">
+          <header className="bg-white shadow-sm px-4 py-3">
+            <div className="flex justify-between items-center">
+              <h1 className="text-lg font-semibold text-gray-800">📅 历史日记</h1>
+              <span className="text-sm text-gray-500">
+                {vaultConnected ? '✓ 已连接' : '未连接'}
+              </span>
+            </div>
+          </header>
 
-      <main className="px-4 py-6 max-w-md mx-auto">
-        {!vaultConnected ? (
-          <div className="text-center py-12 text-gray-400 text-sm">
-            请先连接 Obsidian Vault
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <CalendarView 
-              onDateSelect={handleDateSelect}
-              onMonthChange={loadMonthData}
-              diaryMetas={monthData?.diaries || []}
-              loading={loading}
-            />
+          <main className="px-4 py-6 max-w-md mx-auto">
+            {!vaultConnected ? (
+              <div className="text-center py-12 text-gray-400 text-sm">
+                请先连接 Obsidian Vault
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <CalendarView 
+                  onDateSelect={handleDateSelect}
+                  onMonthChange={loadMonthData}
+                  diaryMetas={monthData?.diaries || []}
+                  loading={loading}
+                />
 
-            {selectedDate && (
-              <DiaryDetail 
-                date={selectedDate}
-                onClose={() => setSelectedDate(null)}
-              />
+                {selectedDate && (
+                  <DiaryDetail 
+                    date={selectedDate}
+                    onClose={() => setSelectedDate(null)}
+                  />
+                )}
+              </div>
             )}
-          </div>
-        )}
-      </main>
+          </main>
+        </div>
+      </PullToRefresh>
     </div>
   );
 }

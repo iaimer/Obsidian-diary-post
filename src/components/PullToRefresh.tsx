@@ -7,12 +7,13 @@ interface PullToRefreshProps {
 
 export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const isPulling = useRef(false);
 
-  const threshold = 80; // 下拉触发阈值
+  const threshold = 50; // 下拉触发阈值
 
   useEffect(() => {
     const container = containerRef.current;
@@ -48,6 +49,8 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
         
         try {
           await onRefresh();
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 1500);
         } catch (error) {
           console.error('Refresh failed:', error);
         } finally {
@@ -76,7 +79,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
     <div 
       ref={containerRef}
       className="overflow-y-auto h-screen"
-      style={{ touchAction: 'pan-y' }}
+      style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
     >
       {/* 下拉刷新指示器 */}
       <div 
@@ -100,6 +103,13 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
         <div className="sticky top-0 bg-indigo-50 border-b border-indigo-100 py-2 flex items-center justify-center z-10">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent mr-2" />
           <span className="text-sm text-indigo-600">刷新中...</span>
+        </div>
+      )}
+
+      {/* 刷新成功提示 */}
+      {showSuccess && (
+        <div className="sticky top-0 bg-green-50 border-b border-green-100 py-2 flex items-center justify-center z-10 animate-fadeOut">
+          <span className="text-sm text-green-600">✓ 刷新成功</span>
         </div>
       )}
 

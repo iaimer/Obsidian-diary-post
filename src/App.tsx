@@ -33,7 +33,7 @@ function App() {
     ];
 
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2 z-50">
         <div className="flex justify-around max-w-md mx-auto">
           {navItems.map(item => (
             <button
@@ -110,69 +110,72 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
-      {/* Header */}
-      <header className="bg-white shadow-sm px-4 py-3">
-        <div className="flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-gray-800">
-            📅 {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
-          </h1>
-          <button
-            onClick={vaultConnected ? handleDisconnect : handleConnect}
-            disabled={connecting}
-            className={`px-3 py-1 rounded-full text-sm ${
-              vaultConnected
-                ? 'bg-green-100 text-green-700'
-                : connecting
-                  ? 'bg-gray-100 text-gray-400'
-                  : wasConnected
-                    ? 'bg-orange-100 text-orange-600'
-                    : 'bg-indigo-100 text-indigo-600'
-            }`}
-          >
-            {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
-          </button>
-        </div>
-      </header>
 
-      {/* 重新连接提示 */}
-      {wasConnected && !vaultConnected && (
-        <div className="px-4 py-2 bg-orange-50 border-b">
-          <div className="text-sm text-orange-700 text-center">
-            页面刷新后需要重新授权Vault访问
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
       <PullToRefresh onRefresh={async () => {
         await diaryViewRef.current?.reload();
       }}>
-        <main className="px-4 py-6 max-w-md mx-auto">
-          {/* Quick Input */}
-          <QuickInput />
+        <div className="min-h-screen">
+          {/* Header */}
+          <header className="bg-white shadow-sm px-4 py-3">
+            <div className="flex justify-between items-center">
+              <h1 className="text-lg font-semibold text-gray-800">
+                📅 {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+              </h1>
+              <button
+                onClick={vaultConnected ? handleDisconnect : handleConnect}
+                disabled={connecting}
+                className={`px-3 py-1 rounded-full text-sm ${
+                  vaultConnected
+                    ? 'bg-green-100 text-green-700'
+                    : connecting
+                      ? 'bg-gray-100 text-gray-400'
+                      : wasConnected
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'bg-indigo-100 text-indigo-600'
+                }`}
+              >
+                {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
+              </button>
+            </div>
+          </header>
 
-          {/* Quick Actions */}
-          <section className="flex gap-3 mb-4">
-            <button
-              className="flex-1 py-3 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-medium hover:bg-yellow-100"
-              onClick={() => setShowReflection(true)}
-            >
-              💡 觉察
-            </button>
-            <button
-              className="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100"
-              onClick={() => setShowHappiness(true)}
-            >
-              ✨ 小确幸
-            </button>
-          </section>
+          {/* 重新连接提示 */}
+          {wasConnected && !vaultConnected && (
+            <div className="px-4 py-2 bg-orange-50 border-b">
+              <div className="text-sm text-orange-700 text-center">
+                页面刷新后需要重新授权Vault访问
+              </div>
+            </div>
+          )}
 
-          {/* Habits */}
-          <HabitTracker />
+          {/* Main Content */}
+          <main className="px-4 py-6 max-w-md mx-auto">
+            {/* Quick Input */}
+            <QuickInput />
 
-          {/* Diary View */}
-          <DiaryView ref={diaryViewRef} />
-        </main>
+            {/* Quick Actions */}
+            <section className="flex gap-3 mb-4">
+              <button
+                className="flex-1 py-3 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-medium hover:bg-yellow-100"
+                onClick={() => setShowReflection(true)}
+              >
+                💡 觉察
+              </button>
+              <button
+                className="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100"
+                onClick={() => setShowHappiness(true)}
+              >
+                ✨ 小确幸
+              </button>
+            </section>
+
+            {/* Habits */}
+            <HabitTracker />
+
+            {/* Diary View */}
+            <DiaryView ref={diaryViewRef} />
+          </main>
+        </div>
       </PullToRefresh>
 
       {/* Bottom Navigation */}
