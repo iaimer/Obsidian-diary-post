@@ -8,8 +8,9 @@ import HabitTracker from './components/HabitTracker';
 import DiaryView from './components/DiaryView';
 import { SettingsPage } from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
+import { HistoryPage } from './components/HistoryPage';
 
-type PageView = 'home' | 'stats' | 'settings';
+type PageView = 'home' | 'history' | 'stats' | 'settings';
 
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
@@ -20,6 +21,35 @@ function App() {
   const [showHappiness, setShowHappiness] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
+
+  const renderBottomNav = () => {
+    const navItems: { label: string; view: PageView }[] = [
+      { label: '今天', view: 'home' },
+      { label: '历史', view: 'history' },
+      { label: '统计', view: 'stats' },
+      { label: '设置', view: 'settings' }
+    ];
+
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
+        <div className="flex justify-around max-w-md mx-auto">
+          {navItems.map(item => (
+            <button
+              key={item.view}
+              className={`px-4 py-2 ${
+                currentView === item.view
+                  ? 'text-indigo-600 font-medium'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+              onClick={() => setCurrentView(item.view)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+    );
+  };
 
   useEffect(() => {
     if (wasConnected && !vaultConnected) {
@@ -51,24 +81,7 @@ function App() {
     return (
       <>
         <SettingsPage />
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
-          <div className="flex justify-around max-w-md mx-auto">
-            <button
-              className="px-4 py-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setCurrentView('home')}
-            >
-              今天
-            </button>
-            <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
-            <button
-              className="px-4 py-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setCurrentView('stats')}
-            >
-              统计
-            </button>
-            <button className="px-4 py-2 text-indigo-600 font-medium">设置</button>
-          </div>
-        </nav>
+        {renderBottomNav()}
       </>
     );
   }
@@ -78,24 +91,17 @@ function App() {
     return (
       <>
         <StatsPage />
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
-          <div className="flex justify-around max-w-md mx-auto">
-            <button
-              className="px-4 py-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setCurrentView('home')}
-            >
-              今天
-            </button>
-            <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
-            <button className="px-4 py-2 text-indigo-600 font-medium">统计</button>
-            <button
-              className="px-4 py-2 text-gray-400 hover:text-gray-600"
-              onClick={() => setCurrentView('settings')}
-            >
-              设置
-            </button>
-          </div>
-        </nav>
+        {renderBottomNav()}
+      </>
+    );
+  }
+
+  // 历史页面
+  if (currentView === 'history') {
+    return (
+      <>
+        <HistoryPage />
+        {renderBottomNav()}
       </>
     );
   }
@@ -170,24 +176,7 @@ function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2">
-        <div className="flex justify-around max-w-md mx-auto">
-          <button className="px-4 py-2 text-indigo-600 font-medium">今天</button>
-          <button className="px-4 py-2 text-gray-400 hover:text-gray-600">历史</button>
-          <button
-            className="px-4 py-2 text-gray-400 hover:text-gray-600"
-            onClick={() => setCurrentView('stats')}
-          >
-            统计
-          </button>
-          <button
-            className="px-4 py-2 text-gray-400 hover:text-gray-600"
-            onClick={() => setCurrentView('settings')}
-          >
-            设置
-          </button>
-        </div>
-      </nav>
+      {renderBottomNav()}
 
       {/* Modals */}
       {showReflection && <ReflectionModal onClose={() => setShowReflection(false)} />}
