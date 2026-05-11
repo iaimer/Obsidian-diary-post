@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DiaryEntry } from '../types';
 import { getHistoryService } from '../services/historyService';
+import { ImageModal } from './ImageModal';
 
 interface DiaryDetailProps {
   date: Date;
@@ -68,6 +69,8 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const loadDiary = async () => {
@@ -211,7 +214,14 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
               <h4 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h4>
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCurrentImageIndex(i);
+                      setShowImageModal(true);
+                    }}
+                    className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
+                  >
                     <img
                       src={url}
                       alt={`Image ${i + 1}`}
@@ -222,7 +232,7 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
                       }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -235,6 +245,15 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* 图片放大模态框 */}
+      {showImageModal && images.length > 0 && (
+        <ImageModal
+          images={images}
+          currentIndex={currentImageIndex}
+          onClose={() => setShowImageModal(false)}
+        />
       )}
     </div>
   );
