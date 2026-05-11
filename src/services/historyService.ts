@@ -10,6 +10,7 @@ const monthNames = [
 
 export class HistoryService {
   private vaultHandle: FileSystemDirectoryHandle | null = null;
+  private imageCache: Map<string, string> = new Map(); // 图片URL缓存
 
   setVaultHandle(handle: FileSystemDirectoryHandle) {
     this.vaultHandle = handle;
@@ -127,6 +128,12 @@ export class HistoryService {
       throw new Error('Vault not connected');
     }
 
+    // 检查缓存
+    const cacheKey = `${year}/${imageName}`;
+    if (this.imageCache.has(cacheKey)) {
+      return this.imageCache.get(cacheKey)!;
+    }
+
     const basePath = `workspace/生活/日记/${year}/assets`;
     const pathParts = basePath.split('/').filter(p => p);
 
@@ -138,11 +145,24 @@ export class HistoryService {
 
       const fileHandle = await currentHandle.getFileHandle(imageName);
       const file = await fileHandle.getFile();
-      return URL.createObjectURL(file);
+      const url = URL.createObjectURL(file);
+      
+      // 缓存图片URL
+      this.imageCache.set(cacheKey, url);
+      
+      return url;
     } catch (error) {
       console.log(`Image not found: ${imageName}`);
       return null;
     }
+  }
+
+  // 清除图片缓存
+  clearImageCache() {
+    this.imageCache.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
+    this.imageCache.clear();
   }
 }
 

@@ -207,15 +207,21 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
 
           {images.length > 0 && (
             <div className="pb-2">
-              <h4 className="text-xs font-medium text-gray-400 mb-2">📸 影像记录</h4>
+              <h4 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h4>
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Image ${i + 1}`}
-                    className="w-full h-20 object-cover rounded-lg"
-                  />
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
+                    <img
+                      src={url}
+                      alt={`Image ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+                  </div>
                 ))}
               </div>
             </div>
