@@ -111,6 +111,11 @@ export class FileSyncService {
     }
   }
 
+  // 获取Vault Handle（用于HistoryService）
+  getVaultHandle(): FileSystemDirectoryHandle | null {
+    return this.vaultHandle;
+  }
+
   // 获取日记（用于读取和显示，文件不存在则创建）
   async getOrCreateDiary(date: Date): Promise<DiaryEntry> {
     const dateString = getDateString(date);
