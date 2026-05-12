@@ -167,7 +167,11 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
     l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签')
   ) || [];
   const happiness = diary?.sections.happiness.filter(l =>
-    l.trim() && l.startsWith('> ') && !l.includes('[!') && l.slice(2).trim()
+    l.trim() && 
+    l.startsWith('> ') && 
+    !l.includes('[!success]') && 
+    !l.includes('[!') && 
+    l.slice(2).trim()
   ) || [];
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--')
