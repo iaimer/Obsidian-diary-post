@@ -97,9 +97,9 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
       )}
 
       {/* 图片容器 */}
-      <div className="w-full h-full flex items-center justify-center p-8">
+      <div className={`w-full h-full flex items-center justify-center ${images.length > 3 ? 'pb-20' : ''} px-4 py-12 box-border`}>
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center z-0">
             <div className="text-white/60 animate-pulse">加载中...</div>
           </div>
         )}
@@ -107,7 +107,7 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
         <img
           src={images[activeIndex]}
           alt={`Image ${activeIndex + 1}`}
-          className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
+          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
           onLoad={handleImageLoad}
           onClick={(e) => e.stopPropagation()}
         />
