@@ -2,6 +2,41 @@
 
 所有重要的更改都将记录在此文件中。
 
+## [0.6.0] - 2026-05-12
+
+### 新增功能
+- **多设备同步**：手机 + Mac 远程访问方案
+  - Express API Server（TypeScript + ESM）
+  - Token 认证中间件
+  - 日记/习惯/历史 API 接口
+  - DataService 抽象层（Local + Remote）
+  - 远程模式配置界面
+
+### 功能改进
+- **DiaryView 布局优化**：
+  - 统一圆角卡片样式
+  - 分隔线左右留边距
+  - 间距紧凑统一
+- **设置页面**：
+  - 新增"远程API设置"区块
+  - API地址 + Token 配置
+  - 测试连接按钮 + 状态反馈
+
+### Bug修复
+- **Markdown 解析标题不一致**：server 端 `焦虑时刻` 标题匹配
+- **DiaryView 远程模式未加载**：添加 remoteMode 检查
+- **HH:MM 占位符未删除**：server 端 appendToSection 修复
+
+### 部署优化
+- **pm2 进程管理**：
+  - 崩溃自动重启
+  - 日志分离（error.log + out.log）
+  - 时间格式化
+- **一键部署脚本**：`deploy.sh`
+- **Mac mini 部署指南**：`DEPLOY.md`
+
+---
+
 ## [0.5.1] - 2026-05-12
 
 ### 功能改进
