@@ -82,7 +82,7 @@ export function HistoryPage() {
   const isConnected = vaultConnected || remoteMode;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50 pb-[50px]">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="min-h-screen">
           <header className="bg-white shadow-sm px-4 py-3">

@@ -113,7 +113,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50 pb-[50px]">
       {/* Header */}
       <header className="bg-white shadow-sm px-4 py-3">
         <h1 className="text-lg font-semibold text-gray-800">⚙️ 设置</h1>

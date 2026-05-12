@@ -97,6 +97,7 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
     const loadDiary = async () => {
       setLoading(true);
       setError(null);
+      setImages([]);
       
       const remoteMode = useDiaryStore.getState().remoteMode;
       

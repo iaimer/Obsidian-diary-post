@@ -11,7 +11,7 @@ export default function StatsPage() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen bg-gray-100 pb-16">
+      <div className="min-h-screen bg-gray-100 pb-[50px]">
         {/* 头部 */}
         <div className="bg-white sticky top-0 z-10 shadow-sm">
           <div className="p-4 max-w-md mx-auto">
