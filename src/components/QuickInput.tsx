@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getFileSyncService } from '../services/fileSync';
+import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
 
 // 三层标签体系（来自标签规范.md）
@@ -73,6 +73,7 @@ export default function QuickInput() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
 
   // 当选择新领域时，清空能力标签
@@ -143,15 +144,17 @@ export default function QuickInput() {
   const handleSubmit = async (textToSend?: string) => {
     const finalContent = textToSend || content;
     if (!finalContent.trim()) return;
-    if (!vaultConnected) {
+    
+    // 检查连接状态
+    const dataService = getDataService();
+    if (!remoteMode && !vaultConnected) {
       alert('请先连接Obsidian Vault');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const fileSync = getFileSyncService();
-      await fileSync.appendQuickNote(finalContent.trim(), getSelectedTags());
+      await dataService.appendQuickNote(finalContent.trim(), getSelectedTags());
 
       setContent('');
       setShowPolishedPreview(false);

@@ -1,7 +1,7 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { DiaryEntry } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getFileSyncService } from '../services/fileSync';
+import { getDataService, getFileSyncService } from '../services/dataService';
 import { getHistoryService } from '../services/historyService';
 import { getCachedDiary } from '../db';
 import { getDateString } from '../utils/date';
@@ -103,6 +103,7 @@ export interface DiaryViewRef {
 
 const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
   const refreshKey = useDiaryStore(state => state.refreshKey);
   const setCurrentDiary = useDiaryStore(state => state.setCurrentDiary);
   const updateHabitData = useDiaryStore(state => state.updateHabitData);
@@ -141,14 +142,17 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     setError(null);
 
     try {
-      const fileSync = getFileSyncService();
-      const entry = await fileSync.getOrCreateDiary(new Date());
+      const dataService = getDataService();
+      const remoteMode = useDiaryStore.getState().remoteMode;
+      
+      const entry = await dataService.getDiary(new Date());
       setDiary(entry);
       setCurrentDiary(entry);
       if (entry.sections.habits) parseHabitData(entry.sections.habits);
       
-      // 加载图片
-      if (entry.sections.images && entry.sections.images.length > 0) {
+      // 加载图片（仅本地模式）
+      if (!remoteMode && entry.sections.images && entry.sections.images.length > 0) {
+        const fileSync = getFileSyncService();
         const historyService = getHistoryService();
         const vaultHandle = fileSync.getVaultHandle();
         if (vaultHandle) {
@@ -188,8 +192,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   }));
 
   useEffect(() => {
-    if (vaultConnected) loadDiary();
-  }, [vaultConnected, refreshKey]); // 监听refreshKey变化
+    if (vaultConnected || remoteMode) loadDiary();
+  }, [vaultConnected, remoteMode, refreshKey]); // 监听refreshKey变化
 
   if (loading && !diary) {
     return (
@@ -199,7 +203,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     );
   }
 
-  if (!vaultConnected) {
+  if (!vaultConnected && !remoteMode) {
     return (
       <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
         <h2 className="text-sm font-medium text-gray-500 mb-3">今日记录</h2>
@@ -236,8 +240,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
   return (
     <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
-      <div className="px-4 py-2 border-b bg-gray-50">
-        <h2 className="text-sm font-medium text-gray-500">今日日记</h2>
+      <div className="px-4 py-3 border-b">
+        <h2 className="text-sm font-medium text-gray-500">📝 今日日记</h2>
       </div>
 
       {error && (
@@ -246,9 +250,9 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 随手记 */}
       {quickNotes.length > 0 && (
-        <div className="p-4 border-b">
-          <h3 className="text-xs font-medium text-gray-400 mb-3">✍️ 随手记</h3>
-          <div className="space-y-2">
+        <div className="px-4 py-3">
+          <h3 className="text-xs font-medium text-gray-400 mb-2">✍️ 随手记</h3>
+          <div className="space-y-1.5">
             {quickNotes.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
             ))}
@@ -257,10 +261,13 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 小确幸 */}
+      {happiness.length > 0 && quickNotes.length > 0 && (
+        <div className="border-t mx-4" />
+      )}
       {happiness.length > 0 && (
-        <div className="p-4 border-b bg-green-50">
-          <h3 className="text-xs font-medium text-gray-400 mb-3">✨ 每日小确幸</h3>
-          <div className="space-y-2">
+        <div className="px-4 py-3">
+          <h3 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h3>
+          <div className="space-y-1.5">
             {happiness.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
             ))}
@@ -269,10 +276,13 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 觉察 */}
+      {reflection.length > 0 && (quickNotes.length > 0 || happiness.length > 0) && (
+        <div className="border-t mx-4" />
+      )}
       {reflection.length > 0 && (
-        <div className="p-4 border-b bg-yellow-50">
-          <h3 className="text-xs font-medium text-gray-400 mb-3">💡 觉察与迭代</h3>
-          <div className="space-y-2">
+        <div className="px-4 py-3">
+          <h3 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h3>
+          <div className="space-y-1.5">
             {reflection.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
             ))}
@@ -281,10 +291,13 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 荔枝喵说 */}
+      {lizhiSays.length > 0 && (quickNotes.length > 0 || happiness.length > 0 || reflection.length > 0) && (
+        <div className="border-t mx-4" />
+      )}
       {lizhiSays.length > 0 && (
-        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <h3 className="text-xs font-medium text-gray-400 mb-3">🧠 荔枝喵说</h3>
-          <div className="space-y-2">
+        <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <h3 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h3>
+          <div className="space-y-1.5">
             {lizhiSays.map((line, i) => (
               <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
             ))}
@@ -294,8 +307,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 影像记录 */}
       {images.length > 0 && (
-        <div className="p-4 border-t">
-          <h3 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h3>
+        <div className="px-4 py-3">
+          <h3 className="text-xs font-medium text-gray-400 mb-2">📸 影像记录 ({images.length}张)</h3>
           <div className="grid grid-cols-3 gap-2">
             {imageUrls.map((url, i) => (
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
@@ -310,10 +323,10 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         </div>
       )}
 
-{/* 空状态 */}
+      {/* 空状态 */}
       {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
-        <div className="p-4">
-          <div className="text-center py-6 text-gray-400 text-sm">
+        <div className="px-4 py-6">
+          <div className="text-center text-gray-400 text-sm">
             {error ? '加载失败' : '暂无记录'}
           </div>
         </div>

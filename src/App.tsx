@@ -16,6 +16,7 @@ type PageView = 'home' | 'history' | 'stats' | 'settings';
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const wasConnected = useDiaryStore(state => state.wasConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
   const setVaultConnected = useDiaryStore(state => state.setVaultConnected);
 
   const [showReflection, setShowReflection] = useState(false);
@@ -121,26 +122,32 @@ function App() {
               <h1 className="text-lg font-semibold text-gray-800">
                 📅 {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
               </h1>
-              <button
-                onClick={vaultConnected ? handleDisconnect : handleConnect}
-                disabled={connecting}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  vaultConnected
-                    ? 'bg-green-100 text-green-700'
-                    : connecting
-                      ? 'bg-gray-100 text-gray-400'
-                      : wasConnected
-                        ? 'bg-orange-100 text-orange-600'
-                        : 'bg-indigo-100 text-indigo-600'
-                }`}
-              >
-                {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
-              </button>
+              {remoteMode ? (
+                <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-700">
+                  ✓ 远程模式
+                </span>
+              ) : (
+                <button
+                  onClick={vaultConnected ? handleDisconnect : handleConnect}
+                  disabled={connecting}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    vaultConnected
+                      ? 'bg-green-100 text-green-700'
+                      : connecting
+                        ? 'bg-gray-100 text-gray-400'
+                        : wasConnected
+                          ? 'bg-orange-100 text-orange-600'
+                          : 'bg-indigo-100 text-indigo-600'
+                  }`}
+                >
+                  {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
+                </button>
+              )}
             </div>
           </header>
 
           {/* 重新连接提示 */}
-          {wasConnected && !vaultConnected && (
+          {!remoteMode && wasConnected && !vaultConnected && (
             <div className="px-4 py-2 bg-orange-50 border-b">
               <div className="text-sm text-orange-700 text-center">
                 页面刷新后需要重新授权Vault访问

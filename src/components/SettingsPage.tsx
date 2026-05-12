@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useDiaryStore } from '../stores/diaryStore';
+import { resetDataService } from '../services/dataService';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -46,6 +48,44 @@ export function SettingsPage() {
   const [aiConfig, setAIConfig] = useState<AIConfig>(getSavedAIConfig());
   const [saving, setSaving] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'failed'>('none');
+  
+  // 远程API配置
+  const remoteMode = useDiaryStore(state => state.remoteMode);
+  const apiUrl = useDiaryStore(state => state.apiUrl);
+  const apiToken = useDiaryStore(state => state.apiToken);
+  const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
+  const setApiConfig = useDiaryStore(state => state.setApiConfig);
+  
+  const handleTestConnection = async () => {
+    if (!apiUrl || !apiToken) {
+      alert('请先填写API地址和Token');
+      return;
+    }
+    
+    setTestingConnection(true);
+    setConnectionStatus('none');
+    
+    try {
+      const response = await fetch(`${apiUrl}/health`, {
+        headers: {
+          'Authorization': `Token ${apiToken}`
+        }
+      });
+      
+      if (response.ok) {
+        setConnectionStatus('success');
+      } else {
+        setConnectionStatus('failed');
+      }
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('failed');
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -81,6 +121,90 @@ export function SettingsPage() {
 
       {/* Main Content */}
       <main className="px-4 py-6 max-w-md mx-auto">
+        {/* 远程API配置 */}
+        <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <h2 className="text-sm font-medium text-gray-500 mb-4">🌐 远程API设置</h2>
+
+          {/* 模式选择 */}
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={remoteMode}
+                onChange={(e) => {
+                  setRemoteMode(e.target.checked);
+                  resetDataService();
+                }}
+                className="w-4 h-4 text-indigo-600 rounded"
+              />
+              <span className="text-sm text-gray-700">启用远程模式（手机访问Mac mini API）</span>
+            </label>
+          </div>
+
+          {remoteMode && (
+            <>
+              {/* API地址 */}
+              <div className="mb-4">
+                <label className="block text-xs text-gray-500 mb-2">API地址</label>
+                <input
+                  type="text"
+                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  placeholder="http://100.127.58.104:3001"
+                  value={apiUrl}
+                  onChange={(e) => {
+                    setApiConfig(e.target.value, apiToken);
+                    resetDataService();
+                  }}
+                />
+                <div className="text-xs text-gray-400 mt-1">
+                  Tailscale地址：http://100.67.123.39:3001（MacBook）
+                </div>
+              </div>
+
+              {/* API Token */}
+              <div className="mb-4">
+                <label className="block text-xs text-gray-500 mb-2">API Token</label>
+                <input
+                  type="password"
+                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  placeholder="输入Token..."
+                  value={apiToken}
+                  onChange={(e) => {
+                    setApiConfig(apiUrl, e.target.value);
+                    resetDataService();
+                  }}
+                />
+              </div>
+
+              {/* 连接状态提示 */}
+              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded mb-3">
+                当前模式：远程API | {apiUrl || '未配置地址'}
+              </div>
+              
+              {/* 测试连接按钮 */}
+              <button
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 mb-2"
+                onClick={handleTestConnection}
+                disabled={testingConnection || !apiUrl || !apiToken}
+              >
+                {testingConnection ? '测试中...' : '测试连接'}
+              </button>
+              
+              {/* 连接状态显示 */}
+              {connectionStatus === 'success' && (
+                <div className="text-xs text-green-600 bg-green-50 p-2 rounded flex items-center gap-1">
+                  <span>✅</span> 连接成功！API Server 正常运行
+                </div>
+              )}
+              {connectionStatus === 'failed' && (
+                <div className="text-xs text-red-600 bg-red-50 p-2 rounded flex items-center gap-1">
+                  <span>❌</span> 连接失败，请检查API地址和Token
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
         {/* AI润色设置 */}
         <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
           <h2 className="text-sm font-medium text-gray-500 mb-4">🤖 AI润色引擎</h2>
