@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getFileSyncService } from '../services/fileSync';
+import { getDataService } from '../services/dataService';
 
 interface ReflectionModalProps {
   onClose: () => void;
@@ -11,19 +11,22 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
-    if (!vaultConnected) {
+    
+    // 检查连接状态
+    const dataService = getDataService();
+    if (!remoteMode && !vaultConnected) {
       alert('请先连接Obsidian Vault');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const fileSync = getFileSyncService();
-      await fileSync.appendReflection(content.trim());
+      await dataService.appendReflection(content.trim());
 
       setContent('');
       triggerRefresh(); // 触发刷新

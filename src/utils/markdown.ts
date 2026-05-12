@@ -89,6 +89,10 @@ export function parseDiary(content: string): DiaryEntry {
       if (line.startsWith('> [!') && !line.startsWith('> [!quote]')) {
         continue;
       }
+      // 跳过每日复盘大标题
+      if (line.startsWith('## 📈 每日复盘')) {
+        continue;
+      }
       sections[currentSection].push(line);
     }
   }

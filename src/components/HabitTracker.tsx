@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getFileSyncService } from '../services/fileSync';
+import { getDataService } from '../services/dataService';
 
 // 习惯目标值
 const HABIT_GOALS = {
@@ -99,6 +99,7 @@ export default function HabitTracker() {
   const habitData = useDiaryStore(state => state.habitData);
   const updateHabitData = useDiaryStore(state => state.updateHabitData);
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
 
   const [editingType, setEditingType] = useState<'water' | 'steps' | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -107,11 +108,11 @@ export default function HabitTracker() {
     const newValue = !habitData[key];
     updateHabitData({ [key]: newValue });
 
-    if (vaultConnected) {
+    if (vaultConnected || remoteMode) {
       setIsSyncing(true);
       try {
-        const fileSync = getFileSyncService();
-        await fileSync.updateHabits({
+        const dataService = getDataService();
+        await dataService.updateHabits({
           ...habitData,
           [key]: newValue
         });
@@ -127,11 +128,11 @@ export default function HabitTracker() {
     updateHabitData({ [type]: value });
     setEditingType(null);
 
-    if (vaultConnected) {
+    if (vaultConnected || remoteMode) {
       setIsSyncing(true);
       try {
-        const fileSync = getFileSyncService();
-        await fileSync.updateHabits({
+        const dataService = getDataService();
+        await dataService.updateHabits({
           ...habitData,
           [type]: value
         });

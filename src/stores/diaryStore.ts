@@ -7,6 +7,11 @@ interface DiaryState {
   vaultConnected: boolean;
   wasConnected: boolean;
 
+  // 远程模式配置
+  remoteMode: boolean;
+  apiUrl: string;
+  apiToken: string;
+
   // 当前日记
   currentDiary: DiaryEntry | null;
 
@@ -18,6 +23,8 @@ interface DiaryState {
 
   // 操作
   setVaultConnected: (connected: boolean) => void;
+  setRemoteMode: (mode: boolean) => void;
+  setApiConfig: (url: string, token: string) => void;
   updateHabitData: (data: Partial<HabitData>) => void;
   setCurrentDiary: (diary: DiaryEntry | null) => void;
   triggerRefresh: () => void; // 触发刷新
@@ -36,12 +43,23 @@ export const useDiaryStore = create<DiaryState>()(
     (set) => ({
       vaultConnected: false,
       wasConnected: false,
+      remoteMode: false,
+      apiUrl: '',
+      apiToken: '',
       currentDiary: null,
       habitData: defaultHabitData,
       refreshKey: 0,
 
       setVaultConnected: (connected: boolean) => {
         set({ vaultConnected: connected, wasConnected: connected });
+      },
+
+      setRemoteMode: (mode: boolean) => {
+        set({ remoteMode: mode });
+      },
+
+      setApiConfig: (url: string, token: string) => {
+        set({ apiUrl: url, apiToken: token });
       },
 
       updateHabitData: (data: Partial<HabitData>) => {
@@ -62,7 +80,10 @@ export const useDiaryStore = create<DiaryState>()(
       name: 'diary-storage',
       partialize: (state) => ({
         wasConnected: state.wasConnected,
-        habitData: state.habitData
+        habitData: state.habitData,
+        remoteMode: state.remoteMode,
+        apiUrl: state.apiUrl,
+        apiToken: state.apiToken
       })
     }
   )
