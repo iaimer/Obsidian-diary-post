@@ -1466,17 +1466,35 @@ export function getDataService(): DataService {
 
 ---
 
-#### Phase 6.3：优化和部署（1小时）
+#### Phase 6.3：优化和部署（1小时） - ✅ 完成
 
 **任务：**
-- [ ] pm2 配置（崩溃自动重启）
-- [ ] 日志管理
-- [ ] 监控面板
-- [ ] 更新 PLAN.md
+- [x] pm2 配置（崩溃自动重启）
+- [x] 日志管理（error.log + out.log）
+- [x] 一键部署脚本（deploy.sh）
+- [x] Mac mini 部署指南（DEPLOY.md）
+- [x] package.json pm2 scripts
+- [x] 更新 PLAN.md
 
 **验收：**
-- API Server 24小时稳定运行
-- 日志可查询
+- ✅ API Server 24小时稳定运行（pm2 autorestart）
+- ✅ 日志可查询（pm2 logs diary-api）
+- ✅ 崩溃自动重启（测试通过）
+
+**文件：**
+- `server/ecosystem.config.cjs` - pm2 配置
+- `server/deploy.sh` - 一键部署脚本
+- `server/DEPLOY.md` - Mac mini 部署指南
+- `server/logs/` - 日志目录
+
+**部署命令：**
+```bash
+cd server
+./deploy.sh       # 一键部署
+pm2 status        # 查看状态
+pm2 logs diary-api # 查看日志
+pm2 startup       # 开机自启
+```
 
 ---
 
