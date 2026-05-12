@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { DiaryEntry } from '../types';
 import { getHistoryService } from '../services/historyService';
+import { getDataService } from '../services/dataService';
+import { useDiaryStore } from '../stores/diaryStore';
 import { ImageModal } from './ImageModal';
 
 interface DiaryDetailProps {
@@ -64,7 +66,26 @@ function renderMarkdown(line: string): React.ReactNode {
   return <span className="text-sm text-gray-700">{line}</span>;
 }
 
-export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
+async function fetchRemoteImage(year: number, imageName: string, month?: number): Promise<string | null> {
+  const { apiUrl, apiToken } = useDiaryStore.getState();
+  
+  const monthParam = month ? `&month=${month}` : '';
+  const url = `${apiUrl}/api/v1/diary/image/${year}/${encodeURIComponent(imageName)}?${monthParam}`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Token ${apiToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) return null;
+  
+  const data = await response.json();
+  return data.data;
+}
+
+export function DiaryDetail({ date }: DiaryDetailProps) {
   const [diary, setDiary] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,16 +98,17 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
       setLoading(true);
       setError(null);
       
+      const remoteMode = useDiaryStore.getState().remoteMode;
+      
       try {
-        const historyService = getHistoryService();
-        const entry = await historyService.loadDiary(date);
-        
-        if (entry) {
+        if (remoteMode) {
+          const dataService = getDataService();
+          const entry = await dataService.getDiary(date);
           setDiary(entry);
           
           if (entry.sections.images && entry.sections.images.length > 0) {
             const year = date.getFullYear();
-            const month = date.getMonth() + 1; // 月份从0开始，需要+1
+            const month = date.getMonth() + 1;
             const imageUrls: string[] = [];
             
             for (const line of entry.sections.images) {
@@ -94,7 +116,7 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
                 const match = line.match(/!\[\[(.*?)\]\]/);
                 if (match) {
                   const imageName = match[1];
-                  const url = await historyService.loadImage(imageName, year, month);
+                  const url = await fetchRemoteImage(year, imageName, month);
                   if (url) imageUrls.push(url);
                 }
               }
@@ -103,7 +125,33 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
             setImages(imageUrls);
           }
         } else {
-          setError('日记不存在');
+          const historyService = getHistoryService();
+          const entry = await historyService.loadDiary(date);
+          
+          if (entry) {
+            setDiary(entry);
+            
+            if (entry.sections.images && entry.sections.images.length > 0) {
+              const year = date.getFullYear();
+              const month = date.getMonth() + 1;
+              const imageUrls: string[] = [];
+              
+              for (const line of entry.sections.images) {
+                if (line.includes('![[')) {
+                  const match = line.match(/!\[\[(.*?)\]\]/);
+                  if (match) {
+                    const imageName = match[1];
+                    const url = await historyService.loadImage(imageName, year, month);
+                    if (url) imageUrls.push(url);
+                  }
+                }
+              }
+              
+              setImages(imageUrls);
+            }
+          } else {
+            setError('日记不存在');
+          }
         }
       } catch (err) {
         setError((err as Error).message);
@@ -130,23 +178,15 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="flex justify-between items-center px-4 py-3 border-b bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-800">
-          📅 {date.toLocaleDateString('zh-CN', {
+      <div className="px-4 py-3 border-b">
+        <h3 className="text-sm font-medium text-gray-500">
+          📝 {date.toLocaleDateString('zh-CN', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
             weekday: 'long'
           })}
         </h3>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="text-xs text-gray-400 hover:text-gray-600"
-          >
-            关闭
-          </button>
-        )}
       </div>
 
       {loading && (
@@ -164,9 +204,9 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
       {!loading && !error && diary && (
         <div className="px-4 py-4 space-y-4">
           {quickNotes.length > 0 && (
-            <div className="border-b pb-3">
+            <div>
               <h4 className="text-xs font-medium text-gray-400 mb-3">✍️ 随手记</h4>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {quickNotes.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
                 ))}
@@ -174,10 +214,13 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
             </div>
           )}
 
+          {happiness.length > 0 && quickNotes.length > 0 && (
+            <div className="border-t" />
+          )}
           {happiness.length > 0 && (
-            <div className="border-b pb-3 bg-green-50 px-3 py-2 rounded-lg">
+            <div>
               <h4 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h4>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {happiness.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
                 ))}
@@ -185,10 +228,13 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
             </div>
           )}
 
+          {reflection.length > 0 && (quickNotes.length > 0 || happiness.length > 0) && (
+            <div className="border-t" />
+          )}
           {reflection.length > 0 && (
-            <div className="border-b pb-3 bg-yellow-50 px-3 py-2 rounded-lg">
+            <div>
               <h4 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h4>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {reflection.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
                 ))}
@@ -196,21 +242,22 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
             </div>
           )}
 
+          {lizhiSays.length > 0 && (quickNotes.length > 0 || happiness.length > 0 || reflection.length > 0) && (
+            <div className="border-t" />
+          )}
           {lizhiSays.length > 0 && (
-            <div className="border-b pb-3 bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 rounded-lg">
               <h4 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h4>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {lizhiSays.map((line, i) => (
-                  <div key={i} className="text-sm text-gray-700 italic">
-                    {renderMarkdown(line)}
-                  </div>
+                  <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
                 ))}
               </div>
             </div>
           )}
 
           {images.length > 0 && (
-            <div className="pb-2">
+            <div>
               <h4 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h4>
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, i) => (
@@ -247,7 +294,6 @@ export function DiaryDetail({ date, onClose }: DiaryDetailProps) {
         </div>
       )}
 
-      {/* 图片放大模态框 */}
       {showImageModal && images.length > 0 && (
         <ImageModal
           images={images}

@@ -116,6 +116,7 @@ export default function HabitTracker() {
           ...habitData,
           [key]: newValue
         });
+        useDiaryStore.getState().triggerRefresh();
       } catch (error) {
         console.error('Failed to sync:', error);
       } finally {
@@ -136,6 +137,7 @@ export default function HabitTracker() {
           ...habitData,
           [type]: value
         });
+        useDiaryStore.getState().triggerRefresh();
       } catch (error) {
         console.error('Failed to sync:', error);
       } finally {

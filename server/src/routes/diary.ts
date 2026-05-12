@@ -1,7 +1,13 @@
 import { Router } from 'express';
-import { readDiary, writeDiary, getDateString } from '../services/vault.js';
+import { readDiary, writeDiary, getDateString, getDiaryPath } from '../services/vault.js';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+import config from '../config/index.js';
 import { parseDiary, appendToSection } from '../services/markdown.js';
 import { createObsidianDiaryContent } from '../services/template.js';
+
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'];
 
 const router = Router();
 
@@ -161,6 +167,77 @@ function updateHabitsSection(content: string, habits: string[]): string {
   const after = lines.slice(endIndex);
   
   return [...before, ...habits, '', ...after].join('\n');
+}
+
+router.get('/image/:year/:imageName', async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+    const imageName = req.params.imageName;
+    const month = req.query.month ? parseInt(req.query.month as string) : null;
+    
+    let imagePath: string | null = null;
+    
+    if (month) {
+      const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
+      const monthAssetsPath = join(
+        config.vaultPath,
+        'workspace',
+        '生活',
+        '日记',
+        year.toString(),
+        monthDirName,
+        'assets',
+        imageName
+      );
+      if (existsSync(monthAssetsPath)) {
+        imagePath = monthAssetsPath;
+      }
+    }
+    
+    if (!imagePath) {
+      const yearAssetsPath = join(
+        config.vaultPath,
+        'workspace',
+        '生活',
+        '日记',
+        year.toString(),
+        'assets',
+        imageName
+      );
+      if (existsSync(yearAssetsPath)) {
+        imagePath = yearAssetsPath;
+      }
+    }
+    
+    if (!imagePath) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    
+    const imageBuffer = readFileSync(imagePath);
+    const base64 = imageBuffer.toString('base64');
+    const mimeType = getMimeType(imageName);
+    
+    res.json({
+      data: `data:${mimeType};base64,${base64}`,
+      mimeType
+    });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+function getMimeType(filename: string): string {
+  const ext = filename.toLowerCase().split('.').pop();
+  const mimeTypes: Record<string, string> = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'heic': 'image/heic',
+    'heif': 'image/heif'
+  };
+  return mimeTypes[ext || ''] || 'image/jpeg';
 }
 
 export default router;

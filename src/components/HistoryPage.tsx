@@ -7,33 +7,61 @@ import { getFileSyncService } from '../services/fileSync';
 import { DiaryMeta } from '../types/history';
 import { PullToRefresh } from './PullToRefresh';
 
+async function fetchRemoteMonthData(year: number, month: number): Promise<{ year: number; month: number; diaries: DiaryMeta[] }> {
+  const { apiUrl, apiToken } = useDiaryStore.getState();
+  
+  const response = await fetch(`${apiUrl}/api/v1/history/${year}/${month}`, {
+    headers: {
+      'Authorization': `Token ${apiToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch history from API');
+  }
+  
+  return await response.json();
+}
+
 export function HistoryPage() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [monthData, setMonthData] = useState<{ year: number; month: number; diaries: DiaryMeta[] } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (vaultConnected) {
-      const fileSync = getFileSyncService();
-      const historyService = getHistoryService();
-      const vaultHandle = fileSync.getVaultHandle();
-      
-      if (vaultHandle) {
-        historyService.setVaultHandle(vaultHandle);
-        
+    if (vaultConnected || remoteMode) {
+      if (remoteMode) {
         const now = new Date();
         loadMonthData(now.getFullYear(), now.getMonth() + 1);
+      } else {
+        const fileSync = getFileSyncService();
+        const historyService = getHistoryService();
+        const vaultHandle = fileSync.getVaultHandle();
+        
+        if (vaultHandle) {
+          historyService.setVaultHandle(vaultHandle);
+          
+          const now = new Date();
+          loadMonthData(now.getFullYear(), now.getMonth() + 1);
+        }
       }
     }
-  }, [vaultConnected]);
+  }, [vaultConnected, remoteMode]);
 
   const loadMonthData = async (year: number, month: number) => {
     setLoading(true);
     try {
-      const historyService = getHistoryService();
-      const data = await historyService.getMonthDiaries(year, month);
-      setMonthData(data);
+      if (remoteMode) {
+        const data = await fetchRemoteMonthData(year, month);
+        setMonthData(data);
+      } else {
+        const historyService = getHistoryService();
+        const data = await historyService.getMonthDiaries(year, month);
+        setMonthData(data);
+      }
     } catch (error) {
       console.error('Failed to load month data:', error);
     } finally {
@@ -51,6 +79,8 @@ export function HistoryPage() {
     setSelectedDate(date);
   };
 
+  const isConnected = vaultConnected || remoteMode;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       <PullToRefresh onRefresh={handleRefresh}>
@@ -59,15 +89,15 @@ export function HistoryPage() {
             <div className="flex justify-between items-center">
               <h1 className="text-lg font-semibold text-gray-800">📅 历史日记</h1>
               <span className="text-sm text-gray-500">
-                {vaultConnected ? '✓ 已连接' : '未连接'}
+                {remoteMode ? '远程模式' : vaultConnected ? '✓ 已连接' : '未连接'}
               </span>
             </div>
           </header>
 
           <main className="px-4 py-6 max-w-md mx-auto">
-            {!vaultConnected ? (
+            {!isConnected ? (
               <div className="text-center py-12 text-gray-400 text-sm">
-                请先连接 Obsidian Vault
+                {remoteMode ? '请配置 API 地址和 Token' : '请先连接 Obsidian Vault'}
               </div>
             ) : (
               <div className="space-y-4">
