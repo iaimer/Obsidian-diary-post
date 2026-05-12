@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
@@ -33,32 +33,6 @@ function parseTagsFromPolished(text: string): { content: string; tags: string[] 
   return { content, tags };
 }
 
-// 将解析的标签设置到选择器
-function setParsedTags(tags: string[], setDomain: (d: string | null) => void, setCapability: (c: string | null) => void, setMethod: (m: string | null) => void) {
-  // 清空所有标签
-  setDomain(null);
-  setCapability(null);
-  setMethod(null);
-
-  // 分类标签
-  for (const tag of tags) {
-    if (TAG_SYSTEM.domain.includes(tag as any)) {
-      setDomain(tag);
-    } else if (TAG_SYSTEM.method.includes(tag as any)) {
-      setMethod(tag);
-    } else {
-      // 查找是否是某个领域的有效能力标签
-      for (const [domain, capabilities] of Object.entries(TAG_SYSTEM.capability)) {
-        if (capabilities.includes(tag)) {
-          setDomain(domain);
-          setCapability(tag);
-          break;
-        }
-      }
-    }
-  }
-}
-
 export default function QuickInput() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,15 +45,54 @@ export default function QuickInput() {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedCapability, setSelectedCapability] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  
+  // 批量设置标签时的标志
+  const isBatchSettingTags = useRef(false);
 
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
 
-  // 当选择新领域时，清空能力标签
+  // 当选择新领域时，清空能力标签（批量设置时跳过）
   useEffect(() => {
-    setSelectedCapability(null);
+    if (!isBatchSettingTags.current) {
+      setSelectedCapability(null);
+    }
   }, [selectedDomain]);
+
+  // 将解析的标签设置到选择器
+  const setParsedTags = (tags: string[]) => {
+    // 标记开始批量设置
+    isBatchSettingTags.current = true;
+
+    // 清空所有标签
+    setSelectedDomain(null);
+    setSelectedCapability(null);
+    setSelectedMethod(null);
+
+    // 分类标签
+    for (const tag of tags) {
+      if (TAG_SYSTEM.domain.includes(tag as any)) {
+        setSelectedDomain(tag);
+      } else if (TAG_SYSTEM.method.includes(tag as any)) {
+        setSelectedMethod(tag);
+      } else {
+        // 查找是否是某个领域的有效能力标签
+        for (const [domain, capabilities] of Object.entries(TAG_SYSTEM.capability)) {
+          if (capabilities.includes(tag)) {
+            setSelectedDomain(domain);
+            setSelectedCapability(tag);
+            break;
+          }
+        }
+      }
+    }
+    
+    // 延迟重置标志，确保 useEffect 执行完毕
+    setTimeout(() => {
+      isBatchSettingTags.current = false;
+    }, 0);
+  };
 
   // 获取当前可用的能力标签列表
   const availableCapabilities = selectedDomain ? TAG_SYSTEM.capability[selectedDomain] || [] : [];
@@ -110,7 +123,7 @@ export default function QuickInput() {
       const { tags } = parseTagsFromPolished(result);
 
       // 设置解析后的标签到选择器
-      setParsedTags(tags, setSelectedDomain, setSelectedCapability, setSelectedMethod);
+      setParsedTags(tags);
 
       // 存储原始润色结果（含标签）
       setPolishedContent(result);
