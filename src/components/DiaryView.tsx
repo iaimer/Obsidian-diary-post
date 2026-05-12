@@ -261,13 +261,10 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 小确幸 */}
-      {happiness.length > 0 && quickNotes.length > 0 && (
-        <div className="border-t mx-4" />
-      )}
       {happiness.length > 0 && (
-        <div className="px-4 py-3">
+        <div className="mx-4 my-3 bg-green-50 px-3 py-2 rounded-lg">
           <h3 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h3>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {happiness.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
             ))}
@@ -276,13 +273,10 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 觉察 */}
-      {reflection.length > 0 && (quickNotes.length > 0 || happiness.length > 0) && (
-        <div className="border-t mx-4" />
-      )}
       {reflection.length > 0 && (
-        <div className="px-4 py-3">
+        <div className="mx-4 my-3 bg-yellow-50 px-3 py-2 rounded-lg">
           <h3 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h3>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {reflection.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
             ))}
@@ -291,13 +285,10 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 荔枝喵说 */}
-      {lizhiSays.length > 0 && (quickNotes.length > 0 || happiness.length > 0 || reflection.length > 0) && (
-        <div className="border-t mx-4" />
-      )}
       {lizhiSays.length > 0 && (
-        <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg">
           <h3 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h3>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {lizhiSays.map((line, i) => (
               <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
             ))}

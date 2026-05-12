@@ -214,13 +214,10 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
             </div>
           )}
 
-          {happiness.length > 0 && quickNotes.length > 0 && (
-            <div className="border-t" />
-          )}
           {happiness.length > 0 && (
-            <div>
+            <div className="bg-green-50 px-3 py-2 rounded-lg">
               <h4 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h4>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {happiness.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
                 ))}
@@ -228,13 +225,10 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
             </div>
           )}
 
-          {reflection.length > 0 && (quickNotes.length > 0 || happiness.length > 0) && (
-            <div className="border-t" />
-          )}
           {reflection.length > 0 && (
-            <div>
+            <div className="bg-yellow-50 px-3 py-2 rounded-lg">
               <h4 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h4>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {reflection.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
                 ))}
@@ -242,13 +236,10 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
             </div>
           )}
 
-          {lizhiSays.length > 0 && (quickNotes.length > 0 || happiness.length > 0 || reflection.length > 0) && (
-            <div className="border-t" />
-          )}
           {lizhiSays.length > 0 && (
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 rounded-lg">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg">
               <h4 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h4>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {lizhiSays.map((line, i) => (
                   <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
                 ))}
