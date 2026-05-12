@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getHistoryService } from '../services/historyService';
+import { useDiaryStore } from '../stores/diaryStore';
 
 interface CalendarDayCellProps {
   date: Date;
@@ -8,6 +9,25 @@ interface CalendarDayCellProps {
   hasDiary: boolean;
   quickNotesCount: number;
   onClick: () => void;
+}
+
+async function fetchRemoteImage(year: number, imageName: string, month?: number): Promise<string | null> {
+  const { apiUrl, apiToken } = useDiaryStore.getState();
+  
+  const monthParam = month ? `&month=${month}` : '';
+  const url = `${apiUrl}/api/v1/diary/image/${year}/${encodeURIComponent(imageName)}?${monthParam}`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Token ${apiToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) return null;
+  
+  const data = await response.json();
+  return data.data;
 }
 
 export function CalendarDayCell({
@@ -21,6 +41,7 @@ export function CalendarDayCell({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const remoteMode = useDiaryStore(state => state.remoteMode);
 
   useEffect(() => {
     if (imageName && hasDiary) {
@@ -28,30 +49,49 @@ export function CalendarDayCell({
       setError(false);
       
       const year = date.getFullYear();
-      const month = date.getMonth() + 1; // 月份从0开始，需要+1
-      const historyService = getHistoryService();
+      const month = date.getMonth() + 1;
       
-      historyService.loadImage(imageName, year, month)
-        .then(url => {
-          if (url) {
-            setImageUrl(url);
-          } else {
+      if (remoteMode) {
+        fetchRemoteImage(year, imageName, month)
+          .then(url => {
+            if (url) {
+              setImageUrl(url);
+            } else {
+              setError(true);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load remote image:', err);
             setError(true);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to load image:', err);
-          setError(true);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
+        const historyService = getHistoryService();
+        
+        historyService.loadImage(imageName, year, month)
+          .then(url => {
+            if (url) {
+              setImageUrl(url);
+            } else {
+              setError(true);
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load image:', err);
+            setError(true);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
     } else {
       setImageUrl(null);
       setLoading(false);
       setError(false);
     }
-  }, [imageName, hasDiary, date]);
+  }, [imageName, hasDiary, date, remoteMode]);
 
   return (
     <button
@@ -113,13 +153,6 @@ export function CalendarDayCell({
       {!imageUrl && !loading && hasDiary && quickNotesCount > 0 && !isToday && (
         <span className="text-xs text-gray-500 absolute bottom-1 bg-white/80 px-1 rounded">
           {quickNotesCount}条
-        </span>
-      )}
-      
-      {/* 图片标记 */}
-      {imageUrl && !loading && !error && (
-        <span className="absolute top-1 right-1 text-xs text-white drop-shadow-lg z-10 bg-black/40 rounded-full px-1">
-          📷
         </span>
       )}
     </button>

@@ -5,6 +5,7 @@ import { getAllCachedDiaries, cacheDiary } from '../db';
 import { getFileSyncService } from './fileSync';
 import { parseDiary } from '../utils/markdown';
 import { getDateString } from '../utils/date';
+import { useDiaryStore } from '../stores/diaryStore';
 
 // 日习惯统计
 export interface DailyHabitStats {
@@ -114,39 +115,52 @@ async function readHabitFromFile(dateStr: string): Promise<DailyHabitStats | nul
 }
 
 // 获取指定日期范围的习惯统计
+async function fetchRemoteHabitStats(days: number): Promise<DailyHabitStats[]> {
+  const { apiUrl, apiToken } = useDiaryStore.getState();
+  
+  const response = await fetch(`${apiUrl}/api/v1/stats/habit?days=${days}`, {
+    headers: {
+      'Authorization': `Token ${apiToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch habit stats from API');
+  }
+  
+  return await response.json();
+}
+
 export async function getHabitStats(days: number, forceReload = false): Promise<DailyHabitStats[]> {
-  // 获取日期范围
+  const { remoteMode, apiUrl, apiToken } = useDiaryStore.getState();
+  
+  if (remoteMode && apiUrl && apiToken) {
+    return await fetchRemoteHabitStats(days);
+  }
+
   const targetDates = getRecentDates(days);
-
-  // 从缓存获取所有日记（如果forceReload=true，跳过缓存）
   const cachedDiaries = forceReload ? [] : await getAllCachedDiaries();
-
-  // 创建日期到日记的映射
   const diaryMap = new Map<string, DiaryEntry>();
   for (const entry of cachedDiaries) {
     diaryMap.set(entry.date, entry);
   }
 
-  // 生成统计数据
   const stats: DailyHabitStats[] = [];
 
   for (const date of targetDates) {
     if (!forceReload) {
-      // 先检查缓存
       const cachedEntry = diaryMap.get(date);
-
       if (cachedEntry) {
         stats.push(entryToStats(cachedEntry));
-        continue; // 使用缓存，跳过文件读取
+        continue;
       }
     }
 
-    // 强制从文件读取（或缓存中没有）
     const fileStats = await readHabitFromFile(date);
     if (fileStats) {
       stats.push(fileStats);
     } else {
-      // 无数据的日期填充默认值
       stats.push({
         date,
         water: 0,
