@@ -168,10 +168,9 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
   ) || [];
   const happiness = diary?.sections.happiness.filter(l =>
     l.trim() && 
-    l.startsWith('> ') && 
     !l.includes('[!success]') && 
     !l.includes('[!') && 
-    l.slice(2).trim()
+    !(l.startsWith('> ') && l.slice(2).trim() === '')
   ) || [];
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--')
