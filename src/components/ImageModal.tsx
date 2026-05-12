@@ -52,7 +52,7 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center overflow-hidden overscroll-contain touch-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -76,9 +76,9 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
       {activeIndex > 0 && (
         <button
           onClick={goToPrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full p-3 transition-colors z-10"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full p-2 transition-colors z-10"
         >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -88,16 +88,16 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
       {activeIndex < images.length - 1 && (
         <button
           onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full p-3 transition-colors z-10"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-full p-2 transition-colors z-10"
         >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       )}
 
       {/* 图片容器 */}
-      <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center p-8">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-white/60 animate-pulse">加载中...</div>
@@ -107,13 +107,13 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
         <img
           src={images[activeIndex]}
           alt={`Image ${activeIndex + 1}`}
-          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg shadow-2xl"
           onLoad={handleImageLoad}
           onClick={(e) => e.stopPropagation()}
         />
       </div>
 
-      {/* 底部图片缩略图导航（可选，如果图片数量超过3张） */}
+      {/* 底部图片缩略图导航 */}
       {images.length > 3 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           {images.map((img, i) => (
@@ -123,7 +123,7 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
                 setActiveIndex(i);
                 setLoading(true);
               }}
-              className={`w-12 h-12 rounded overflow-hidden border-2 transition-all ${
+              className={`w-10 h-10 rounded overflow-hidden border-2 transition-all ${
                 i === activeIndex 
                   ? 'border-white opacity-100' 
                   : 'border-white/30 opacity-60 hover:opacity-80'
