@@ -1214,362 +1214,306 @@ import { RefreshCw, Link2, X } from 'lucide-react';
 
 ### 功能概述
 
-支持在手机和电脑之间同步日记数据，确保多设备访问时数据一致性。
+支持手机和电脑多设备实时同步日记数据。Mac mini 作为中心服务器，手机通过 Tailscale 网络调用 API Server 实时写入 Vault。
 
 ### 问题分析
 
 **当前限制：**
 - File System Access API 仅在桌面浏览器完全支持
-- 移动端浏览器支持有限（iOS Safari不支持）
-- 每次打开App需要重新授权Vault访问
-- 无法在手机上直接写入Obsidian文件
+- 移动端浏览器不支持（iOS Safari、Android Chrome）
+- 手机无法直接写入 Obsidian Vault
 
-**核心挑战：**
-1. **移动端写入困难**：File System API在移动端受限
-2. **权限临时性**：页面刷新后需要重新授权
-3. **数据一致性**：多设备同时修改的冲突处理
-4. **离线场景**：无网络时的数据暂存和同步
-
----
-
-### 解决方案
-
-#### 方案A：Obsidian Sync + 双向缓存（推荐）
-
-**设计思路：**
-- 依赖Obsidian官方同步服务（Obsidian Sync或iCloud）
-- 手机端只读取已同步的文件，不直接写入
-- 使用IndexedDB作为本地缓存层
-- 在电脑端定期同步缓存数据到Obsidian文件
-
-**优点：**
-- ✅ 无需开发同步服务器
-- ✅ 利用Obsidian现有的可靠同步机制
-- ✅ 减少技术复杂度
-- ✅ 数据安全性高（由Obsidian保障）
-
-**缺点：**
-- ❌ 需要Obsidian Sync订阅（$8/月）
-- ❌ 手机端不能实时写入
-- ❌ 数据同步延迟（依赖Obsidian Sync频率）
-
-**实现步骤：**
-```
-1. 电脑端：直接写入Obsidian文件（当前已实现）
-2. 手机端：读取IndexedDB缓存 + 定期拉取Obsidian文件
-3. 同步策略：
-   - 电脑端写入后，自动更新IndexedDB
-   - 手机端从Obsidian读取最新文件（通过Obsidian Sync）
-   - 手机端修改暂存到IndexedDB，标记为"待同步"
-   - 电脑端检测"待同步"数据，合并写入Obsidian文件
-```
+**用户环境：**
+- Mac mini 24小时在线，作为服务器
+- 手机有网络流量，可实时访问
+- Vault 通过 Syncthing 在 Mac mini 和 MacBook 之间同步
+- Tailscale 提供私有网络连接
 
 ---
 
-#### 方案B：第三方云存储同步
+### 方案设计
 
-**设计思路：**
-- 使用第三方云存储（如Google Drive、Dropbox）
-- App直接读写云端文件
-- 通过云服务商API实现跨平台访问
+#### 核心思路：远程 API + 用户自托管
 
-**优点：**
-- ✅ 移动端完全支持
-- ✅ 实时写入能力
-- ✅ 跨平台统一体验
+**架构图：**
 
-**缺点：**
-- ❌ 需要开发云存储集成
-- ❌ 不直接写入Obsidian Vault
-- ❌ 需要额外的云服务账号
-- ❌ 数据隐私风险
+```
+                    Tailscale 网络 (私有，安全)
+                           │
+    ┌──────────────────────┼──────────────────────┐
+    │                      │                      │
+┌───▼───┐            ┌─────▼─────┐          ┌─────▼─────┐
+│手机PWA│            │ Mac mini  │          │ MacBook   │
+│(远程) │ ──HTTP───→ │ API Server│ ←─HTTP── │浏览器     │
+│       │            │ → Vault   │          │(本地API)  │
+└───────┘            └───────────┘          └───────────┘
+                           │
+                    Syncthing 同步
+                           │
+                      MacBook Vault
+                      (本地编辑)
+```
 
-**实现复杂度：**
-- 高：需要OAuth认证、文件API集成、冲突解决
+**设计原则：**
+- 文件优先：Vault 作为唯一数据源（数据库）
+- 用户自托管：用户部署自己的 API Server
+- 无云端部署：数据完全本地，无隐私风险
+- 预留公开接口：API 设计通用，支持未来多用户扩展
 
 ---
 
-#### 方案C：自建同步服务器
+### API Server 设计
 
-**设计思路：**
-- 开发简单的同步服务器（Node.js + SQLite）
-- App通过REST API同步数据
-- 服务器作为Obsidian文件的中转层
-
-**优点：**
-- ✅ 完全自主控制
-- ✅ 移动端实时写入
-- ✅ 可定制同步策略
-
-**缺点：**
-- ❌ 需要服务器运维成本
-- ❌ 开发工作量最大
-- ❌ 需要处理数据安全和隐私
-- ❌ 增加用户配置复杂度
-
-**实现复杂度：**
-- 最高：需要后端开发、数据库设计、API安全、部署运维
-
----
-
-### 推荐方案实现细节
-
-#### 采用方案A：Obsidian Sync + 双向缓存
-
-**技术架构：**
+#### 技术栈
 
 ```
-┌──────────────┐              ┌──────────────┐
-│  电脑端 App  │              │  手机端 App  │
-│              │              │              │
-│ ┌──────────┐ │              │ ┌──────────┐ │
-│ │ Obsidian │ │              │ │IndexedDB │ │
-│ │  文件    │ │              │ │  缓存    │ │
-│ └──────────┘ │              │ └──────────┘ │
-│      ↕       │              │      ↕       │
-│ ┌──────────┐ │              │ ┌──────────┐ │
-│ │IndexedDB │ │              │ │ 网络     │ │
-│ │  缓存    │ │              │ │ 拉取     │ │
-│ └──────────┘ │              │ └──────────┘ │
-└──────────────┘              └──────────────┘
-       ↕                              ↕
-       └──────────────────────────────┘
-                  Obsidian Sync
-                  (官方同步服务)
+Express/Fastify + TypeScript
+├── 复用现有 fileSync.ts 核心逻辑
+├── REST API 接口包装
+├── 简单 Token 认证（预留 JWT 扩展）
+└── pm2 进程管理（崩溃自动重启）
 ```
 
-**数据流程：**
+#### 项目结构
 
-**电脑端写入流程：**
 ```
-1. 用户在电脑端添加随手记
-2. 直接写入Obsidian文件
-3. 同时更新IndexedDB缓存
-4. Obsidian Sync自动推送到云端
-```
-
-**手机端读取流程：**
-```
-1. 手机App打开
-2. 尝试连接Obsidian Vault（移动端可能失败）
-3. 读取IndexedDB缓存数据
-4. 如果网络可用，从云端拉取最新文件（通过Obsidian Sync）
-5. 更新IndexedDB缓存
-```
-
-**手机端写入流程（暂存模式）：**
-```
-1. 用户在手机端添加随手记
-2. 写入IndexedDB缓存，标记为"待同步"
-3. 显示"已暂存，等待同步到Obsidian"
-4. 用户在电脑端打开App
-5. 电脑端检测"待同步"数据
-6. 合并写入Obsidian文件
-7. 清除"待同步"标记
+server/
+├── package.json
+├── tsconfig.json
+├── ecosystem.config.js      # pm2配置
+├── config.json              # Vault路径、Token配置
+├── src/
+│   ├── index.ts             # Express入口
+│   ├── routes/
+│   │   ├── diary.ts         # 日记读写接口
+│   │   ├── habit.ts         # 习惯统计接口
+│   │   ├── history.ts       # 历史查询接口
+│   ├── middleware/
+│   │   ├── auth.ts          # Token认证（预留JWT）
+│   ├── services/
+│   │   ├── fileSync.ts      # 复用现有代码
+│   │   ├── vault.ts         # Vault路径配置
+│   ├── config/
+│   │   ├── index.ts         # 配置聚合
 ```
 
 ---
 
-### 实现功能清单
+### API 接口规范
 
-#### Phase 6.1：缓存层增强（1周）
+#### 日记接口
 
-**IndexedDB扩展：**
-- [ ] 添加"待同步"标记字段
-- [ ] 实现增量同步队列
-- [ ] 添加同步状态管理
-- [ ] 实现冲突检测机制
+| 接口 | 方法 | 功能 | 请求体 | 预留字段 |
+|------|------|------|--------|---------|
+| `/api/v1/diary/:date` | GET | 获取日记 | - | `X-User-ID` |
+| `/api/v1/diary/quick-note` | POST | 追加随手记 | `{content, tags[]}` | `X-User-ID` |
+| `/api/v1/diary/habit` | POST | 更新习惯 | `{water, steps, reading...}` | `X-User-ID` |
+| `/api/v1/diary/happiness` | POST | 追加小确幸 | `{content}` | `X-User-ID` |
+| `/api/v1/diary/reflection` | POST | 追加觉察 | `{content}` | `X-User-ID` |
 
-**同步状态类型：**
-```typescript
-interface SyncStatus {
-  localModified: boolean;    // 本地已修改
-  syncedAt: Date;            // 最后同步时间
-  pendingChanges: number;   // 待同步数量
-  conflicts: ConflictItem[]; // 冲突条目
-}
+#### 统计接口
 
-interface ConflictItem {
-  date: string;
-  section: DiarySection;
-  localContent: string;
-  remoteContent: string;
-  resolvedAt?: Date;
-}
+| 接口 | 方法 | 功能 | 参数 |
+|------|------|------|------|
+| `/api/v1/stats/habit` | GET | 获取习惯统计 | `?days=30` |
+| `/api/v1/history/:year/:month` | GET | 获取历史日记列表 | - |
+
+#### 认证头
+
+```
+当前个人版：
+Authorization: Token <simple-token>
+
+未来公开版（预留）：
+Authorization: Bearer <JWT>
+X-User-ID: <user-id>
 ```
 
 ---
 
-#### Phase 6.2：同步检测和合并（1周）
+### 认证方案
 
-**电脑端功能：**
-- [ ] 检测IndexedDB中的"待同步"数据
-- [ ] 实现数据合并逻辑（追加而非覆盖）
-- [ ] 冲突解决UI（显示冲突条目，用户选择）
-- [ ] 自动同步触发（定时或手动）
-
-**合并策略：**
-```
-原则：追加优先，避免覆盖
-
-场景1：手机端添加随手记 → 电脑端合并追加
-  - 手机：添加"10:30 播客感悟 #学习"
-  - 电脑：检测到新增 → 追加到对应区块
-
-场景2：手机和电脑同时修改同一区块
-  - 冲突检测：时间戳对比
-  - UI提示："手机端新增3条，电脑端新增2条，全部保留？"
-  - 用户确认后合并
-
-场景3：习惯数据冲突
-  - 优先保留最新值（时间戳）
-  - 或提供选择界面
-```
-
----
-
-#### Phase 6.3：移动端优化（1周）
-
-**手机端功能：**
-- [ ] 离线模式增强（完全依赖IndexedDB）
-- [ ] 网络状态检测（Online/Offline）
-- [ ] 尝试拉取最新文件（通过Obsidian Sync）
-- [ ] 暂存写入提示（"已暂存，等待同步"）
-- [ ] 同步状态显示（待同步数量）
-
-**UI优化：**
-```
-┌─────────────────────────────┐
-│ 📅 今天 · 3条待同步          │ ← 显示同步状态
-├─────────────────────────────┤
-│ [添加随手记]                │
-│                             │
-│ ✅ 已暂存到本地             │ ← 暂存提示
-│ ⏳ 等待同步到Obsidian       │
-│                             │
-│ [手动同步] [查看待同步]     │ ← 操作按钮
-└─────────────────────────────┘
-```
-
----
-
-#### Phase 6.4：PWA离线支持（1周）
-
-**PWA配置：**
-- [ ] 创建 manifest.json
-- [ ] 实现Service Worker
-- [ ] 离线资源缓存
-- [ ] 后台同步API（Background Sync）
-- [ ] 推送通知（可选）
-
-**manifest.json示例：**
-```json
-{
-  "name": "Diary Post",
-  "short_name": "日记",
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
-```
-
----
-
-### 数据同步API设计
-
-#### 同步服务接口
+#### 当前实现：简单 Token
 
 ```typescript
-// src/services/syncService.ts
-
-export interface SyncService {
-  // 检查同步状态
-  checkSyncStatus(): Promise<SyncStatus>;
+// middleware/auth.ts
+export function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.replace('Token ', '')
+  const validToken = process.env.API_TOKEN || config.token
   
-  // 拉取远程数据（从Obsidian Sync）
-  pullRemoteData(): Promise<void>;
+  if (token !== validToken) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
   
-  // 推送本地数据（到Obsidian文件）
-  pushLocalData(): Promise<void>;
+  // 预留：未来可扩展为 JWT 验证
+  // const decoded = verifyJWT(token)
+  // req.userId = decoded.userId
   
-  // 合并冲突数据
-  mergeConflicts(conflicts: ConflictItem[]): Promise<void>;
-  
-  // 自动同步（定时）
-  autoSync(): Promise<void>;
-  
-  // 手动同步触发
-  manualSync(): Promise<void>;
+  next()
 }
 ```
 
-#### IndexedDB扩展
+#### 配置方式
+
+- 环境变量 `API_TOKEN=your-secret-token`
+- 或配置文件 `config.json` 中的 `token` 字段
+- 预留字段 `X-User-ID` 用于未来多用户扩展
+
+---
+
+### PWA 改造设计
+
+#### 数据抽象层
 
 ```typescript
-// src/db/syncDB.ts
+// src/services/dataService.ts
 
-export interface SyncEntry extends DiaryEntry {
-  syncStatus: SyncStatus;
-  pendingChanges: PendingChange[];
+export interface DataService {
+  getDiary(date: string): Promise<DiaryEntry>
+  appendQuickNote(content: string, tags: string[]): Promise<void>
+  updateHabit(data: HabitData): Promise<void>
+  appendHappiness(content: string): Promise<void>
+  appendReflection(content: string): Promise<void>
+  getHabitStats(days: number): Promise<DailyHabitStats[]>
+  getMonthDiaries(year: number, month: number): Promise<MonthData>
 }
+```
 
-export interface PendingChange {
-  id: string;
-  section: DiarySection;
-  content: string;
-  timestamp: Date;
-  synced: boolean;
+#### 实现类
+
+**本地模式（File System API）：**
+```typescript
+export class LocalDataService implements DataService {
+  private fileSync = getFileSyncService()
+  // MacBook 浏览器直接读写本地 Vault
 }
+```
 
-// 新增数据库表
-class SyncDatabase extends Dexie {
-  entries!: Table<SyncEntry, string>;
-  pendingChanges!: Table<PendingChange, string>;
-  syncLog!: Table<SyncLogItem, number>;
+**远程模式（HTTP API）：**
+```typescript
+export class RemoteDataService implements DataService {
+  private apiBase = 'http://100.x.x.x:3001/api/v1'
+  private token = 'your-token'
+  // 手机通过 Tailscale 调用 Mac mini API
+}
+```
+
+#### 模式自动检测
+
+```typescript
+export function getDataService(): DataService {
+  const isMobile = /Android|iPhone|iPad/.test(navigator.userAgent)
+  const hasFileSystemAPI = 'showDirectoryPicker' in window
+  
+  if (isMobile) {
+    return new RemoteDataService()
+  }
+  return new LocalDataService()
 }
 ```
 
 ---
 
-### 用户使用流程
+### 公开版预留设计
 
-#### 电脑端使用（完整功能）
+#### 产品定位
 
-```
-1. 打开App，授权Obsidian Vault
-2. 直接添加随手记、习惯打卡等
-3. 数据实时写入Obsidian文件
-4. Obsidian Sync自动推送到云端
-5. IndexedDB缓存同步更新
-```
+> **「Obsidian 日记伴侣」—— 为 Obsidian 用户提供快速记录的移动端工具**
 
-#### 手机端使用（缓存模式）
+**特点：**
+- 用户需有自己的 Obsidian Vault
+- 用户自托管 API Server（或提供托管选项）
+- 数据完全由用户掌控，应用不存储
 
-```
-1. 打开App（PWA离线可用）
-2. 读取IndexedDB缓存数据
-3. 尝试网络连接：
-   - ✅ 有网络：从Obsidian Sync拉取最新文件
-   - ❌ 无网络：使用缓存数据
-4. 添加新内容：
-   - 写入IndexedDB，标记"待同步"
-   - 显示"已暂存"
-5. 回到电脑端：
-   - App检测"待同步"数据
-   - 自动或手动合并到Obsidian文件
-```
+#### 扩展路径
+
+| 维度 | 个人版 | 公开版迁移 |
+|------|--------|-----------|
+| 认证 | 简单Token | JWT/OAuth（认证中间件替换） |
+| 数据存储 | 单一Vault | 每用户独立Vault（自托管模式） |
+| API Server | Mac mini单实例 | 用户自托管或云端选项 |
+
+---
+
+### 实施计划
+
+#### Phase 6.1：API Server 搭建（1-2小时）
+
+**任务：**
+- [ ] 创建 `server/` 目录结构
+- [ ] 实现日记读写接口（复用 fileSync.ts）
+- [ ] 实现简单 Token 认证
+- [ ] pm2 配置和启动
+
+**验收：**
+- Mac mini 启动 API Server
+- curl 测试 API 正常响应
+
+---
+
+#### Phase 6.2：PWA 改造（2-3小时）
+
+**任务：**
+- [ ] 创建 `dataService.ts` 抽象层
+- [ ] 实现 `RemoteDataService`（HTTP客户端）
+- [ ] 改造组件调用方式
+- [ ] 配置 API 地址和 Token
+
+**验收：**
+- 手机浏览器访问 PWA
+- 随手记、习惯打卡功能正常
+- Mac mini Vault 文件同步更新
+
+---
+
+#### Phase 6.3：优化和部署（1小时）
+
+**任务：**
+- [ ] pm2 配置（崩溃自动重启）
+- [ ] 日志管理
+- [ ] 监控面板
+- [ ] 更新 PLAN.md
+
+**验收：**
+- API Server 24小时稳定运行
+- 日志可查询
+
+---
+
+#### Phase 6.4：手机端优化（可选）
+
+**任务：**
+- [ ] 网络错误提示
+- [ ] 请求失败重试
+- [ ] 加载状态优化
+
+---
+
+### 原生应用迁移路径
+
+#### Android 原生应用
+
+**迁移复杂度：低**
+
+HTTP 客户端代码几乎完全复用：
+- API 接口不变
+- Kotlin/Java HTTP 客户端调用相同接口
+- 数据模型一致
+
+**技术栈选择：**
+- React Native：JS 代码复用度最高
+- Flutter：性能好但需重写
+- 原生 Kotlin：性能最好，HTTP 简单
+
+---
+
+#### Mac 原生应用
+
+**迁移复杂度：低**
+
+两种选择：
+- 继续使用 HTTP API（代码复用）
+- 直接本地文件读写（File System API 不再需要）
 
 ---
 
@@ -1577,79 +1521,53 @@ class SyncDatabase extends Dexie {
 
 | 风险 | 影响 | 应对措施 |
 |------|------|----------|
-| Obsidian Sync不可用 | 手机端无法拉取最新数据 | 完全依赖IndexedDB缓存 |
-| 数据冲突频繁 | 用户需要频繁手动合并 | 智能合并策略，减少冲突 |
-| IndexedDB存储限制 | 大量历史数据占用空间 | 实现数据清理策略（只保留近90天） |
-| Service Worker缓存失效 | 离线功能不稳定 | 多层缓存策略 + 失败重试 |
-| 手机端权限问题 | 无法访问Obsidian Vault | 完全切换到缓存模式 |
+| Mac mini 网络中断 | 手机无法访问 | 网络错误提示， IndexedDB 缓存 |
+| API Server 崩溃 | 服务不可用 | pm2 自动重启 |
+| Tailscale 连接问题 | 无法访问 | 配置备用局域网 IP |
+| Token 泄露 | 未授权访问 | Tailscale 网络隔离 + 定期更换 Token |
 
 ---
 
-### 实现优先级
+### 需要配置的信息
 
-**Phase 6.1（必须实现）：**
-- ✅ IndexedDB缓存增强（当前已实现基础版）
-- ✅ "待同步"标记机制
-- ✅ 基础同步状态显示
+**实施前需要用户提供：**
 
-**Phase 6.2（高优先级）：**
-- ✅ 数据合并逻辑
-- ✅ 冲突检测和解决UI
-- ✅ 电脑端自动同步
-
-**Phase 6.3（中优先级）：**
-- ✅ 手机端暂存模式优化
-- ✅ 网络状态检测
-- ✅ 暂存提示UI
-
-**Phase 6.4（低优先级）：**
-- ✅ PWA离线支持
-- ✅ Service Worker
-- ✅ 后台同步API
-
----
-
-### 时间估算
-
-**总开发周期：4-5周**
-
-- Phase 6.1：缓存层增强 → 1周
-- Phase 6.2：同步检测合并 → 1周
-- Phase 6.3：移动端优化 → 1周
-- Phase 6.4：PWA离线支持 → 1周
-- 测试和优化 → 1周
+1. **Mac mini Vault 路径** - Vault 的绝对路径
+2. **Tailscale 地址** - Mac mini 的 IP 或 MagicDNS
+3. **API 端口** - 默认 3001 或其他（避免冲突）
 
 ---
 
 ### 最终用户体验
 
-**理想使用场景：**
+**手机使用流程：**
+```
+1. 手机浏览器打开 PWA（通过 Tailscale）
+2. 自动检测为远程模式
+3. 添加随手记 → HTTP POST → Mac mini API
+4. API Server 写入 Vault
+5. Syncthing 同步到 MacBook
+6. MacBook Obsidian 显示最新内容
+```
 
-**早晨（手机端）：**
-- 手机打开App，查看今天日记
-- 添加晨间随手记（暂存到IndexedDB）
-- 标记习惯打卡（暂存）
-
-**上午（电脑端）：**
-- 电脑打开App，检测到3条待同步
-- 自动合并到Obsidian文件
-- Obsidian Sync推送到云端
-
-**下午（手机端）：**
-- 手机App拉取最新数据（从Obsidian Sync）
-- 看到上午添加的内容已同步
-- 继续添加新的随手记
-
-**晚上（电脑端）：**
-- 电脑端最终汇总和查看
-- 所有数据完整同步
+**MacBook 使用流程：**
+```
+1. MacBook 浏览器打开 PWA
+2. 自动检测为本地模式
+3. File System API 直接读写 Vault
+4. Syncthing 同步到 Mac mini
+5. Mac mini Vault 保持一致
+```
 
 ---
 
-### 功能增强建议
+### 时间估算
 
-- 图片点击后支持缩放、拖动
-- 日历支持年视图切换
-- 日记详情支持Markdown渲染（代码块、链接等）
-- 支持分享日记到社交媒体
-- 支持导出日记为PDF
+**总开发周期：4-6小时**
+
+- Phase 6.1：API Server 搭建 → 1-2小时
+- Phase 6.2：PWA 改造 → 2-3小时
+- Phase 6.3：优化部署 → 1小时
+- Phase 6.4：手机优化 → 可选
+
+---
