@@ -3,20 +3,54 @@ node_modules/
 
 # Build output
 dist/
+build/
+
+# Server
+server/logs/
+server/dist/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
+logs/
+npm-debug.log*
 
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
 
-# Claude plans (optional)
+# Test
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+
+# Temp
+*.tmp
+*.temp
+tmp/
+
+# Claude
 .claude/plans/
+
+# AI agent docs
+AGENTS.md
+CLAUDE.md
+PLAN.md
+
+# Misc
+*.bak
+*.orig
