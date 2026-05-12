@@ -2,6 +2,31 @@
 
 所有重要的更改都将记录在此文件中。
 
+## [0.6.1] - 2026-05-12
+
+### 新增功能
+- **远程模式完整支持**：
+  - HistoryPage 支持远程 API（/api/v1/history/:year/:month）
+  - HabitStats 支持远程 API（/api/v1/stats/habit）
+  - CalendarDayCell/DiaryDetail 远程模式图片加载
+  - 服务端新增图片 API（/api/v1/diary/image/:year/:imageName）
+
+### 功能改进
+- **习惯统计实时更新**：更新习惯后自动触发统计刷新
+- **样式统一优化**：
+  - DiaryDetail 与 DiaryView 模块颜色区分保持一致
+  - 小确幸：bg-green-50 圆角矩形
+  - 觉察与迭代：bg-yellow-50 圆角矩形
+  - 荔枝喵说：渐变背景圆角矩形
+  - 与 dock 卡片样式区分开
+- **日历缩略图简化**：移除相机 emoji 标记，直接显示图片
+
+### Bug修复
+- **小确幸显示问题**：统一 DiaryDetail 和 DiaryView 过滤逻辑，排除 callout 标记
+- **远程模式历史页面**：正确处理 vaultConnected 和 remoteMode 状态判断
+
+---
+
 ## [0.6.0] - 2026-05-12
 
 ### 新增功能
@@ -195,7 +220,8 @@
 
 ## 待开发功能
 
-- [ ] 历史日记查看
+- [x] 历史日记查看（v0.5.0 已完成）
+- [x] 多设备远程同步（v0.6.0 已完成）
 - [ ] 习惯月度汇总表
 - [ ] 标签统计可视化
 - [ ] 日记搜索
