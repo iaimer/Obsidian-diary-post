@@ -110,7 +110,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50 pb-[50px]">
 
       <PullToRefresh onRefresh={async () => {
         await diaryViewRef.current?.reload();
