@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { readDiary, writeDiary, getDateString, getDiaryPath } from '../services/vault.js';
+import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary } from '../services/vault.js';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import config from '../config/index.js';
@@ -10,6 +10,47 @@ const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
 
 const router = Router();
+
+// 检查日记是否存在
+router.get('/exists/:date', async (req, res) => {
+  try {
+    const dateStr = req.params.date;
+    const [year, month, day] = dateStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
+    const exists = existsDiary(date);
+    res.json({ exists });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// 创建日记
+router.post('/create', async (req, res) => {
+  try {
+    const { date } = req.body;
+    let diaryDate: Date;
+    
+    if (date) {
+      const [year, month, day] = date.split('-');
+      diaryDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      diaryDate = new Date();
+    }
+    
+    // 如果已存在，返回错误
+    if (existsDiary(diaryDate)) {
+      return res.status(400).json({ error: '日记已存在' });
+    }
+    
+    const content = createObsidianDiaryContent(diaryDate);
+    writeDiary(diaryDate, content);
+    
+    res.json({ success: true, date: getDateString(diaryDate) });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
 
 router.get('/:date', async (req, res) => {
   try {
@@ -45,8 +86,7 @@ router.post('/quick-note', async (req, res) => {
     try {
       originalContent = readDiary(date);
     } catch {
-      originalContent = createObsidianDiaryContent(date);
-      writeDiary(date, originalContent);
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
     const updated = appendToSection(originalContent, 'quick_notes', formatted);
@@ -67,7 +107,7 @@ router.post('/habit', async (req, res) => {
     try {
       originalContent = readDiary(date);
     } catch {
-      originalContent = createObsidianDiaryContent(date);
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
     const waterEmoji = '🥤';
@@ -102,8 +142,7 @@ router.post('/happiness', async (req, res) => {
     try {
       originalContent = readDiary(date);
     } catch {
-      originalContent = createObsidianDiaryContent(date);
-      writeDiary(date, originalContent);
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
     const updated = appendToSection(originalContent, 'happiness', `> ${content}`);
@@ -124,8 +163,7 @@ router.post('/reflection', async (req, res) => {
     try {
       originalContent = readDiary(date);
     } catch {
-      originalContent = createObsidianDiaryContent(date);
-      writeDiary(date, originalContent);
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
     const updated = appendToSection(originalContent, 'reflection', `- ${content}`);

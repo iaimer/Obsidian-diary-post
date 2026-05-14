@@ -65,3 +65,8 @@ export function listMonthDiaries(year: number, month: number): string[] {
     .filter(f => f.endsWith('.md'))
     .map(f => f.replace('.md', ''));
 }
+
+export function existsDiary(date: Date): boolean {
+  const path = getDiaryPath(date);
+  return existsSync(path);
+}
