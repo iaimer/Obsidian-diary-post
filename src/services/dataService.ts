@@ -9,6 +9,12 @@ export interface DataService {
   // 连接 Vault（仅 local 模式需要）
   connectVault(): Promise<boolean>;
   
+  // 检查日记是否存在
+  checkDiaryExists(date: Date): Promise<boolean>;
+  
+  // 创建日记
+  createDiary(date: Date): Promise<void>;
+  
   // 获取日记
   getDiary(date: Date): Promise<DiaryEntry>;
   
@@ -34,6 +40,14 @@ export class LocalDataService implements DataService {
   
   async connectVault(): Promise<boolean> {
     return await this.fileSync.connectVault();
+  }
+  
+  async checkDiaryExists(date: Date): Promise<boolean> {
+    return await this.fileSync.checkDiaryExists(date);
+  }
+  
+  async createDiary(date: Date): Promise<void> {
+    await this.fileSync.createDiary(date);
   }
   
   async getDiary(date: Date): Promise<DiaryEntry> {
@@ -92,6 +106,24 @@ export class RemoteDataService implements DataService {
     }
     
     return await response.json();
+  }
+  
+  async checkDiaryExists(date: Date): Promise<boolean> {
+    const dateStr = this.formatDate(date);
+    try {
+      const result = await this.fetchAPI(`/api/v1/diary/exists/${dateStr}`);
+      return result.exists === true;
+    } catch {
+      return false;
+    }
+  }
+  
+  async createDiary(date: Date): Promise<void> {
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/create', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr })
+    });
   }
   
   async getDiary(date: Date): Promise<DiaryEntry> {

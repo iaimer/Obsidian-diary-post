@@ -99,6 +99,48 @@ function createObsidianDiaryContent(date: Date): string {
 export class FileSyncService {
   private vaultHandle: FileSystemDirectoryHandle | null = null;
 
+  // 检查日记文件是否存在
+  async checkDiaryExists(date: Date): Promise<boolean> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    try {
+      await this.getFileHandle(date);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // 创建新日记（仅创建，不返回内容）
+  async createDiary(date: Date): Promise<void> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    console.log('Creating diary for:', getDateString(date));
+    const content = createObsidianDiaryContent(date);
+    await this.writeFile(date, content);
+    console.log('Diary created successfully');
+  }
+
+  // 获取文件句柄（内部方法）
+  private async getFileHandle(date: Date): Promise<FileSystemFileHandle> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    const pathParts = this.getPathParts(date);
+    let currentHandle = this.vaultHandle;
+
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      currentHandle = await currentHandle.getDirectoryHandle(pathParts[i]);
+    }
+
+    return await currentHandle.getFileHandle(pathParts[pathParts.length - 1]);
+  }
+
   // 连接Vault
   async connectVault(): Promise<boolean> {
     try {
@@ -116,8 +158,8 @@ export class FileSyncService {
     return this.vaultHandle;
   }
 
-  // 获取日记（用于读取和显示，文件不存在则创建）
-  async getOrCreateDiary(date: Date): Promise<DiaryEntry> {
+  // 获取日记（用于读取和显示）
+  async getDiary(date: Date): Promise<DiaryEntry> {
     const dateString = getDateString(date);
     console.log('Getting diary for:', dateString);
 
@@ -135,16 +177,14 @@ export class FileSyncService {
       await cacheDiary(entry);
       return entry;
     } catch (error) {
-      console.log('File not found, creating new diary...');
-      const newContent = createObsidianDiaryContent(date);
-      await this.writeFile(date, newContent);
-
-      const entry = parseDiary(newContent);
-      entry.date = dateString;
-
-      await cacheDiary(entry);
-      return entry;
+      console.log('File not found:', error);
+      throw new Error('日记文件不存在');
     }
+  }
+
+  // 获取日记（用于读取和显示，文件不存在则创建）- 兼容旧方法名
+  async getOrCreateDiary(date: Date): Promise<DiaryEntry> {
+    return await this.getDiary(date);
   }
 
   // 直接追加内容到区块（不重新序列化整个文件）
@@ -157,14 +197,12 @@ export class FileSyncService {
       throw new Error('Vault not connected');
     }
 
-    // 尝试读取原文件内容，不存在则创建
+    // 尝试读取原文件内容，不存在则抛出错误
     let originalContent: string;
     try {
       originalContent = await this.readFile(date);
     } catch (error) {
-      console.log('File not found, creating new diary...');
-      originalContent = createObsidianDiaryContent(date);
-      await this.writeFile(date, originalContent);
+      throw new Error('日记文件不存在，请先创建');
     }
 
     const lines = originalContent.split('\n');
@@ -257,14 +295,12 @@ export class FileSyncService {
     }
 
     const date = new Date();
-    // 尝试读取原文件内容，不存在则创建
+    // 尝试读取原文件内容，不存在则抛出错误
     let originalContent: string;
     try {
       originalContent = await this.readFile(date);
     } catch (error) {
-      console.log('File not found, creating new diary...');
-      originalContent = createObsidianDiaryContent(date);
-      await this.writeFile(date, originalContent);
+      throw new Error('日记文件不存在，请先创建');
     }
 
     const lines = originalContent.split('\n');

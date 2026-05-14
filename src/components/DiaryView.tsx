@@ -111,6 +111,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [diary, setDiary] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [diaryExists, setDiaryExists] = useState<boolean | null>(null);
+  const [creating, setCreating] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // 解析习惯数据
@@ -143,6 +145,16 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
     try {
       const dataService = getDataService();
+      
+      // 先检查文件是否存在
+      const exists = await dataService.checkDiaryExists(new Date());
+      setDiaryExists(exists);
+      
+      if (!exists) {
+        setLoading(false);
+        return;
+      }
+      
       const remoteMode = useDiaryStore.getState().remoteMode;
       
       const entry = await dataService.getDiary(new Date());
@@ -191,6 +203,26 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     reload: loadDiary
   }));
 
+  // 创建新日记
+  const handleCreateDiary = async () => {
+    setCreating(true);
+    setError(null);
+    console.log('开始创建日记...');
+    try {
+      const dataService = getDataService();
+      await dataService.createDiary(new Date());
+      console.log('日记创建成功');
+      setDiaryExists(true);
+      // 创建后重新加载
+      await loadDiary();
+    } catch (err) {
+      console.error('创建日记失败:', err);
+      setError((err as Error).message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   useEffect(() => {
     if (vaultConnected || remoteMode) loadDiary();
   }, [vaultConnected, remoteMode, refreshKey]); // 监听refreshKey变化
@@ -208,6 +240,25 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
         <h2 className="text-sm font-medium text-gray-500 mb-3">今日记录</h2>
         <div className="text-center py-6 text-gray-400 text-sm">请先连接Obsidian Vault</div>
+      </section>
+    );
+  }
+
+  // 日记不存在，显示新建按钮
+  if (!loading && diaryExists === false) {
+    return (
+      <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
+        <h2 className="text-sm font-medium text-gray-500 mb-3">📝 今日日记</h2>
+        <div className="text-center py-6">
+          <p className="text-gray-500 text-sm mb-4">今天还没有日记</p>
+          <button
+            onClick={handleCreateDiary}
+            disabled={creating}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+          >
+            {creating ? '创建中...' : '新建日记'}
+          </button>
+        </div>
       </section>
     );
   }

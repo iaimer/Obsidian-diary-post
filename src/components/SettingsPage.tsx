@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { resetDataService } from '../services/dataService';
+import { CollapsibleSection } from './CollapsibleSection';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -122,9 +123,7 @@ export function SettingsPage() {
       {/* Main Content */}
       <main className="px-4 py-6 max-w-md mx-auto">
         {/* 远程API配置 */}
-        <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-          <h2 className="text-sm font-medium text-gray-500 mb-4">🌐 远程API设置</h2>
-
+        <CollapsibleSection title="🌐 远程API设置">
           {/* 模式选择 */}
           <div className="mb-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -203,12 +202,10 @@ export function SettingsPage() {
               )}
             </>
           )}
-        </section>
+        </CollapsibleSection>
 
         {/* AI润色设置 */}
-        <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-          <h2 className="text-sm font-medium text-gray-500 mb-4">🤖 AI润色引擎</h2>
-
+        <CollapsibleSection title="🤖 AI润色引擎">
           {/* 启用开关 */}
           <div className="mb-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -336,7 +333,7 @@ export function SettingsPage() {
           >
             {saving ? '保存中...' : '保存设置'}
           </button>
-        </section>
+        </CollapsibleSection>
 
         {/* 关于 */}
         <section className="bg-white rounded-xl p-4 shadow-sm">
