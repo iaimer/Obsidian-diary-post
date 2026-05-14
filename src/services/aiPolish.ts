@@ -6,17 +6,23 @@ interface AIConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  polishPrompt?: string;
 }
 
-// 润色提示词
-const POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的简短日记内容进行润色扩写，并自动添加合适的标签。
+// 默认润色提示词
+const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的内容进行润色，并自动添加合适的标签。
 
 【润色规则】
-1. 生动化扩写：用比喻、拟人或反差修辞让表达鲜活，但不脑补环境描写和心理活动。
-2. 事实零增补：严格遵守原文的时间、地点、人物和逻辑，绝不添加未提及的内容。
-3. 拒绝代写总结：禁止在末尾加AI风格感悟（如"生活真美好"、"很有意义"）。
-4. 口语化与去官腔：用"薅羊毛、撒个欢、白忙活"等接地气词汇，替代"进行了、开展了、由于"等公文词汇。
-5. 简短有节奏：多用短句，适当加语气词（呀、呢、嘛），像跟老友聊天。
+1. 尊重事实零增补：严格遵守原文的每一个事实细节，绝不添加任何未提及的人物、事件、地点、时间或具体信息。
+2. 适度修辞：可以适当使用比喻、拟人等修辞手法让表达更生动，但只能基于原文已有的信息进行修辞化处理。
+3. 轻微扩写：可以做一点点扩写（1-2句），但只能是对原文氛围或情绪的自然延伸，不可编造新事实。
+4. 拒绝代写总结：禁止在末尾加任何AI风格感悟、建议或总结。
+5. 保持原意：保留原文的核心表达和语气风格。
+
+【扩写边界示例】
+原文：带娃去公园玩。
+✅ 合理扩写：带娃去公园撒了个欢，跑得满头大汗。（基于"玩"的氛围延伸）
+❌ 过度扩写：带娃去公园玩，阳光明媚，草地上蝴蝶飞舞...（添加了未提及的阳光、蝴蝶、草地细节）
 
 【标签规则】必须添加三层标签，格式为：内容 #领域 #能力 #方法
 
@@ -43,9 +49,26 @@ const POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的简
 5. 涉及工具/代码/AI/Obsidian → #技术
 
 请直接输出润色后的内容和标签，格式示例：
-今天带娃去公园撒了个欢，跑得满头大汗呀。 #亲子 #自主探索 #记录
+带娃去公园撒了个欢，跑得满头大汗。 #亲子 #自主探索 #记录
 
 注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
+
+// 润色类型
+export type PolishType = 'quickNote' | 'reflection' | 'happiness';
+
+// 获取润色提示词（优先使用用户自定义）
+function getPromptByType(_type: PolishType): string {
+  const saved = localStorage.getItem('diary-ai-config');
+  if (saved) {
+    try {
+      const config = JSON.parse(saved);
+      if (config.polishPrompt && config.polishPrompt.trim()) {
+        return config.polishPrompt;
+      }
+    } catch {}
+  }
+  return DEFAULT_POLISH_PROMPT;
+}
 
 // 判断是否是Claude API
 function isClaudeAPI(baseUrl: string): boolean {
@@ -53,7 +76,8 @@ function isClaudeAPI(baseUrl: string): boolean {
 }
 
 // 调用Claude API格式
-async function callClaudeAPI(content: string, config: AIConfig): Promise<string> {
+async function callClaudeAPI(content: string, config: AIConfig, type: PolishType): Promise<string> {
+  const prompt = getPromptByType(type);
   const response = await fetch(`${config.baseUrl}/v1/messages`, {
     method: 'POST',
     headers: {
@@ -67,7 +91,7 @@ async function callClaudeAPI(content: string, config: AIConfig): Promise<string>
       messages: [
         {
           role: 'user',
-          content: `${POLISH_PROMPT}\n\n原文：${content}`
+          content: `${prompt}\n\n原文：${content}`
         }
       ]
     })
@@ -83,11 +107,10 @@ async function callClaudeAPI(content: string, config: AIConfig): Promise<string>
 }
 
 // 调用OpenAI兼容API格式
-async function callOpenAICompatibleAPI(content: string, config: AIConfig): Promise<string> {
-  // 构建完整的API URL
+async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: PolishType): Promise<string> {
+  const prompt = getPromptByType(type);
   let apiUrl = config.baseUrl;
 
-  // 如果baseUrl不包含/v1，自动添加
   if (!apiUrl.includes('/v1') && !apiUrl.endsWith('/chat/completions')) {
     apiUrl = `${apiUrl}/v1/chat/completions`;
   } else if (!apiUrl.endsWith('/chat/completions')) {
@@ -106,7 +129,7 @@ async function callOpenAICompatibleAPI(content: string, config: AIConfig): Promi
       messages: [
         {
           role: 'system',
-          content: POLISH_PROMPT
+          content: prompt
         },
         {
           role: 'user',
@@ -126,20 +149,18 @@ async function callOpenAICompatibleAPI(content: string, config: AIConfig): Promi
 }
 
 // 润色内容
-export async function polishContent(content: string, config: AIConfig): Promise<string> {
+export async function polishContent(content: string, config: AIConfig, type: PolishType = 'quickNote'): Promise<string> {
   if (!config.enabled || !config.baseUrl || !config.apiKey || !config.model) {
     throw new Error('请先在设置页面配置AI API');
   }
 
-  console.log('Polishing with:', config.name, config.model);
+  console.log('Polishing with:', config.name, config.model, 'type:', type);
 
   try {
-    // 根据baseUrl判断API格式
     if (isClaudeAPI(config.baseUrl)) {
-      return await callClaudeAPI(content, config);
+      return await callClaudeAPI(content, config, type);
     } else {
-      // 其他API使用OpenAI兼容格式
-      return await callOpenAICompatibleAPI(content, config);
+      return await callOpenAICompatibleAPI(content, config, type);
     }
   } catch (error) {
     console.error('Polish failed:', error);
@@ -164,12 +185,16 @@ export function isAIConfigured(): boolean {
 export function getAIConfig(): AIConfig {
   const saved = localStorage.getItem('diary-ai-config');
   if (!saved) {
-    return { enabled: false, name: '', baseUrl: '', apiKey: '', model: '' };
+    return { enabled: false, name: '', baseUrl: '', apiKey: '', model: '', polishPrompt: DEFAULT_POLISH_PROMPT };
   }
 
   try {
-    return JSON.parse(saved);
+    const config = JSON.parse(saved);
+    if (!config.polishPrompt) {
+      config.polishPrompt = DEFAULT_POLISH_PROMPT;
+    }
+    return config;
   } catch {
-    return { enabled: false, name: '', baseUrl: '', apiKey: '', model: '' };
+    return { enabled: false, name: '', baseUrl: '', apiKey: '', model: '', polishPrompt: DEFAULT_POLISH_PROMPT };
   }
 }
