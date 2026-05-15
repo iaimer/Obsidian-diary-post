@@ -2,6 +2,26 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DiaryEntry, HabitData } from '../types';
 
+export interface ImageCompressConfig {
+  maxLongSide: number;    // 最大长边像素
+  maxSizeMB: number;      // 最大文件大小 MB
+  quality: number;        // JPEG 质量 0-1
+  nameFormat: string;     // 文件名格式，{date}=YYYYMMDD, {seq}=序号
+}
+
+const defaultImageConfig: ImageCompressConfig = {
+  maxLongSide: 2000,
+  maxSizeMB: 2,
+  quality: 0.7,
+  nameFormat: 'Image-{date}-{seq}'
+};
+
+export function getFormatDateStr(date: Date): string {
+  return date.getFullYear().toString() +
+    (date.getMonth() + 1).toString().padStart(2, '0') +
+    date.getDate().toString().padStart(2, '0');
+}
+
 interface DiaryState {
   // 连接状态
   vaultConnected: boolean;
@@ -11,6 +31,9 @@ interface DiaryState {
   remoteMode: boolean;
   apiUrl: string;
   apiToken: string;
+
+  // 图片压缩配置
+  imageConfig: ImageCompressConfig;
 
   // 当前日记
   currentDiary: DiaryEntry | null;
@@ -25,6 +48,8 @@ interface DiaryState {
   setVaultConnected: (connected: boolean) => void;
   setRemoteMode: (mode: boolean) => void;
   setApiConfig: (url: string, token: string) => void;
+  setImageConfig: (config: Partial<ImageCompressConfig>) => void;
+  resetImageConfig: () => void;
   updateHabitData: (data: Partial<HabitData>) => void;
   setCurrentDiary: (diary: DiaryEntry | null) => void;
   triggerRefresh: () => void; // 触发刷新
@@ -46,6 +71,7 @@ export const useDiaryStore = create<DiaryState>()(
       remoteMode: false,
       apiUrl: '',
       apiToken: '',
+      imageConfig: defaultImageConfig,
       currentDiary: null,
       habitData: defaultHabitData,
       refreshKey: 0,
@@ -60,6 +86,16 @@ export const useDiaryStore = create<DiaryState>()(
 
       setApiConfig: (url: string, token: string) => {
         set({ apiUrl: url, apiToken: token });
+      },
+
+      setImageConfig: (config: Partial<ImageCompressConfig>) => {
+        set((state) => ({
+          imageConfig: { ...state.imageConfig, ...config }
+        }));
+      },
+
+      resetImageConfig: () => {
+        set({ imageConfig: defaultImageConfig });
       },
 
       updateHabitData: (data: Partial<HabitData>) => {
@@ -83,7 +119,8 @@ export const useDiaryStore = create<DiaryState>()(
         habitData: state.habitData,
         remoteMode: state.remoteMode,
         apiUrl: state.apiUrl,
-        apiToken: state.apiToken
+        apiToken: state.apiToken,
+        imageConfig: state.imageConfig
       })
     }
   )
