@@ -378,19 +378,21 @@ export class FileSyncService {
   }
 
   // 获取下一个可用图片序号
-  async getNextImageSequence(date: Date): Promise<number> {
+  async getNextImageSequence(date: Date, nameFormat: string): Promise<number> {
     const dayStr = date.getFullYear().toString() +
       (date.getMonth() + 1).toString().padStart(2, '0') +
       date.getDate().toString().padStart(2, '0');
-    const prefix = `Image-${dayStr}-`;
+    // 将 nameFormat 中的 {date} 替换为实际日期，{seq} 部分去掉，得到文件名前缀
+    const prefix = nameFormat.replace('{date}', dayStr).replace('{seq}', '');
 
     const assetsHandle = await this.getAssetsDirectoryHandle(date);
 
     let maxSeq = 0;
     for await (const [name] of assetsHandle.entries()) {
       if (name.startsWith(prefix) && name.endsWith('.jpg')) {
-        const seqStr = name.slice(prefix.length, -4);
-        const seq = parseInt(seqStr);
+        // 从前缀后提取序号: prefix + seq + ".jpg"
+        const seqPart = name.slice(prefix.length, -4);
+        const seq = parseInt(seqPart);
         if (!isNaN(seq) && seq > maxSeq) {
           maxSeq = seq;
         }

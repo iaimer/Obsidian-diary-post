@@ -75,9 +75,10 @@ export class LocalDataService implements DataService {
   }
 
   async uploadImage(file: File, date: Date): Promise<void> {
-    const blob = await compressImage(file);
-    const seq = await this.fileSync.getNextImageSequence(date);
-    const filename = generateImageFilename(date, seq);
+    const config = useDiaryStore.getState().imageConfig;
+    const blob = await compressImage(file, config);
+    const seq = await this.fileSync.getNextImageSequence(date, config.nameFormat);
+    const filename = generateImageFilename(date, seq, config.nameFormat);
     await this.fileSync.saveImageToAssets(date, blob, filename);
     await this.fileSync.appendImageReference(date, filename);
   }

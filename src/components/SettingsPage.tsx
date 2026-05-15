@@ -101,13 +101,19 @@ export function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'failed'>('none');
-  
+  const [imageSaving, setImageSaving] = useState(false);
+
   // 远程API配置
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const apiUrl = useDiaryStore(state => state.apiUrl);
   const apiToken = useDiaryStore(state => state.apiToken);
   const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
+
+  // 图片压缩配置（本地编辑状态）
+  const imageConfigStore = useDiaryStore(state => state.imageConfig);
+  const setImageConfig = useDiaryStore(state => state.setImageConfig);
+  const [imageDraft, setImageDraft] = useState(imageConfigStore);
   
   const handleTestConnection = async () => {
     if (!apiUrl || !apiToken) {
@@ -145,6 +151,16 @@ export function SettingsPage() {
       alert('设置已保存');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageSave = async () => {
+    setImageSaving(true);
+    try {
+      setImageConfig(imageDraft);
+      alert('图片设置已保存');
+    } finally {
+      setImageSaving(false);
     }
   };
 
@@ -393,6 +409,88 @@ export function SettingsPage() {
           >
             {saving ? '保存中...' : '保存设置'}
           </button>
+        </CollapsibleSection>
+
+        {/* 图片上传设置 */}
+        <CollapsibleSection title="📷 图片压缩设置">
+          {/* 最大长边 */}
+          <div className="mb-4">
+            <label className="block text-xs text-gray-500 mb-2">最大长边 (px)</label>
+            <input
+              type="number"
+              min="800"
+              max="4000"
+              step="100"
+              value={imageDraft.maxLongSide}
+              onChange={(e) => setImageDraft({ ...imageDraft, maxLongSide: parseInt(e.target.value) || 2000 })}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* 最大文件大小 */}
+          <div className="mb-4">
+            <label className="block text-xs text-gray-500 mb-2">最大文件大小 (MB)</label>
+            <input
+              type="number"
+              min="0.5"
+              max="5"
+              step="0.5"
+              value={imageDraft.maxSizeMB}
+              onChange={(e) => setImageDraft({ ...imageDraft, maxSizeMB: parseFloat(e.target.value) || 2 })}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* JPEG质量 */}
+          <div className="mb-4">
+            <label className="block text-xs text-gray-500 mb-2">JPEG 质量 (0.3-1.0)</label>
+            <input
+              type="number"
+              min="0.3"
+              max="1.0"
+              step="0.05"
+              value={imageDraft.quality}
+              onChange={(e) => setImageDraft({ ...imageDraft, quality: parseFloat(e.target.value) || 0.7 })}
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {/* 文件名格式 */}
+          <div className="mb-4">
+            <label className="block text-xs text-gray-500 mb-2">文件名格式</label>
+            <input
+              type="text"
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-mono"
+              placeholder="Image-{date}-{seq}"
+              value={imageDraft.nameFormat}
+              onChange={(e) => setImageDraft({ ...imageDraft, nameFormat: e.target.value })}
+            />
+            <div className="text-xs text-gray-400 mt-1">
+              可用占位符: <code className="bg-gray-100 px-1 rounded">{'{date}'}</code> = YYYYMMDD, <code className="bg-gray-100 px-1 rounded">{'{seq}'}</code> = 序号
+            </div>
+            <div className="text-xs text-gray-400">
+              预览: <span className="text-indigo-600 font-mono">
+                {imageDraft.nameFormat.replace('{date}', '20260515').replace('{seq}', '001')}.jpg
+              </span>
+            </div>
+          </div>
+
+          {/* 操作按钮 */}
+          <div className="flex gap-2">
+            <button
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+              onClick={handleImageSave}
+              disabled={imageSaving}
+            >
+              {imageSaving ? '保存中...' : '保存设置'}
+            </button>
+            <button
+              className="px-4 py-2 text-sm text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100"
+              onClick={() => setImageDraft({ maxLongSide: 2000, maxSizeMB: 2, quality: 0.7, nameFormat: 'Image-{date}-{seq}' })}
+            >
+              恢复默认
+            </button>
+          </div>
         </CollapsibleSection>
 
         {/* 关于 */}
