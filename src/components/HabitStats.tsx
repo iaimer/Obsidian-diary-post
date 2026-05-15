@@ -6,7 +6,8 @@ import {
   getTrendData,
   getHeatmapData,
   calculateSummary,
-  DailyHabitStats
+  DailyHabitStats,
+  HABIT_GOALS
 } from '../services/habitStats';
 import { useDiaryStore } from '../stores/diaryStore';
 
@@ -108,6 +109,8 @@ const HabitStats = forwardRef<HabitStatsRef, HabitStatsProps>(({ days }, ref) =>
         avgSteps={summary.avgSteps}
         waterGoalRate={summary.waterGoalRate}
         stepsGoalRate={summary.stepsGoalRate}
+        waterGoal={HABIT_GOALS.water}
+        stepsGoal={HABIT_GOALS.steps}
       />
 
       {/* 标签切换 */}

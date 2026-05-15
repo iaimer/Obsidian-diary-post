@@ -26,11 +26,11 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
 
     return (
       <div className="text-sm text-gray-700">
-        <div className="flex items-start gap-2 pl-2 border-l-2 border-green-200">
+        <div className="flex items-start gap-2">
           {time && (
             <span className="text-green-600 font-medium shrink-0">{time}</span>
           )}
-          <span className="flex-1 italic" dangerouslySetInnerHTML={{ __html: textContent }} />
+          <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
