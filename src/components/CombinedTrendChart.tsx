@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, Legend, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Legend, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
 
 interface CombinedTrendChartProps {
   waterData: { date: string; value: number }[];
@@ -7,6 +7,8 @@ interface CombinedTrendChartProps {
   avgSteps?: number;
   waterGoalRate?: number;
   stepsGoalRate?: number;
+  waterGoal?: number;
+  stepsGoal?: number;
 }
 
 export default function CombinedTrendChart({
@@ -15,7 +17,9 @@ export default function CombinedTrendChart({
   avgWater = 0,
   avgSteps = 0,
   waterGoalRate = 0,
-  stepsGoalRate = 0
+  stepsGoalRate = 0,
+  waterGoal = 1500,
+  stepsGoal = 6000
 }: CombinedTrendChartProps) {
   // 合并数据
   const combinedData = waterData.map((item, idx) => ({
@@ -34,7 +38,7 @@ export default function CombinedTrendChart({
 
       <div className="h-40 -mx-2 mb-3">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={combinedData}>
+          <BarChart data={combinedData}>
             <XAxis
               dataKey="date"
               tick={{ fontSize: 10, fill: '#6b7280' }}
@@ -71,27 +75,37 @@ export default function CombinedTrendChart({
               wrapperStyle={{ fontSize: 12, paddingTop: 5 }}
               formatter={(value) => value === 'water' ? '💧 饮水(mL)' : '🏃 运动(步)'}
             />
-            {/* 饮水曲线 - 使用左边Y轴 */}
-            <Line
+            {/* 饮水柱状 - 使用左边Y轴 */}
+            <Bar
               yAxisId="left"
-              type="monotone"
               dataKey="water"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              dot={{ fill: '#3b82f6', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#3b82f6' }}
+              fill="#3b82f6"
+              radius={[4, 4, 0, 0]}
             />
-            {/* 运动曲线 - 使用右边Y轴 */}
-            <Line
+            {/* 运动柱状 - 使用右边Y轴 */}
+            <Bar
               yAxisId="right"
-              type="monotone"
               dataKey="steps"
-              stroke="#f97316"
-              strokeWidth={2}
-              dot={{ fill: '#f97316', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#f97316' }}
+              fill="#f97316"
+              radius={[4, 4, 0, 0]}
             />
-          </LineChart>
+            {/* 饮水达标线 */}
+            <ReferenceLine
+              yAxisId="left"
+              y={waterGoal}
+              stroke="#3b82f6"
+              strokeDasharray="4 4"
+              strokeOpacity={0.7}
+            />
+            {/* 运动达标线 */}
+            <ReferenceLine
+              yAxisId="right"
+              y={stepsGoal}
+              stroke="#f97316"
+              strokeDasharray="4 4"
+              strokeOpacity={0.7}
+            />
+          </BarChart>
         </ResponsiveContainer>
       </div>
 
