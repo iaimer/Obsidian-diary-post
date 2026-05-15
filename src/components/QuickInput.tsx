@@ -48,10 +48,22 @@ export default function QuickInput() {
   
   // 批量设置标签时的标志
   const isBatchSettingTags = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
+
+  const autoResize = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+  };
+
+  useEffect(() => {
+    autoResize();
+  }, [content]);
 
   // 当选择新领域时，清空能力标签（批量设置时跳过）
   useEffect(() => {
@@ -247,7 +259,8 @@ export default function QuickInput() {
       ) : (
         <>
           <textarea
-            className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            ref={textareaRef}
+            className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent overflow-hidden"
             placeholder="输入随手记内容..."
             rows={2}
             value={content}
