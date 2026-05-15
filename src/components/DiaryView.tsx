@@ -5,6 +5,8 @@ import { getDataService, getFileSyncService } from '../services/dataService';
 import { getHistoryService } from '../services/historyService';
 import { getCachedDiary } from '../db';
 import { getDateString } from '../utils/date';
+import ImageUploadButton from './ImageUploadButton';
+import { ImageModal } from './ImageModal';
 
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string): React.ReactNode {
@@ -114,6 +116,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [diaryExists, setDiaryExists] = useState<boolean | null>(null);
   const [creating, setCreating] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -162,31 +166,53 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       setCurrentDiary(entry);
       if (entry.sections.habits) parseHabitData(entry.sections.habits);
       
-      // 加载图片（仅本地模式）
-      if (!remoteMode && entry.sections.images && entry.sections.images.length > 0) {
-        const fileSync = getFileSyncService();
-        const historyService = getHistoryService();
-        const vaultHandle = fileSync.getVaultHandle();
-        if (vaultHandle) {
-          historyService.setVaultHandle(vaultHandle);
-          
-          const year = new Date().getFullYear();
-          const month = new Date().getMonth() + 1;
-          const urls: string[] = [];
-          
+      // 加载图片
+      if (entry.sections.images && entry.sections.images.length > 0) {
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        const urls: string[] = [];
+
+        if (remoteMode) {
+          const { apiUrl, apiToken } = useDiaryStore.getState();
           for (const line of entry.sections.images) {
             if (line.includes('![[')) {
               const match = line.match(/!\[\[(.*?)\]\]/);
               if (match) {
                 const imageName = match[1];
-                const url = await historyService.loadImage(imageName, year, month);
-                if (url) urls.push(url);
+                try {
+                  const response = await fetch(
+                    `${apiUrl}/api/v1/diary/image/${year}/${imageName}?month=${month}`,
+                    { headers: { Authorization: `Token ${apiToken}` } }
+                  );
+                  if (response.ok) {
+                    const data = await response.json();
+                    if (data.data) urls.push(data.data);
+                  }
+                } catch { /* skip failed images */ }
               }
             }
           }
-          
-          setImageUrls(urls);
+        } else {
+          const fileSync = getFileSyncService();
+          const historyService = getHistoryService();
+          const vaultHandle = fileSync.getVaultHandle();
+          if (vaultHandle) {
+            historyService.setVaultHandle(vaultHandle);
+
+            for (const line of entry.sections.images) {
+              if (line.includes('![[')) {
+                const match = line.match(/!\[\[(.*?)\]\]/);
+                if (match) {
+                  const imageName = match[1];
+                  const url = await historyService.loadImage(imageName, year, month);
+                  if (url) urls.push(url);
+                }
+              }
+            }
+          }
         }
+
+        setImageUrls(urls);
       }
     } catch (err) {
       setError((err as Error).message);
@@ -290,6 +316,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   ) || [];
 
   return (
+    <>
     <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
       <div className="px-4 py-3 border-b">
         <h2 className="text-sm font-medium text-gray-500">📝 今日日记</h2>
@@ -348,22 +375,37 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 影像记录 */}
-      {images.length > 0 && (
-        <div className="px-4 py-3">
-          <h3 className="text-xs font-medium text-gray-400 mb-2">📸 影像记录 ({images.length}张)</h3>
+      <div className="px-4 py-3">
+        <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center">
+          <span>📸 影像记录 ({images.length}张)</span>
+          <ImageUploadButton onImageUploaded={loadDiary} />
+        </h3>
+        {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             {imageUrls.map((url, i) => (
-              <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+              <button
+                key={i}
+                onClick={() => {
+                  setCurrentImageIndex(i);
+                  setShowImageModal(true);
+                }}
+                className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100"
+              >
                 <img
                   src={url}
                   alt={`Image ${i + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
-              </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+              </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 空状态 */}
       {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
@@ -374,6 +416,14 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         </div>
       )}
     </section>
+    {showImageModal && imageUrls.length > 0 && (
+      <ImageModal
+        images={imageUrls}
+        currentIndex={currentImageIndex}
+        onClose={() => setShowImageModal(false)}
+      />
+    )}
+    </>
   );
 });
 
