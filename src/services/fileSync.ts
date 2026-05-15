@@ -345,6 +345,75 @@ export class FileSyncService {
     await cacheDiary(entry);
   }
 
+  // 获取 assets 目录句柄（自动创建不存在的目录）
+  async getAssetsDirectoryHandle(date: Date): Promise<FileSystemDirectoryHandle> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
+
+    const parts = ['workspace', '生活', '日记', year.toString(), monthDirName];
+
+    let handle = this.vaultHandle;
+    for (const part of parts) {
+      try {
+        handle = await handle.getDirectoryHandle(part);
+      } catch {
+        handle = await handle.getDirectoryHandle(part, { create: true });
+      }
+    }
+
+    try {
+      handle = await handle.getDirectoryHandle('assets');
+    } catch {
+      handle = await handle.getDirectoryHandle('assets', { create: true });
+    }
+
+    return handle;
+  }
+
+  // 获取下一个可用图片序号
+  async getNextImageSequence(date: Date): Promise<number> {
+    const dayStr = date.getFullYear().toString() +
+      (date.getMonth() + 1).toString().padStart(2, '0') +
+      date.getDate().toString().padStart(2, '0');
+    const prefix = `Image-${dayStr}-`;
+
+    const assetsHandle = await this.getAssetsDirectoryHandle(date);
+
+    let maxSeq = 0;
+    for await (const [name] of assetsHandle.entries()) {
+      if (name.startsWith(prefix) && name.endsWith('.jpg')) {
+        const seqStr = name.slice(prefix.length, -4);
+        const seq = parseInt(seqStr);
+        if (!isNaN(seq) && seq > maxSeq) {
+          maxSeq = seq;
+        }
+      }
+    }
+
+    return maxSeq + 1;
+  }
+
+  // 保存图片到 assets 目录
+  async saveImageToAssets(date: Date, blob: Blob, filename: string): Promise<void> {
+    const assetsHandle = await this.getAssetsDirectoryHandle(date);
+    const fileHandle = await assetsHandle.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }
+
+  // 追加图片引用到日记影像记录区块
+  async appendImageReference(date: Date, filename: string): Promise<void> {
+    await this.appendToSection(date, DiarySection.IMAGES, `![[${filename}]]`);
+  }
+
   // 读取文件（公开方法，用于统计页面读取历史数据）
   async readFile(date: Date): Promise<string> {
     if (!this.vaultHandle) {

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary } from '../services/vault.js';
-import { readFileSync, existsSync } from 'fs';
+import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary, getAssetsDir } from '../services/vault.js';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import config from '../config/index.js';
 import { parseDiary, appendToSection } from '../services/markdown.js';
@@ -170,6 +170,62 @@ router.post('/reflection', async (req, res) => {
     writeDiary(date, updated);
     
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// 上传图片（远程模式）：接收 base64 压缩图片，保存到 assets 并追加 WikiLink
+router.post('/image/upload', async (req, res) => {
+  try {
+    const { date: dateStr, imageData } = req.body;
+
+    const [year, monthNum, day] = dateStr.split('-').map(Number);
+    const uploadDate = new Date(year, monthNum - 1, day);
+
+    const assetsDir = getAssetsDir(uploadDate);
+    if (!existsSync(assetsDir)) {
+      mkdirSync(assetsDir, { recursive: true });
+    }
+
+    // 扫描已有文件确定序号
+    const dayPrefix = `${year}${monthNum.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+    const prefix = `Image-${dayPrefix}-`;
+
+    let maxSeq = 0;
+    if (existsSync(assetsDir)) {
+      const files = readdirSync(assetsDir);
+      for (const file of files) {
+        if (file.startsWith(prefix) && file.endsWith('.jpg')) {
+          const seqStr = file.slice(prefix.length, -4);
+          const seq = parseInt(seqStr);
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      }
+    }
+
+    const seq = (maxSeq + 1).toString().padStart(3, '0');
+    const filename = `${prefix}${seq}.jpg`;
+
+    // 解码 base64
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // 写入图片文件
+    writeFileSync(join(assetsDir, filename), buffer);
+
+    // 追加 WikiLink 到日记
+    let originalContent: string;
+    try {
+      originalContent = readDiary(uploadDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    const updated = appendToSection(originalContent, 'images', `![[${filename}]]`);
+    writeDiary(uploadDate, updated);
+
+    res.json({ success: true, filename });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

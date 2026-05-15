@@ -70,3 +70,18 @@ export function existsDiary(date: Date): boolean {
   const path = getDiaryPath(date);
   return existsSync(path);
 }
+
+export function getAssetsDir(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  
+  return join(
+    config.vaultPath,
+    'workspace',
+    '生活',
+    '日记',
+    year.toString(),
+    `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`,
+    'assets'
+  );
+}

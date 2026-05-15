@@ -1,6 +1,7 @@
 import { DiaryEntry, HabitData } from '../types';
 import { getFileSyncService } from './fileSync';
 import { useDiaryStore } from '../stores/diaryStore';
+import { compressImage, blobToBase64, generateImageFilename } from './imageService';
 
 export { getFileSyncService };
 
@@ -32,6 +33,9 @@ export interface DataService {
   
   // 检查是否已连接
   isConnected(): boolean;
+
+  // 上传图片（压缩后保存到 vault assets 并追加引用）
+  uploadImage(file: File, date: Date): Promise<void>;
 }
 
 // 本地数据服务（File System Access API）
@@ -68,6 +72,14 @@ export class LocalDataService implements DataService {
   
   async updateHabits(habitData: HabitData): Promise<void> {
     await this.fileSync.updateHabits(habitData);
+  }
+
+  async uploadImage(file: File, date: Date): Promise<void> {
+    const blob = await compressImage(file);
+    const seq = await this.fileSync.getNextImageSequence(date);
+    const filename = generateImageFilename(date, seq);
+    await this.fileSync.saveImageToAssets(date, blob, filename);
+    await this.fileSync.appendImageReference(date, filename);
   }
   
   isConnected(): boolean {
@@ -156,6 +168,17 @@ export class RemoteDataService implements DataService {
     await this.fetchAPI('/api/v1/diary/habit', {
       method: 'POST',
       body: JSON.stringify(habitData)
+    });
+  }
+
+  async uploadImage(file: File, date: Date): Promise<void> {
+    const blob = await compressImage(file);
+    const base64 = await blobToBase64(blob);
+    
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/image/upload', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, imageData: base64 })
     });
   }
   

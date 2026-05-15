@@ -106,7 +106,6 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
           const meta = getDiaryMeta(date);
           const hasDiary = meta?.exists || false;
           const imageName = meta?.firstImage;
-          const quickNotesCount = meta?.quickNotesCount || 0;
 
           return (
             <div key={index} className="aspect-square">
@@ -115,7 +114,6 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
                 imageName={imageName}
                 isToday={isToday(date)}
                 hasDiary={hasDiary}
-                quickNotesCount={quickNotesCount}
                 onClick={() => onDateSelect?.(date)}
               />
             </div>

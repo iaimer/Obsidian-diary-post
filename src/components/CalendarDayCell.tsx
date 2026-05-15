@@ -7,7 +7,6 @@ interface CalendarDayCellProps {
   imageName?: string;
   isToday: boolean;
   hasDiary: boolean;
-  quickNotesCount: number;
   onClick: () => void;
 }
 
@@ -35,7 +34,6 @@ export function CalendarDayCell({
   imageName,
   isToday,
   hasDiary,
-  quickNotesCount,
   onClick
 }: CalendarDayCellProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -136,24 +134,24 @@ export function CalendarDayCell({
       
       {/* 日期数字 */}
       <span className={`text-sm relative z-10 transition-all
-        ${isToday 
-          ? 'font-bold' 
-          : imageUrl 
-            ? 'text-white font-semibold drop-shadow-lg' 
-            : loading
-              ? 'text-gray-400'
-              : error
-                ? 'text-red-400'
-                : ''
+        ${isToday && imageUrl
+          ? 'text-white font-bold drop-shadow-lg'
+          : isToday 
+            ? 'font-bold' 
+            : imageUrl 
+              ? 'text-white font-semibold drop-shadow-lg' 
+              : loading
+                ? 'text-gray-400'
+                : error
+                  ? 'text-red-400'
+                  : ''
         }`}>
         {date.getDate()}
       </span>
       
-      {/* 随手记数量 */}
-      {!imageUrl && !loading && hasDiary && quickNotesCount > 0 && !isToday && (
-        <span className="text-xs text-gray-500 absolute bottom-1 bg-white/80 px-1 rounded">
-          {quickNotesCount}条
-        </span>
+      {/* 有记录指示点 */}
+      {!imageUrl && !loading && hasDiary && (
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-0.5" />
       )}
     </button>
   );
