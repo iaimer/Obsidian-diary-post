@@ -142,7 +142,7 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
 
     setIsSubmitting(true);
     try {
-      await dataService.appendReflection(finalContent.trim());
+      await dataService.appendReflection(finalContent.trim(), getSelectedTags());
 
       setContent('');
       setSelectedDomain(null);
