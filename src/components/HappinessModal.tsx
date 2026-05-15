@@ -142,7 +142,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
 
     setIsSubmitting(true);
     try {
-      await dataService.appendHappiness(finalContent.trim());
+      await dataService.appendHappiness(finalContent.trim(), getSelectedTags());
 
       setContent('');
       setSelectedDomain(null);

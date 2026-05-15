@@ -499,7 +499,7 @@ export function SettingsPage() {
           <div className="text-xs text-gray-600">
             <p>日记APP v0.1.0</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
-            <p className="mt-2 text-gray-400">荔枝喵说由 hermes agent 定时生成</p>
+            <p className="mt-2 text-gray-400">荔枝喵说 APP 内 AI 生成（待实现）</p>
           </div>
         </section>
       </main>

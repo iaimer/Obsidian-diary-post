@@ -277,14 +277,16 @@ export class FileSyncService {
   }
 
   // 追加觉察
-  async appendReflection(content: string): Promise<void> {
-    const formatted = formatReflection(content);
+  async appendReflection(content: string, tags: string[] = []): Promise<void> {
+    const time = getTimestamp();
+    const formatted = formatReflection(time, content, tags);
     await this.appendToSection(new Date(), DiarySection.REFLECTION, formatted);
   }
 
   // 追加小确幸
-  async appendHappiness(content: string): Promise<void> {
-    const formatted = formatHappiness(content);
+  async appendHappiness(content: string, tags: string[] = []): Promise<void> {
+    const time = getTimestamp();
+    const formatted = formatHappiness(time, content, tags);
     await this.appendToSection(new Date(), DiarySection.HAPPINESS, formatted);
   }
 

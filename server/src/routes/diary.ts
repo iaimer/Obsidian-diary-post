@@ -135,8 +135,14 @@ router.post('/habit', async (req, res) => {
 
 router.post('/happiness', async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, tags } = req.body;
     const date = new Date();
+    const time = date.toLocaleTimeString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
     
     let originalContent: string;
     try {
@@ -145,7 +151,8 @@ router.post('/happiness', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
-    const updated = appendToSection(originalContent, 'happiness', `> ${content}`);
+    const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
+    const updated = appendToSection(originalContent, 'happiness', `> **${time}** ${content}${tagStr}`);
     writeDiary(date, updated);
     
     res.json({ success: true });
@@ -156,8 +163,14 @@ router.post('/happiness', async (req, res) => {
 
 router.post('/reflection', async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, tags } = req.body;
     const date = new Date();
+    const time = date.toLocaleTimeString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
     
     let originalContent: string;
     try {
@@ -166,7 +179,8 @@ router.post('/reflection', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
-    const updated = appendToSection(originalContent, 'reflection', `- ${content}`);
+    const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
+    const updated = appendToSection(originalContent, 'reflection', `- **${time}** ${content}${tagStr}`);
     writeDiary(date, updated);
     
     res.json({ success: true });

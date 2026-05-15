@@ -10,17 +10,37 @@ interface DiaryDetailProps {
   onClose?: () => void;
 }
 
-function renderMarkdown(line: string): React.ReactNode {
+function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
   if (line.includes('<!--')) return null;
 
   if (line.startsWith('> ') && !line.startsWith('> [!')) {
     let content = line.slice(2);
-    content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const timeMatch = content.match(/\*\*(\d{2}:\d{2})\*\*/);
+    const time = timeMatch ? timeMatch[1] : null;
+    let textContent = timeMatch ? content.replace(/\*\*\d{2}:\d{2}\*\*/, '').trim() : content;
+
+    const tags = textContent.match(/#\S+/g) || [];
+    textContent = textContent.replace(/#\S+/g, '').trim();
+    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
     return (
-      <span 
-        className="text-gray-600 italic pl-2 border-l-2 border-green-200" 
-        dangerouslySetInnerHTML={{ __html: content }} 
-      />
+      <div className="text-sm text-gray-700">
+        <div className="flex items-start gap-2 pl-2 border-l-2 border-green-200">
+          {time && (
+            <span className="text-green-600 font-medium shrink-0">{time}</span>
+          )}
+          <span className="flex-1 italic" dangerouslySetInnerHTML={{ __html: textContent }} />
+        </div>
+        {tags.length > 0 && (
+          <div className="flex gap-1 mt-1 ml-8">
+            {tags.map(tag => (
+              <span key={tag} className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -34,18 +54,24 @@ function renderMarkdown(line: string): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
+    const isReflection = section === 'reflection';
+    const timeColor = isReflection ? 'text-yellow-600' : 'text-indigo-600';
+    const tagClass = isReflection
+      ? 'text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded'
+      : 'text-xs text-gray-400';
+
     return (
       <div className="text-sm text-gray-700">
         <div className="flex items-start gap-2">
           {time && (
-            <span className="text-indigo-600 font-medium shrink-0">{time}</span>
+            <span className={`font-medium shrink-0 ${timeColor}`}>{time}</span>
           )}
           <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
             {tags.map(tag => (
-              <span key={tag} className="text-xs text-gray-400">
+              <span key={tag} className={tagClass}>
                 {tag}
               </span>
             ))}
@@ -234,7 +260,7 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
               <h4 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h4>
               <div className="space-y-1">
                 {reflection.map((line, i) => (
-                  <div key={i}>{renderMarkdown(line)}</div>
+                  <div key={i}>{renderMarkdown(line, 'reflection')}</div>
                 ))}
               </div>
             </div>

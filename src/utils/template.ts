@@ -37,14 +37,16 @@ export function formatQuickNote(time: string, content: string, tags: string[]): 
   return `- **${time}** ${content}${tagStr}`;
 }
 
-// 格式化小确幸
-export function formatHappiness(content: string): string {
-  return `> ${content}`;
+// 格式化觉察
+export function formatReflection(time: string, content: string, tags: string[] = []): string {
+  const tagStr = tags.length > 0 ? ' ' + tags.map(t => `#${t}`).join(' ') : '';
+  return `- **${time}** ${content}${tagStr}`;
 }
 
-// 格式化觉察
-export function formatReflection(content: string): string {
-  return `- ${content}`;
+// 格式化小确幸
+export function formatHappiness(time: string, content: string, tags: string[] = []): string {
+  const tagStr = tags.length > 0 ? ' ' + tags.map(t => `#${t}`).join(' ') : '';
+  return `> **${time}** ${content}${tagStr}`;
 }
 
 // 格式化习惯打卡

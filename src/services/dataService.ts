@@ -23,10 +23,10 @@ export interface DataService {
   appendQuickNote(content: string, tags: string[]): Promise<void>;
   
   // 追加小确幸
-  appendHappiness(content: string): Promise<void>;
+  appendHappiness(content: string, tags?: string[]): Promise<void>;
   
   // 追加觉察
-  appendReflection(content: string): Promise<void>;
+  appendReflection(content: string, tags?: string[]): Promise<void>;
   
   // 更新习惯
   updateHabits(habitData: HabitData): Promise<void>;
@@ -62,12 +62,12 @@ export class LocalDataService implements DataService {
     await this.fileSync.appendQuickNote(content, tags);
   }
   
-  async appendHappiness(content: string): Promise<void> {
-    await this.fileSync.appendHappiness(content);
+  async appendHappiness(content: string, tags: string[] = []): Promise<void> {
+    await this.fileSync.appendHappiness(content, tags);
   }
   
-  async appendReflection(content: string): Promise<void> {
-    await this.fileSync.appendReflection(content);
+  async appendReflection(content: string, tags: string[] = []): Promise<void> {
+    await this.fileSync.appendReflection(content, tags);
   }
   
   async updateHabits(habitData: HabitData): Promise<void> {
@@ -151,17 +151,17 @@ export class RemoteDataService implements DataService {
     });
   }
   
-  async appendHappiness(content: string): Promise<void> {
+  async appendHappiness(content: string, tags: string[] = []): Promise<void> {
     await this.fetchAPI('/api/v1/diary/happiness', {
       method: 'POST',
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content, tags })
     });
   }
   
-  async appendReflection(content: string): Promise<void> {
+  async appendReflection(content: string, tags: string[] = []): Promise<void> {
     await this.fetchAPI('/api/v1/diary/reflection', {
       method: 'POST',
-      body: JSON.stringify({ content })
+      body: JSON.stringify({ content, tags })
     });
   }
   
