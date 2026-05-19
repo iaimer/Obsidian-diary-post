@@ -48,11 +48,11 @@ pm2 startup             # 开机自启
 
 - **MacBook Air**（开发调试）- Tailscale: `100.67.123.39`
 - **Mac mini**（生产部署）- Tailscale: `100.127.58.104`
-- API 端口：`3001`
+- API 端口：`4001`
 - API Token：`diary-app-secret-token-2026`
 - API 地址：
-  - MacBook: `http://100.67.123.39:3001`
-  - Mac mini: `http://100.127.58.104:3001`
+  - MacBook: `http://100.67.123.39:4001`
+  - Mac mini: `http://100.127.58.104:4001`
 
 ---
 

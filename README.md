@@ -72,7 +72,7 @@ Mac mini: 运行 API Server
 # 安装依赖
 npm install
 
-# 启动开发服务器（端口 3000）
+# 启动开发服务器（端口 4000）
 npm run dev
 
 # 构建生产版本
@@ -159,7 +159,7 @@ tags:
 
 ```typescript
 // 设置页面配置
-API 地址: http://macmini.local:3001
+API 地址: http://macmini.local:4001
 Token: your-secret-token
 ```
 

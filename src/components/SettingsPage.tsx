@@ -214,7 +214,7 @@ export function SettingsPage() {
                 <input
                   type="text"
                   className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                  placeholder="http://100.127.58.104:3001"
+                  placeholder="http://100.127.58.104:4001"
                   value={apiUrl}
                   onChange={(e) => {
                     setApiConfig(e.target.value, apiToken);
@@ -222,7 +222,7 @@ export function SettingsPage() {
                   }}
                 />
                 <div className="text-xs text-gray-400 mt-1">
-                  Tailscale地址：http://100.67.123.39:3001（MacBook）
+                  Tailscale地址：http://100.67.123.39:4001（MacBook）
                 </div>
               </div>
 
