@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from './stores/diaryStore';
 import { getFileSyncService } from './services/fileSync';
+import { resetDataService } from './services/dataService';
 import QuickInput from './components/QuickInput';
 import { ReflectionModal } from './components/ReflectionModal';
 import { HappinessModal } from './components/HappinessModal';
@@ -13,17 +14,52 @@ import { PullToRefresh } from './components/PullToRefresh';
 
 type PageView = 'home' | 'history' | 'stats' | 'settings';
 
+// API 默认配置
+const DEFAULT_API_TOKEN = 'diary-app-secret-token-2026';
+const PRODUCTION_API_URL = 'https://obsidian.femkits.org';
+const DEV_API_URL = 'http://localhost:4001';
+
 function App() {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const wasConnected = useDiaryStore(state => state.wasConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const setVaultConnected = useDiaryStore(state => state.setVaultConnected);
+  const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
+  const setApiConfig = useDiaryStore(state => state.setApiConfig);
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
+
+  // 初始化：确保 API 配置有效
+  useEffect(() => {
+    const state = useDiaryStore.getState();
+    const { apiToken, apiUrl, remoteMode } = state;
+
+    // 检查 apiUrl 是否有效（非空且不是错误值）
+    const isValidUrl = apiUrl && apiUrl.length > 0 && !apiUrl.includes('//');
+
+    if (!apiToken || !isValidUrl) {
+      const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
+      const defaultUrl = isProduction ? PRODUCTION_API_URL : DEV_API_URL;
+      const newUrl = isValidUrl ? apiUrl : defaultUrl;
+      setApiConfig(newUrl, DEFAULT_API_TOKEN);
+
+      // 生产环境自动启用远程模式
+      if (isProduction && !remoteMode) {
+        setRemoteMode(true);
+        resetDataService();
+      }
+    }
+
+    // 如果已启用远程模式但没有有效的 API 配置，禁用远程模式
+    if (remoteMode && !isValidUrl) {
+      setRemoteMode(false);
+      resetDataService();
+    }
+  }, []);
 
   const renderBottomNav = () => {
     const navItems: { label: string; view: PageView }[] = [

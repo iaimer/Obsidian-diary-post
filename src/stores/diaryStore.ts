@@ -55,6 +55,19 @@ interface DiaryState {
   triggerRefresh: () => void; // 触发刷新
 }
 
+// API 默认配置
+const DEFAULT_API_TOKEN = 'diary-app-secret-token-2026';
+
+// 根据环境获取默认 API 地址
+function getDefaultApiUrl(): string {
+  // 生产环境（非 localhost）使用远程 API（不包含 /api/v1）
+  if (typeof window !== 'undefined' && !window.location.hostname.match(/localhost|127\.0\.0\.1/)) {
+    return 'https://obsidian.femkits.org';
+  }
+  // 开发环境使用本地 API
+  return 'http://localhost:4001';
+}
+
 const defaultHabitData: HabitData = {
   water: 0,
   steps: 0,
@@ -69,8 +82,8 @@ export const useDiaryStore = create<DiaryState>()(
       vaultConnected: false,
       wasConnected: false,
       remoteMode: false,
-      apiUrl: '',
-      apiToken: '',
+      apiUrl: getDefaultApiUrl(),
+      apiToken: DEFAULT_API_TOKEN,
       imageConfig: defaultImageConfig,
       currentDiary: null,
       habitData: defaultHabitData,
