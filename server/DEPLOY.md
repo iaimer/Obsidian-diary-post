@@ -44,7 +44,7 @@ pm2 status
 
 ```bash
 # 测试 Health endpoint
-curl http://localhost:3001/health
+curl http://localhost:4001/health
 
 # 查看日志
 pm2 logs diary-api
@@ -90,7 +90,7 @@ pm2 save
 
 日志格式：
 ```
-2026-05-12 10:29:58 +08:00: Diary API Server running on port 3001
+2026-05-12 10:29:58 +08:00: Diary API Server running on port 4001
 ```
 
 ## 更新部署
@@ -117,10 +117,10 @@ pm2 monit
 
 ```bash
 # Health check
-curl http://localhost:3001/health
+curl http://localhost:4001/health
 
 # 日记接口测试
-curl http://localhost:3001/api/v1/diary/2026-05-12 \
+curl http://localhost:4001/api/v1/diary/2026-05-12 \
   -H "Authorization: Token diary-app-secret-token-2026"
 ```
 
@@ -140,7 +140,7 @@ pm2 logs diary-api --err
 
 ```bash
 # 检查端口
-lsof -i :3001
+lsof -i :4001
 
 # 停止占用进程
 pm2 stop diary-api
@@ -153,12 +153,12 @@ pm2 stop diary-api
 ## 手机端配置
 
 手机浏览器访问：
-- PWA：`http://100.127.58.104:3000`（Mac mini Tailscale）
-- API：`http://100.127.58.104:3001`
+- PWA：`http://100.127.58.104:4000`（Mac mini Tailscale）
+- API：`http://100.127.58.104:4001`
 
 设置页面：
 - 启用远程模式
-- API地址：`http://100.127.58.104:3001`
+- API地址：`http://100.127.58.104:4001`
 - Token：`diary-app-secret-token-2026`
 
 ## 配置文件
@@ -168,7 +168,7 @@ pm2 stop diary-api
 {
   "vaultPath": "/Users/yezi/Obsidian Vault",
   "apiToken": "diary-app-secret-token-2026",
-  "port": 3001
+  "port": 4001
 }
 ```
 

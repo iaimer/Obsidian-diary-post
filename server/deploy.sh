@@ -47,7 +47,7 @@ pm2 save
 
 echo ""
 echo "=== 部署完成 ==="
-echo "API 地址: http://localhost:3001"
+echo "API 地址: http://localhost:4001"
 echo "查看日志: pm2 logs diary-api"
 echo "停止服务: pm2 stop diary-api"
 echo ""
