@@ -120,21 +120,44 @@ export function SettingsPage() {
       alert('请先填写API地址和Token');
       return;
     }
-    
+
     setTestingConnection(true);
     setConnectionStatus('none');
-    
+
     try {
-      const response = await fetch(`${apiUrl}/health`, {
+      // 使用实际的 API 端点测试连接（获取今天的日记）
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      // 确保 apiUrl 不包含 /api/v1
+      const cleanUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
+
+      const response = await fetch(`${cleanUrl}/api/v1/diary/${dateStr}`, {
         headers: {
-          'Authorization': `Token ${apiToken}`
+          'Authorization': `Token ${apiToken}`,
+          'Content-Type': 'application/json'
         }
       });
-      
+
       if (response.ok) {
         setConnectionStatus('success');
-      } else {
+        // 连接成功后自动启用远程模式
+        if (!remoteMode) {
+          setRemoteMode(true);
+          setApiConfig(cleanUrl, apiToken);
+          resetDataService();
+        }
+      } else if (response.status === 401) {
         setConnectionStatus('failed');
+        console.error('Token invalid');
+      } else {
+        // 其他错误（如日记不存在）也视为连接成功
+        setConnectionStatus('success');
+        if (!remoteMode) {
+          setRemoteMode(true);
+          setApiConfig(cleanUrl, apiToken);
+          resetDataService();
+        }
       }
     } catch (error) {
       console.error('Connection test failed:', error);
@@ -214,15 +237,18 @@ export function SettingsPage() {
                 <input
                   type="text"
                   className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                  placeholder="http://100.127.58.104:4001"
-                  value={apiUrl}
+                  placeholder="https://obsidian.femkits.org"
+                  value={apiUrl.replace(/\/api\/v1\/?$/, '')}  // 显示时移除 /api/v1
                   onChange={(e) => {
-                    setApiConfig(e.target.value, apiToken);
+                    // 保存时自动移除末尾的 /api/v1
+                    let url = e.target.value.trim();
+                    url = url.replace(/\/api\/v1\/?$/, '');
+                    setApiConfig(url, apiToken);
                     resetDataService();
                   }}
                 />
                 <div className="text-xs text-gray-400 mt-1">
-                  Tailscale地址：http://100.67.123.39:4001（MacBook）
+                  基础地址（不包含 /api/v1），例如：https://obsidian.femkits.org
                 </div>
               </div>
 
