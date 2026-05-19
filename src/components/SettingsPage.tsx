@@ -99,6 +99,7 @@ export function SettingsPage() {
   const [aiConfig, setAIConfig] = useState<AIConfig>(getSavedAIConfig());
   const [saving, setSaving] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiToken, setShowApiToken] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'failed'>('none');
   const [imageSaving, setImageSaving] = useState(false);
@@ -255,16 +256,24 @@ export function SettingsPage() {
               {/* API Token */}
               <div className="mb-4">
                 <label className="block text-xs text-gray-500 mb-2">API Token</label>
-                <input
-                  type="password"
-                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                  placeholder="输入Token..."
-                  value={apiToken}
-                  onChange={(e) => {
-                    setApiConfig(apiUrl, e.target.value);
-                    resetDataService();
-                  }}
-                />
+                <div className="flex gap-2">
+                  <input
+                    type={showApiToken ? 'text' : 'password'}
+                    className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    placeholder="输入Token..."
+                    value={apiToken}
+                    onChange={(e) => {
+                      setApiConfig(apiUrl, e.target.value);
+                      resetDataService();
+                    }}
+                  />
+                  <button
+                    className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                    onClick={() => setShowApiToken(!showApiToken)}
+                  >
+                    {showApiToken ? '隐藏' : '显示'}
+                  </button>
+                </div>
               </div>
 
               {/* 连接状态提示 */}
