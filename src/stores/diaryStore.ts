@@ -68,6 +68,15 @@ function getDefaultApiUrl(): string {
   return 'http://localhost:4001';
 }
 
+// 根据环境获取默认远程模式
+function getDefaultRemoteMode(): boolean {
+  // 生产环境默认启用远程模式
+  if (typeof window !== 'undefined' && !window.location.hostname.match(/localhost|127\.0\.0\.1/)) {
+    return true;
+  }
+  return false;
+}
+
 const defaultHabitData: HabitData = {
   water: 0,
   steps: 0,
@@ -81,7 +90,7 @@ export const useDiaryStore = create<DiaryState>()(
     (set) => ({
       vaultConnected: false,
       wasConnected: false,
-      remoteMode: false,
+      remoteMode: getDefaultRemoteMode(),
       apiUrl: getDefaultApiUrl(),
       apiToken: DEFAULT_API_TOKEN,
       imageConfig: defaultImageConfig,

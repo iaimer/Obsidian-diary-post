@@ -33,31 +33,26 @@ function App() {
   const [connecting, setConnecting] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
 
-  // 初始化：确保 API 配置有效
+  // 初始化：远程环境自动启用远程模式
   useEffect(() => {
+    const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
     const state = useDiaryStore.getState();
-    const { apiToken, apiUrl, remoteMode } = state;
+    const { apiToken, apiUrl } = state;
 
-    // 检查 apiUrl 是否有效（非空且不是错误值）
-    const isValidUrl = apiUrl && apiUrl.length > 0 && !apiUrl.includes('//');
+    // 远程环境：强制启用远程模式并配置 API
+    if (isProduction) {
+      const cleanUrl = apiUrl?.replace(/\/api\/v1\/?$/, '') || PRODUCTION_API_URL;
+      setApiConfig(cleanUrl, apiToken || DEFAULT_API_TOKEN);
 
-    if (!apiToken || !isValidUrl) {
-      const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
-      const defaultUrl = isProduction ? PRODUCTION_API_URL : DEV_API_URL;
-      const newUrl = isValidUrl ? apiUrl : defaultUrl;
-      setApiConfig(newUrl, DEFAULT_API_TOKEN);
-
-      // 生产环境自动启用远程模式
-      if (isProduction && !remoteMode) {
+      if (!state.remoteMode) {
         setRemoteMode(true);
         resetDataService();
       }
-    }
-
-    // 如果已启用远程模式但没有有效的 API 配置，禁用远程模式
-    if (remoteMode && !isValidUrl) {
-      setRemoteMode(false);
-      resetDataService();
+    } else {
+      // 本地环境：确保有默认配置
+      if (!apiToken || !apiUrl) {
+        setApiConfig(DEV_API_URL, DEFAULT_API_TOKEN);
+      }
     }
   }, []);
 
