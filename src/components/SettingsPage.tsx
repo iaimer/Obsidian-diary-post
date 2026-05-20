@@ -532,9 +532,8 @@ export function SettingsPage() {
         <section className="bg-white rounded-xl p-4 shadow-sm">
           <h2 className="text-sm font-medium text-gray-500 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600">
-            <p>日记APP v0.1.0</p>
+            <p>日记APP v0.6.8</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
-            <p className="mt-2 text-gray-400">荔枝喵说 APP 内 AI 生成（待实现）</p>
           </div>
         </section>
       </main>
