@@ -181,6 +181,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       setDiaryExists(exists);
       
       if (!exists) {
+        // 当天没有日记时，习惯数据回退到默认值
+        updateHabitData({ water: 0, steps: 0, reading: false, language: false, supplements: false });
         setLoading(false);
         return;
       }
