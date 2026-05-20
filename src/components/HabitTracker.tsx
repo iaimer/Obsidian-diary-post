@@ -147,75 +147,103 @@ export default function HabitTracker() {
         {isSyncing && <span className="ml-2 text-xs text-gray-400">同步中...</span>}
       </h2>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="space-y-2">
         {/* 饮水 */}
         <div
-          className="text-center p-2 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
           onClick={() => setEditingType('water')}
         >
-          <div className="text-xl mb-1">💧</div>
-          <div className={`text-xs ${waterGoalMet ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
-            {habitData.water} mL
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💧</span>
+            <div>
+              <div className="text-sm text-gray-700">饮水</div>
+              <div className="text-xs text-gray-500">目标 1500 mL</div>
+            </div>
           </div>
-          {waterEmojiCount > 0 && (
-            <div className="text-xs mt-1">{'🥤'.repeat(Math.min(waterEmojiCount, 6))}</div>
-          )}
+          <div className="flex items-center gap-2">
+            {waterEmojiCount > 0 && (
+              <span className="text-sm">{'🥤'.repeat(Math.min(waterEmojiCount, 6))}</span>
+            )}
+            <span className={`text-sm font-medium ${waterGoalMet ? 'text-green-600' : 'text-gray-600'}`}>
+              {habitData.water} mL
+            </span>
+            {waterGoalMet && <span className="text-green-600">✓</span>}
+          </div>
         </div>
 
         {/* 运动 */}
         <div
-          className="text-center p-2 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+          className="flex items-center justify-between p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
           onClick={() => setEditingType('steps')}
         >
-          <div className="text-xl mb-1">🏃</div>
-          <div className={`text-xs ${stepsGoalMet ? 'text-green-600 font-medium' : 'text-gray-600'}`}>
-            {habitData.steps} 步
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏃</span>
+            <div>
+              <div className="text-sm text-gray-700">运动</div>
+              <div className="text-xs text-gray-500">目标 6000 步</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-medium ${stepsGoalMet ? 'text-green-600' : 'text-gray-600'}`}>
+              {habitData.steps} 步
+            </span>
+            {stepsGoalMet && <span className="text-green-600">✓</span>}
           </div>
         </div>
 
         {/* 阅读 */}
         <div
-          className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
             habitData.reading ? 'bg-purple-100' : 'bg-purple-50'
           }`}
           onClick={() => handleToggleBoolean('reading')}
         >
-          <div className="text-xl mb-1">📖</div>
-          <div className={`text-xs ${habitData.reading ? 'text-green-600' : 'text-gray-500'}`}>
-            {habitData.reading ? '✓' : '☐'}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📖</span>
+            <span className="text-sm text-gray-700">阅读/亲子共读</span>
+          </div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            habitData.reading ? 'bg-green-500 text-white' : 'bg-gray-200'
+          }`}>
+            {habitData.reading ? '✓' : ''}
           </div>
         </div>
 
         {/* 学语言 */}
         <div
-          className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
             habitData.language ? 'bg-indigo-100' : 'bg-indigo-50'
           }`}
           onClick={() => handleToggleBoolean('language')}
         >
-          <div className="text-xl mb-1">🇬🇧</div>
-          <div className={`text-xs ${habitData.language ? 'text-green-600' : 'text-gray-500'}`}>
-            {habitData.language ? '✓' : '☐'}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🇬🇧</span>
+            <span className="text-sm text-gray-700">学语言</span>
+          </div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            habitData.language ? 'bg-green-500 text-white' : 'bg-gray-200'
+          }`}>
+            {habitData.language ? '✓' : ''}
           </div>
         </div>
 
         {/* 补充剂 */}
         <div
-          className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
             habitData.supplements ? 'bg-red-100' : 'bg-red-50'
           }`}
           onClick={() => handleToggleBoolean('supplements')}
         >
-          <div className="text-xl mb-1">💊</div>
-          <div className={`text-xs ${habitData.supplements ? 'text-green-600' : 'text-gray-500'}`}>
-            {habitData.supplements ? '✓' : '☐'}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💊</span>
+            <span className="text-sm text-gray-700">鱼油/植物甾醇</span>
+          </div>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            habitData.supplements ? 'bg-green-500 text-white' : 'bg-gray-200'
+          }`}>
+            {habitData.supplements ? '✓' : ''}
           </div>
         </div>
-      </div>
-
-      {/* 目标提示 */}
-      <div className="mt-3 text-xs text-gray-400 text-center">
-        饮水 ≥ 1500mL · 运动 ≥ 6000步 为达标
       </div>
 
       {/* 编辑弹窗 */}
