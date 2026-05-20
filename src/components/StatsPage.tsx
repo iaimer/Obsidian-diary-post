@@ -11,11 +11,11 @@ export default function StatsPage() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <div className="min-h-screen bg-gray-100 pb-[50px]">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-[50px]">
         {/* 头部 */}
-        <div className="bg-white sticky top-0 z-10 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
           <div className="p-4 max-w-md mx-auto">
-            <h1 className="text-lg font-medium text-gray-800">📊 习惯统计（近30天）</h1>
+            <h1 className="text-lg font-medium text-gray-800 dark:text-gray-100">📊 习惯统计（近30天）</h1>
           </div>
         </div>
 

@@ -32,6 +32,9 @@ interface DiaryState {
   apiUrl: string;
   apiToken: string;
 
+  // 深色模式
+  darkMode: boolean;
+
   // 图片压缩配置
   imageConfig: ImageCompressConfig;
 
@@ -48,6 +51,7 @@ interface DiaryState {
   setVaultConnected: (connected: boolean) => void;
   setRemoteMode: (mode: boolean) => void;
   setApiConfig: (url: string, token: string) => void;
+  setDarkMode: (mode: boolean) => void;
   setImageConfig: (config: Partial<ImageCompressConfig>) => void;
   resetImageConfig: () => void;
   updateHabitData: (data: Partial<HabitData>) => void;
@@ -93,6 +97,7 @@ export const useDiaryStore = create<DiaryState>()(
       remoteMode: getDefaultRemoteMode(),
       apiUrl: getDefaultApiUrl(),
       apiToken: DEFAULT_API_TOKEN,
+      darkMode: false,
       imageConfig: defaultImageConfig,
       currentDiary: null,
       habitData: defaultHabitData,
@@ -108,6 +113,18 @@ export const useDiaryStore = create<DiaryState>()(
 
       setApiConfig: (url: string, token: string) => {
         set({ apiUrl: url, apiToken: token });
+      },
+
+      setDarkMode: (mode: boolean) => {
+        set({ darkMode: mode });
+        // 同步更新 html class
+        if (typeof document !== 'undefined') {
+          if (mode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
       },
 
       setImageConfig: (config: Partial<ImageCompressConfig>) => {
@@ -142,7 +159,8 @@ export const useDiaryStore = create<DiaryState>()(
         remoteMode: state.remoteMode,
         apiUrl: state.apiUrl,
         apiToken: state.apiToken,
-        imageConfig: state.imageConfig
+        imageConfig: state.imageConfig,
+        darkMode: state.darkMode
       })
     }
   )

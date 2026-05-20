@@ -63,21 +63,21 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
   };
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
       {/* 月份标题和切换 */}
       <div className="flex justify-between items-center mb-4">
         <button
           onClick={goToPrevMonth}
-          className="p-2 text-gray-400 hover:text-gray-600"
+          className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
         >
           ‹
         </button>
-        <h2 className="text-lg font-semibold text-gray-800">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           📅 {year}年{month}月
         </h2>
         <button
           onClick={goToNextMonth}
-          className="p-2 text-gray-400 hover:text-gray-600"
+          className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
         >
           ›
         </button>
@@ -86,7 +86,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
       {/* 星期标题 */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekdays.map(day => (
-          <div key={day} className="text-center text-xs text-gray-500 py-1">
+          <div key={day} className="text-center text-xs text-gray-500 dark:text-gray-400 py-1">
             {day}
           </div>
         ))}
@@ -98,7 +98,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
           if (!date) {
             return (
               <div key={index} className="aspect-square flex items-center justify-center">
-                <div className="text-gray-300">-</div>
+                <div className="text-gray-300 dark:text-gray-600">-</div>
               </div>
             );
           }
@@ -120,9 +120,9 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
           );
         })}
       </div>
-      
+
       {loading && (
-        <div className="text-center text-xs text-gray-400 py-2">
+        <div className="text-center text-xs text-gray-400 dark:text-gray-500 py-2">
           加载中...
         </div>
       )}

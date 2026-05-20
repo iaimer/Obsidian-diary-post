@@ -139,8 +139,8 @@ export default function HabitTracker() {
   const stepsGoalMet = habitData.steps >= HABIT_GOALS.steps;
 
   return (
-    <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-      <h2 className="text-sm font-medium text-gray-500 mb-3">
+    <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
         🏃 今日习惯
         {isSyncing && <span className="ml-2 text-xs text-gray-400">同步中...</span>}
       </h2>
@@ -153,11 +153,11 @@ export default function HabitTracker() {
         >
           {/* 进度条背景 */}
           <div
-            className="absolute inset-0 bg-blue-100"
+            className="absolute inset-0 bg-blue-100 dark:bg-blue-900/30"
             style={{ width: '100%' }}
           />
           <div
-            className="absolute inset-y-0 left-0 bg-blue-200 transition-all duration-300"
+            className="absolute inset-y-0 left-0 bg-blue-200 dark:bg-blue-700/50 transition-all duration-300"
             style={{ width: `${Math.min(100, (habitData.water / HABIT_GOALS.water) * 100)}%` }}
           />
 
@@ -165,15 +165,15 @@ export default function HabitTracker() {
           <div className="relative flex items-center gap-3">
             <span className="text-2xl">💧</span>
             <div>
-              <div className="text-sm text-gray-700">饮水</div>
-              <div className="text-xs text-gray-500">目标 1500 mL</div>
+              <div className="text-sm text-gray-700 dark:text-gray-200">饮水</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">目标 1500 mL</div>
             </div>
           </div>
           <div className="relative flex items-center">
-            <span className={`text-sm font-medium ${waterGoalMet ? 'text-green-600' : 'text-gray-700'}`}>
+            <span className={`text-sm font-medium ${waterGoalMet ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-200'}`}>
               {habitData.water} mL
             </span>
-            {waterGoalMet && <span className="text-green-600">✓</span>}
+            {waterGoalMet && <span className="text-green-600 dark:text-green-400">✓</span>}
           </div>
         </div>
 
@@ -184,43 +184,43 @@ export default function HabitTracker() {
         >
           {/* 进度条背景 */}
           <div
-            className="absolute inset-0"
-            style={{ width: '100%', backgroundColor: '#DDFFE4' }}
+            className="absolute inset-0 bg-green-100 dark:bg-green-900/30"
+            style={{ width: '100%' }}
           />
           <div
-            className="absolute inset-y-0 left-0 transition-all duration-300"
-            style={{ width: `${Math.min(100, (habitData.steps / HABIT_GOALS.steps) * 100)}%`, backgroundColor: '#ADEBB3' }}
+            className="absolute inset-y-0 left-0 bg-green-200 dark:bg-green-700/50 transition-all duration-300"
+            style={{ width: `${Math.min(100, (habitData.steps / HABIT_GOALS.steps) * 100)}%` }}
           />
 
           {/* 内容 */}
           <div className="relative flex items-center gap-3">
             <span className="text-2xl">🏃</span>
             <div>
-              <div className="text-sm text-gray-700">运动</div>
-              <div className="text-xs text-gray-500">目标 6000 步</div>
+              <div className="text-sm text-gray-700 dark:text-gray-200">运动</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">目标 6000 步</div>
             </div>
           </div>
           <div className="relative flex items-center gap-2">
-            <span className={`text-sm font-medium ${stepsGoalMet ? 'text-green-600' : 'text-gray-700'}`}>
+            <span className={`text-sm font-medium ${stepsGoalMet ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-200'}`}>
               {habitData.steps} 步
             </span>
-            {stepsGoalMet && <span className="text-green-600">✓</span>}
+            {stepsGoalMet && <span className="text-green-600 dark:text-green-400">✓</span>}
           </div>
         </div>
 
         {/* 阅读 */}
         <div
           className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-            habitData.reading ? 'bg-purple-100' : 'bg-purple-50'
+            habitData.reading ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-purple-50 dark:bg-purple-900/20'
           }`}
           onClick={() => handleToggleBoolean('reading')}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">📖</span>
-            <span className="text-sm text-gray-700">阅读/亲子共读</span>
+            <span className="text-sm text-gray-700 dark:text-gray-200">阅读/亲子共读</span>
           </div>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-            habitData.reading ? 'bg-green-500 text-white' : 'bg-gray-200'
+            habitData.reading ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'
           }`}>
             {habitData.reading ? '✓' : ''}
           </div>
@@ -229,16 +229,16 @@ export default function HabitTracker() {
         {/* 学语言 */}
         <div
           className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-            habitData.language ? 'bg-indigo-100' : 'bg-indigo-50'
+            habitData.language ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-indigo-50 dark:bg-indigo-900/20'
           }`}
           onClick={() => handleToggleBoolean('language')}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">🇬🇧</span>
-            <span className="text-sm text-gray-700">学语言</span>
+            <span className="text-sm text-gray-700 dark:text-gray-200">学语言</span>
           </div>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-            habitData.language ? 'bg-green-500 text-white' : 'bg-gray-200'
+            habitData.language ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'
           }`}>
             {habitData.language ? '✓' : ''}
           </div>
@@ -247,16 +247,16 @@ export default function HabitTracker() {
         {/* 补充剂 */}
         <div
           className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-            habitData.supplements ? 'bg-red-100' : 'bg-red-50'
+            habitData.supplements ? 'bg-red-100 dark:bg-red-900/30' : 'bg-red-50 dark:bg-red-900/20'
           }`}
           onClick={() => handleToggleBoolean('supplements')}
         >
           <div className="flex items-center gap-3">
             <span className="text-2xl">💊</span>
-            <span className="text-sm text-gray-700">鱼油/植物甾醇</span>
+            <span className="text-sm text-gray-700 dark:text-gray-200">鱼油/植物甾醇</span>
           </div>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-            habitData.supplements ? 'bg-green-500 text-white' : 'bg-gray-200'
+            habitData.supplements ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'
           }`}>
             {habitData.supplements ? '✓' : ''}
           </div>

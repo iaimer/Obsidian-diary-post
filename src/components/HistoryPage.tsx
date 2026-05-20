@@ -82,13 +82,13 @@ export function HistoryPage() {
   const isConnected = vaultConnected || remoteMode;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-[50px]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="min-h-screen">
-          <header className="bg-white shadow-sm px-4 py-3">
+          <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-lg font-semibold text-gray-800">📅 历史日记</h1>
-              <span className="text-sm text-gray-500">
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">📅 历史日记</h1>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {remoteMode ? '远程模式' : vaultConnected ? '✓ 已连接' : '未连接'}
               </span>
             </div>
@@ -96,7 +96,7 @@ export function HistoryPage() {
 
           <main className="px-4 py-6 max-w-md mx-auto">
             {!isConnected ? (
-              <div className="text-center py-12 text-gray-400 text-sm">
+              <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
                 {remoteMode ? '请配置 API 地址和 Token' : '请先连接 Obsidian Vault'}
               </div>
             ) : (
