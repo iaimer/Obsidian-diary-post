@@ -11,6 +11,7 @@ import { SettingsPage } from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
 import { HistoryPage } from './components/HistoryPage';
 import { PullToRefresh } from './components/PullToRefresh';
+import { TodayIcon, HistoryIcon, StatsIcon, SettingsIcon } from './components/Icons';
 
 type PageView = 'home' | 'history' | 'stats' | 'settings';
 
@@ -37,12 +38,27 @@ function App() {
   useEffect(() => {
     const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
     const state = useDiaryStore.getState();
-    const { apiToken, apiUrl, darkMode } = state;
+    const { apiToken, apiUrl, themePreference } = state;
 
-    // 恢复深色模式
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    }
+    // 恢复主题（监听系统变化）
+    const applyTheme = () => {
+      const isDark = themePreference === 'dark' || (themePreference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    applyTheme();
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      const pref = useDiaryStore.getState().themePreference;
+      if (pref === 'system') {
+        applyTheme();
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
 
     // 远程环境：强制启用远程模式并配置 API
     if (isProduction) {
@@ -59,36 +75,39 @@ function App() {
         setApiConfig(DEV_API_URL, DEFAULT_API_TOKEN);
       }
     }
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
   }, []);
 
-  const renderBottomNav = () => {
-    const navItems: { label: string; view: PageView }[] = [
-      { label: '今天', view: 'home' },
-      { label: '历史', view: 'history' },
-      { label: '统计', view: 'stats' },
-      { label: '设置', view: 'settings' }
-    ];
+  const navItems: { label: string; view: PageView; icon: React.ReactNode }[] = [
+    { label: '今天', view: 'home', icon: <TodayIcon /> },
+    { label: '历史', view: 'history', icon: <HistoryIcon /> },
+    { label: '统计', view: 'stats', icon: <StatsIcon /> },
+    { label: '设置', view: 'settings', icon: <SettingsIcon /> }
+  ];
 
-    return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-2 z-50">
-        <div className="flex justify-around max-w-md mx-auto">
-          {navItems.map(item => (
-            <button
-              key={item.view}
-              className={`px-4 py-2 ${
-                currentView === item.view
-                  ? 'text-indigo-600 font-medium'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-              }`}
-              onClick={() => setCurrentView(item.view)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-    );
-  };
+  const renderBottomNav = () => (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-2 py-1 z-50">
+      <div className="flex justify-around max-w-md mx-auto">
+        {navItems.map(item => (
+          <button
+            key={item.view}
+            className={`flex flex-col items-center gap-1 px-4 py-2 text-xs ${
+              currentView === item.view
+                ? 'text-indigo-600'
+                : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+            }`}
+            onClick={() => setCurrentView(item.view)}
+          >
+            <span className="text-2xl">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
 
   useEffect(() => {
     if (wasConnected && !vaultConnected) {
@@ -156,7 +175,10 @@ function App() {
           <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
             <div className="flex justify-between items-center">
               <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                📅 {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+                <span className="inline-flex items-center gap-2">
+                  <TodayIcon />
+                  {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+                </span>
               </h1>
               {remoteMode ? (
                 <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
