@@ -73,7 +73,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
           ‹
         </button>
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          📅 {year}年{month}月
+          {year}年{month}月
         </h2>
         <button
           onClick={goToNextMonth}

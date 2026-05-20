@@ -32,7 +32,9 @@ interface DiaryState {
   apiUrl: string;
   apiToken: string;
 
-  // 深色模式
+  // 主题偏好：深色 / 浅色 / 跟随系统
+  themePreference: 'dark' | 'light' | 'system';
+  // 深色模式（有效值，system 时由 matchMedia 决定）
   darkMode: boolean;
 
   // 图片压缩配置
@@ -52,6 +54,7 @@ interface DiaryState {
   setRemoteMode: (mode: boolean) => void;
   setApiConfig: (url: string, token: string) => void;
   setDarkMode: (mode: boolean) => void;
+  setThemePreference: (pref: 'dark' | 'light' | 'system') => void;
   setImageConfig: (config: Partial<ImageCompressConfig>) => void;
   resetImageConfig: () => void;
   updateHabitData: (data: Partial<HabitData>) => void;
@@ -97,6 +100,7 @@ export const useDiaryStore = create<DiaryState>()(
       remoteMode: getDefaultRemoteMode(),
       apiUrl: getDefaultApiUrl(),
       apiToken: DEFAULT_API_TOKEN,
+      themePreference: 'system',
       darkMode: false,
       imageConfig: defaultImageConfig,
       currentDiary: null,
@@ -120,6 +124,20 @@ export const useDiaryStore = create<DiaryState>()(
         // 同步更新 html class
         if (typeof document !== 'undefined') {
           if (mode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+      },
+
+      setThemePreference: (pref: 'dark' | 'light' | 'system') => {
+        set({ themePreference: pref });
+        // 立即应用主题
+        if (typeof document !== 'undefined') {
+          const isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          set({ darkMode: isDark });
+          if (isDark) {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
@@ -160,7 +178,7 @@ export const useDiaryStore = create<DiaryState>()(
         apiUrl: state.apiUrl,
         apiToken: state.apiToken,
         imageConfig: state.imageConfig,
-        darkMode: state.darkMode
+        themePreference: state.themePreference
       })
     }
   )
