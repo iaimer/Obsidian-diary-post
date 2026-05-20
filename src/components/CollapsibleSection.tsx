@@ -14,14 +14,14 @@ export function CollapsibleSection({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
+    <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 overflow-hidden">
       <div
-        className="flex justify-between items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+        className="flex justify-between items-center px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h2 className="text-sm font-medium text-gray-500">{title}</h2>
-        <span 
-          className={`text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+        <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h2>
+        <span
+          className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
           style={{ fontSize: '12px' }}
         >
           ▶

@@ -24,17 +24,17 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     return (
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
-            <span className="text-green-600 font-medium shrink-0">{time}</span>
+            <span className="text-green-600 dark:text-green-400 font-medium shrink-0">{time}</span>
           )}
           <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
             {tags.map(tag => (
-              <span key={tag} className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+              <span key={tag} className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
                 {tag}
               </span>
             ))}
@@ -55,13 +55,13 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     const isReflection = section === 'reflection';
-    const timeColor = isReflection ? 'text-yellow-600' : 'text-indigo-600';
+    const timeColor = isReflection ? 'text-yellow-600 dark:text-yellow-400' : 'text-indigo-600 dark:text-indigo-400';
     const tagClass = isReflection
-      ? 'text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded'
-      : 'text-xs text-gray-400';
+      ? 'text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded'
+      : 'text-xs text-gray-400 dark:text-gray-500';
 
     return (
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
             <span className={`font-medium shrink-0 ${timeColor}`}>{time}</span>
@@ -87,9 +87,9 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
 
   let plainText = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   if (plainText !== line) {
-    return <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: plainText }} />;
+    return <span className="text-sm text-gray-700 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: plainText }} />;
   }
-  return <span className="text-sm text-gray-700">{line}</span>;
+  return <span className="text-sm text-gray-700 dark:text-gray-200">{line}</span>;
 }
 
 async function fetchRemoteImage(year: number, imageName: string, month?: number): Promise<string | null> {
@@ -207,9 +207,9 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
   ) || [];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b">
-        <h3 className="text-sm font-medium text-gray-500">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b dark:border-gray-700">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
           📝 {date.toLocaleDateString('zh-CN', {
             year: 'numeric',
             month: 'long',
@@ -220,13 +220,13 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
       </div>
 
       {loading && (
-        <div className="text-center py-6 text-gray-400 text-sm">
+        <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
           加载中...
         </div>
       )}
 
       {error && (
-        <div className="px-4 py-2 bg-red-50 text-red-600 text-xs">
+        <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs">
           加载失败: {error}
         </div>
       )}
@@ -235,7 +235,7 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
         <div className="px-4 py-4 space-y-4">
           {quickNotes.length > 0 && (
             <div>
-              <h4 className="text-xs font-medium text-gray-400 mb-3">✍️ 随手记</h4>
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-3">✍️ 随手记</h4>
               <div className="space-y-1.5">
                 {quickNotes.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
@@ -245,8 +245,8 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
           )}
 
           {happiness.length > 0 && (
-            <div className="bg-green-50 px-3 py-2 rounded-lg">
-              <h4 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h4>
+            <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">✨ 每日小确幸</h4>
               <div className="space-y-1">
                 {happiness.map((line, i) => (
                   <div key={i}>{renderMarkdown(line)}</div>
@@ -256,8 +256,8 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
           )}
 
           {reflection.length > 0 && (
-            <div className="bg-yellow-50 px-3 py-2 rounded-lg">
-              <h4 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h4>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded-lg">
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">💡 觉察与迭代</h4>
               <div className="space-y-1">
                 {reflection.map((line, i) => (
                   <div key={i}>{renderMarkdown(line, 'reflection')}</div>
@@ -267,11 +267,11 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
           )}
 
           {lizhiSays.length > 0 && (
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg">
-              <h4 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h4>
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🧠 荔枝喵说</h4>
               <div className="space-y-1">
                 {lizhiSays.map((line, i) => (
-                  <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
+                  <div key={i} className="text-sm text-gray-700 dark:text-gray-200 italic">{renderMarkdown(line)}</div>
                 ))}
               </div>
             </div>
@@ -279,7 +279,7 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
 
           {images.length > 0 && (
             <div>
-              <h4 className="text-xs font-medium text-gray-400 mb-3">📸 影像记录 ({images.length}张)</h4>
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-3">📸 影像记录 ({images.length}张)</h4>
               <div className="grid grid-cols-3 gap-2">
                 {images.map((url, i) => (
                   <button
@@ -306,9 +306,9 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
             </div>
           )}
 
-          {quickNotes.length === 0 && happiness.length === 0 && 
+          {quickNotes.length === 0 && happiness.length === 0 &&
            reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
-            <div className="text-center py-6 text-gray-400 text-sm">
+            <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
               暂无记录
             </div>
           )}

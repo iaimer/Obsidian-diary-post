@@ -54,15 +54,15 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
         disabled={status === 'processing'}
         className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
           status === 'processing'
-            ? 'bg-gray-100 text-gray-400'
-            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+            ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+            : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
         }`}
       >
         {status === 'processing' ? progress : '添加照片'}
       </button>
 
       {status === 'error' && (
-        <span className="text-xs text-red-500">{errorMsg}</span>
+        <span className="text-xs text-red-500 dark:text-red-400">{errorMsg}</span>
       )}
 
       <input

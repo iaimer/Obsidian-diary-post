@@ -58,7 +58,7 @@ const HabitStats = forwardRef<HabitStatsRef, HabitStatsProps>(({ days }, ref) =>
 
   if (isLoading) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-gray-400 dark:text-gray-500">
         加载统计数据...
       </div>
     );
@@ -66,7 +66,7 @@ const HabitStats = forwardRef<HabitStatsRef, HabitStatsProps>(({ days }, ref) =>
 
   if (stats.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400">
+      <div className="text-center py-8 text-gray-400 dark:text-gray-500">
         暂无习惯数据
       </div>
     );
@@ -114,15 +114,15 @@ const HabitStats = forwardRef<HabitStatsRef, HabitStatsProps>(({ days }, ref) =>
       />
 
       {/* 标签切换 */}
-      <div className="bg-white rounded-xl shadow-sm mb-4">
-        <div className="flex border-b">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4">
+        <div className="flex border-b dark:border-gray-700">
           {HABIT_TABS.map(tab => (
             <button
               key={tab.key}
               className={`flex-1 py-3 text-sm text-center transition-colors ${
                 activeTab === tab.key
-                  ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 font-medium'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
               onClick={() => setActiveTab(tab.key)}
             >

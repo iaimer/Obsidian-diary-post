@@ -29,9 +29,9 @@ export default function CombinedTrendChart({
   }));
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">
           📈 习惯趋势
         </h3>
       </div>
@@ -69,7 +69,7 @@ export default function CombinedTrendChart({
                 return [String(value), String(name)];
               }}
               labelFormatter={(label) => `日期: ${label}`}
-              contentStyle={{ fontSize: 12 }}
+              contentStyle={{ fontSize: 12, backgroundColor: '#fff' }}
             />
             <Legend
               wrapperStyle={{ fontSize: 12, paddingTop: 5 }}
@@ -113,13 +113,13 @@ export default function CombinedTrendChart({
       <div className="grid grid-cols-2 gap-4 text-xs">
         <div className="text-center">
           <div className="text-blue-500 font-medium">💧 饮水</div>
-          <div className="text-gray-500">平均 {avgWater} mL</div>
-          <div className="text-gray-400">达标率 {waterGoalRate}%</div>
+          <div className="text-gray-500 dark:text-gray-400">平均 {avgWater} mL</div>
+          <div className="text-gray-400 dark:text-gray-500">达标率 {waterGoalRate}%</div>
         </div>
         <div className="text-center">
           <div className="text-orange-500 font-medium">🏃 运动</div>
-          <div className="text-gray-500">平均 {avgSteps} 步</div>
-          <div className="text-gray-400">达标率 {stepsGoalRate}%</div>
+          <div className="text-gray-500 dark:text-gray-400">平均 {avgSteps} 步</div>
+          <div className="text-gray-400 dark:text-gray-500">达标率 {stepsGoalRate}%</div>
         </div>
       </div>
     </div>

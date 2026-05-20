@@ -33,11 +33,11 @@ export default function HabitHeatmap({ data, title, icon, days = 30 }: HabitHeat
       }
     }
 
-    if (streak >= 7) return 'bg-green-700';
-    if (streak >= 5) return 'bg-green-600';
-    if (streak >= 3) return 'bg-green-500';
-    if (streak >= 1) return 'bg-green-400';
-    return 'bg-gray-100';
+    if (streak >= 7) return 'bg-green-700 dark:bg-green-600';
+    if (streak >= 5) return 'bg-green-600 dark:bg-green-500';
+    if (streak >= 3) return 'bg-green-500 dark:bg-green-400';
+    if (streak >= 1) return 'bg-green-400 dark:bg-green-300';
+    return 'bg-gray-100 dark:bg-gray-700';
   };
 
   // 计算第一天需要多少空白方块来对齐周一
@@ -61,24 +61,24 @@ export default function HabitHeatmap({ data, title, icon, days = 30 }: HabitHeat
     <div>
       {/* 标题和统计 */}
       <div className="flex justify-between items-center mb-3">
-        <div className="text-sm font-medium text-gray-700">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
           {icon} {title}
         </div>
-        <div className="flex gap-4 text-xs text-gray-500">
+        <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
           <span>完成率 {rate}%</span>
           <span>最长连续 {maxStreak}天</span>
         </div>
       </div>
 
       {/* 星期标签 */}
-      <div className={`grid grid-cols-7 ${gapSize} mb-2 text-xs text-gray-400`}>
+      <div className={`grid grid-cols-7 ${gapSize} mb-2 text-xs text-gray-400 dark:text-gray-500`}>
         <span>一</span>
         <span>二</span>
         <span>三</span>
         <span>四</span>
         <span>五</span>
-        <span className="text-orange-400">六</span>
-        <span className="text-orange-400">日</span>
+        <span className="text-orange-400 dark:text-orange-500">六</span>
+        <span className="text-orange-400 dark:text-orange-500">日</span>
       </div>
 
       {/* 热力图网格 */}
@@ -91,7 +91,7 @@ export default function HabitHeatmap({ data, title, icon, days = 30 }: HabitHeat
                 ? 'bg-transparent'
                 : item.completed
                   ? getGreenLevel(idx)
-                  : 'bg-gray-100'
+                  : 'bg-gray-100 dark:bg-gray-700'
             }`}
             title={item ? `${item.date}: ${item.completed ? '已完成' : '未完成'}` : ''}
           />
@@ -99,7 +99,7 @@ export default function HabitHeatmap({ data, title, icon, days = 30 }: HabitHeat
       </div>
 
       {/* 日期范围 */}
-      <div className="text-xs text-gray-400 text-center mt-3">
+      <div className="text-xs text-gray-400 dark:text-gray-500 text-center mt-3">
         {data.length > 0 && `${data[0].date} ~ ${data[data.length - 1].date}`}
       </div>
     </div>

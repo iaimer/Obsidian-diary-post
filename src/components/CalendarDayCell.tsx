@@ -95,16 +95,16 @@ export function CalendarDayCell({
     <button
       onClick={onClick}
       className={`w-full h-full flex flex-col items-center justify-center rounded-lg relative overflow-hidden transition-all duration-200
-        ${isToday && !imageUrl && !loading 
-          ? 'bg-indigo-600 text-white font-medium shadow-md' 
+        ${isToday && !imageUrl && !loading
+          ? 'bg-indigo-600 text-white font-medium shadow-md'
           : hasDiary && !imageUrl && !loading
-            ? 'bg-blue-50 text-gray-700 hover:bg-blue-100'
+            ? 'bg-blue-50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900/50'
             : !hasDiary && !imageUrl && !loading
-              ? 'text-gray-400 hover:bg-gray-50'
+              ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
               : imageUrl
                 ? 'hover:shadow-lg'
                 : loading
-                  ? 'bg-gray-100'
+                  ? 'bg-gray-100 dark:bg-gray-700'
                   : ''
         }`}
       style={{
@@ -117,41 +117,41 @@ export function CalendarDayCell({
       {imageUrl && (
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/40" />
       )}
-      
+
       {/* 加载状态 */}
       {loading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-          <span className="text-xs text-gray-400">📷</span>
+        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center">
+          <span className="text-xs text-gray-400 dark:text-gray-500">📷</span>
         </div>
       )}
-      
+
       {/* 错误状态 */}
       {error && imageName && (
-        <div className="absolute inset-0 bg-red-50 flex items-center justify-center">
-          <span className="text-xs text-red-300">📷</span>
+        <div className="absolute inset-0 bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+          <span className="text-xs text-red-300 dark:text-red-400">📷</span>
         </div>
       )}
-      
+
       {/* 日期数字 */}
       <span className={`text-sm relative z-10 transition-all
         ${isToday && imageUrl
           ? 'text-white font-bold drop-shadow-lg'
-          : isToday 
-            ? 'font-bold' 
-            : imageUrl 
-              ? 'text-white font-semibold drop-shadow-lg' 
+          : isToday
+            ? 'font-bold'
+            : imageUrl
+              ? 'text-white font-semibold drop-shadow-lg'
               : loading
-                ? 'text-gray-400'
+                ? 'text-gray-400 dark:text-gray-500'
                 : error
-                  ? 'text-red-400'
+                  ? 'text-red-400 dark:text-red-500'
                   : ''
         }`}>
         {date.getDate()}
       </span>
-      
+
       {/* 有记录指示点 */}
       {!imageUrl && !loading && hasDiary && (
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-0.5" />
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-500 mt-0.5" />
       )}
     </button>
   );

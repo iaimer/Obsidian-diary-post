@@ -198,27 +198,27 @@ export default function QuickInput() {
   };
 
   return (
-    <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-      <h2 className="text-sm font-medium text-gray-500 mb-3">📝 快速记录</h2>
+    <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📝 快速记录</h2>
 
       {/* 润色预览 */}
       {showPolishedPreview ? (
         <div className="mb-3">
-          <div className="text-xs text-gray-500 mb-1">✨ AI润色结果：</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">✨ AI润色结果：</div>
           {/* 内容部分 */}
-          <div className="p-3 bg-indigo-50 rounded-lg text-sm text-gray-700 mb-2">
+          <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-200 mb-2">
             {parseTagsFromPolished(polishedContent).content}
           </div>
           {/* AI生成的标签 */}
           <div className="flex gap-1 mb-2 flex-wrap items-center">
-            <span className="text-xs text-gray-500">AI标签：</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">AI标签：</span>
             {selectedDomain && (
-              <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded text-xs">
+              <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs">
                 #{selectedDomain}
               </span>
             )}
             {selectedCapability && (
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-xs">
+              <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs">
                 #{selectedCapability}
               </span>
             )}
@@ -229,27 +229,27 @@ export default function QuickInput() {
             )}
             {/* 缺少能力标签警告 */}
             {selectedDomain && !selectedCapability && (
-              <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">
+              <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs">
                 ⚠️ 缺少能力标签，请手动选择
               </span>
             )}
           </div>
           <div className="flex gap-2">
             <button
-              className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:bg-indigo-300"
+              className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
               onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
               disabled={isSubmitting || !selectedDomain || !selectedCapability}
             >
               {isSubmitting ? '发送中...' : '发送润色结果'}
             </button>
             <button
-              className="px-3 py-2 bg-indigo-100 text-indigo-600 rounded-lg text-sm"
+              className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm"
               onClick={handleUsePolished}
             >
               继续编辑
             </button>
             <button
-              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm"
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm"
               onClick={handleCancelPolish}
             >
               取消
@@ -260,7 +260,7 @@ export default function QuickInput() {
         <>
           <textarea
             ref={textareaRef}
-            className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent overflow-hidden"
+            className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent overflow-hidden bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
             placeholder="输入随手记内容..."
             rows={2}
             value={content}
@@ -302,7 +302,7 @@ export default function QuickInput() {
             {/* 润色按钮 */}
             {isAIConfigured() && (
               <button
-                className="px-3 py-2 bg-purple-100 text-purple-600 rounded-lg text-sm hover:bg-purple-200 disabled:opacity-50 flex items-center gap-1"
+                className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50 flex items-center gap-1"
                 onClick={handlePolish}
                 disabled={isPolishing || !content.trim()}
               >
@@ -311,14 +311,14 @@ export default function QuickInput() {
             )}
 
             <button
-              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 flex items-center gap-1"
+              className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1"
               onClick={() => setShowTagPicker(!showTagPicker)}
             >
               🏷️ {showTagPicker ? '收起' : '标签'}
             </button>
 
             <button
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
               onClick={() => handleSubmit()}
               disabled={isSubmitting || !content.trim()}
             >
@@ -328,10 +328,10 @@ export default function QuickInput() {
 
           {/* 标签选择器 */}
           {showTagPicker && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
+            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-3">
               {/* 第一层：领域层 */}
               <div>
-                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                   <span className="text-red-500">*</span> 领域（必选1个）
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -341,7 +341,7 @@ export default function QuickInput() {
                       className={`px-2 py-1 rounded-full text-xs transition-colors ${
                         selectedDomain === tag
                           ? 'bg-indigo-600 text-white'
-                          : 'bg-white text-gray-600 hover:bg-indigo-50 border border-gray-200'
+                          : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500'
                       }`}
                       onClick={() => setSelectedDomain(tag)}
                     >
@@ -353,9 +353,9 @@ export default function QuickInput() {
 
               {/* 第二层：能力层 */}
               <div>
-                <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                   <span className="text-orange-500">*</span> 能力（必选1个）
-                  {!selectedDomain && <span className="text-gray-400 ml-1">→ 先选择领域</span>}
+                  {!selectedDomain && <span className="text-gray-400 dark:text-gray-500 ml-1">→ 先选择领域</span>}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {availableCapabilities.length > 0 ? (
@@ -365,7 +365,7 @@ export default function QuickInput() {
                         className={`px-2 py-1 rounded-full text-xs transition-colors ${
                           selectedCapability === tag
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-600 hover:bg-blue-50 border border-gray-200'
+                            : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500'
                         }`}
                         onClick={() => setSelectedCapability(tag)}
                       >
@@ -373,22 +373,22 @@ export default function QuickInput() {
                       </button>
                     ))
                   ) : (
-                    <span className="text-xs text-gray-400 italic">请先选择领域</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 italic">请先选择领域</span>
                   )}
                 </div>
               </div>
 
               {/* 第三层：方法层 */}
               <div>
-                <div className="text-xs text-gray-500 mb-1">方法（可选0-1个）</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">方法（可选0-1个）</div>
                 <div className="flex flex-wrap gap-1">
                   {TAG_SYSTEM.method.map(tag => (
                     <button
                       key={tag}
                       className={`px-2 py-1 rounded-full text-xs transition-colors ${
                         selectedMethod === tag
-                          ? 'bg-gray-600 text-white'
-                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                          ? 'bg-gray-600 dark:bg-gray-500 text-white'
+                          : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500'
                       }`}
                       onClick={() => setSelectedMethod(selectedMethod === tag ? null : tag)}
                     >
@@ -399,7 +399,7 @@ export default function QuickInput() {
               </div>
 
               {/* 规则提示 */}
-              <div className="text-xs text-gray-400 pt-2 border-t border-gray-200">
+              <div className="text-xs text-gray-400 dark:text-gray-500 pt-2 border-t border-gray-200 dark:border-gray-600">
                 规则：1领域 + 1能力 + 0-1方法
               </div>
             </div>

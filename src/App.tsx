@@ -33,11 +33,16 @@ function App() {
   const [connecting, setConnecting] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
 
-  // 初始化：远程环境自动启用远程模式
+  // 初始化：远程环境自动启用远程模式 + 深色模式恢复
   useEffect(() => {
     const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
     const state = useDiaryStore.getState();
-    const { apiToken, apiUrl } = state;
+    const { apiToken, apiUrl, darkMode } = state;
+
+    // 恢复深色模式
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    }
 
     // 远程环境：强制启用远程模式并配置 API
     if (isProduction) {
@@ -65,7 +70,7 @@ function App() {
     ];
 
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-2 z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-2 z-50">
         <div className="flex justify-around max-w-md mx-auto">
           {navItems.map(item => (
             <button
@@ -73,7 +78,7 @@ function App() {
               className={`px-4 py-2 ${
                 currentView === item.view
                   ? 'text-indigo-600 font-medium'
-                  : 'text-gray-400 hover:text-gray-600'
+                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
               onClick={() => setCurrentView(item.view)}
             >
@@ -141,20 +146,20 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-[50px]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
 
       <PullToRefresh onRefresh={async () => {
         await diaryViewRef.current?.reload();
       }}>
         <div className="min-h-screen">
           {/* Header */}
-          <header className="bg-white shadow-sm px-4 py-3">
+          <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-lg font-semibold text-gray-800">
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 📅 {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
               </h1>
               {remoteMode ? (
-                <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-700">
+                <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
                   ✓ 远程模式
                 </span>
               ) : (
@@ -163,12 +168,12 @@ function App() {
                   disabled={connecting}
                   className={`px-3 py-1 rounded-full text-sm ${
                     vaultConnected
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                       : connecting
-                        ? 'bg-gray-100 text-gray-400'
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
                         : wasConnected
-                          ? 'bg-orange-100 text-orange-600'
-                          : 'bg-indigo-100 text-indigo-600'
+                          ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
+                          : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
                   }`}
                 >
                   {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
@@ -179,8 +184,8 @@ function App() {
 
           {/* 重新连接提示 */}
           {!remoteMode && wasConnected && !vaultConnected && (
-            <div className="px-4 py-2 bg-orange-50 border-b">
-              <div className="text-sm text-orange-700 text-center">
+            <div className="px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border-b dark:border-gray-700">
+              <div className="text-sm text-orange-700 dark:text-orange-300 text-center">
                 页面刷新后需要重新授权Vault访问
               </div>
             </div>
@@ -194,13 +199,13 @@ function App() {
             {/* Quick Actions */}
             <section className="flex gap-3 mb-4">
               <button
-                className="flex-1 py-3 bg-yellow-50 text-yellow-700 rounded-xl text-sm font-medium hover:bg-yellow-100"
+                className="flex-1 py-3 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl text-sm font-medium hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
                 onClick={() => setShowReflection(true)}
               >
                 💡 觉察
               </button>
               <button
-                className="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-sm font-medium hover:bg-green-100"
+                className="flex-1 py-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/50"
                 onClick={() => setShowHappiness(true)}
               >
                 ✨ 小确幸

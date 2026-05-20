@@ -25,17 +25,17 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     return (
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
-            <span className="text-green-600 font-medium shrink-0">{time}</span>
+            <span className="text-green-600 dark:text-green-400 font-medium shrink-0">{time}</span>
           )}
           <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
             {tags.map(tag => (
-              <span key={tag} className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+              <span key={tag} className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
                 {tag}
               </span>
             ))}
@@ -57,13 +57,13 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
     const isReflection = section === 'reflection';
-    const timeColor = isReflection ? 'text-yellow-600' : 'text-indigo-600';
+    const timeColor = isReflection ? 'text-yellow-600 dark:text-yellow-400' : 'text-indigo-600 dark:text-indigo-400';
     const tagClass = isReflection
-      ? 'text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded'
+      ? 'text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded'
       : 'text-xs text-gray-400';
 
     return (
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
             <span className={`font-medium shrink-0 ${timeColor}`}>{time}</span>
@@ -92,11 +92,11 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
 
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className={`w-4 h-4 rounded flex items-center justify-center text-xs ${checked ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
+        <span className={`w-4 h-4 rounded flex items-center justify-center text-xs ${checked ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'}`}>
           {checked ? '✓' : ''}
         </span>
         <span className="text-lg">{emoji}</span>
-        <span className="text-gray-700">{rest}</span>
+        <span className="text-gray-700 dark:text-gray-200">{rest}</span>
       </div>
     );
   }
@@ -281,17 +281,17 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
   if (loading && !diary) {
     return (
-      <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <div className="text-center py-6 text-gray-400 text-sm">加载中...</div>
+      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+        <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">加载中...</div>
       </section>
     );
   }
 
   if (!vaultConnected && !remoteMode) {
     return (
-      <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <h2 className="text-sm font-medium text-gray-500 mb-3">今日记录</h2>
-        <div className="text-center py-6 text-gray-400 text-sm">请先连接Obsidian Vault</div>
+      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+        <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">今日记录</h2>
+        <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">请先连接Obsidian Vault</div>
       </section>
     );
   }
@@ -299,14 +299,14 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   // 日记不存在，显示新建按钮
   if (!loading && diaryExists === false) {
     return (
-      <section className="bg-white rounded-xl p-4 shadow-sm mb-4">
-        <h2 className="text-sm font-medium text-gray-500 mb-3">📝 今日日记</h2>
+      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+        <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📝 今日日记</h2>
         <div className="text-center py-6">
-          <p className="text-gray-500 text-sm mb-4">今天还没有日记</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">今天还没有日记</p>
           <button
             onClick={handleCreateDiary}
             disabled={creating}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
           >
             {creating ? '创建中...' : '新建日记'}
           </button>
@@ -343,19 +343,19 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
   return (
     <>
-    <section className="bg-white rounded-xl shadow-sm mb-4 overflow-hidden">
-      <div className="px-4 py-3 border-b">
-        <h2 className="text-sm font-medium text-gray-500">📝 今日日记</h2>
+    <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 overflow-hidden">
+      <div className="px-4 py-3 border-b dark:border-gray-700">
+        <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">📝 今日日记</h2>
       </div>
 
       {error && (
-        <div className="px-4 py-2 bg-red-50 text-red-600 text-xs">加载失败: {error}</div>
+        <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs">加载失败: {error}</div>
       )}
 
       {/* 随手记 */}
       {quickNotes.length > 0 && (
         <div className="px-4 py-3">
-          <h3 className="text-xs font-medium text-gray-400 mb-2">✍️ 随手记</h3>
+          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">✍️ 随手记</h3>
           <div className="space-y-1.5">
             {quickNotes.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
@@ -366,8 +366,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 小确幸 */}
       {happiness.length > 0 && (
-        <div className="mx-4 my-3 bg-green-50 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 mb-2">✨ 每日小确幸</h3>
+        <div className="mx-4 my-3 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
+          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">✨ 每日小确幸</h3>
           <div className="space-y-1">
             {happiness.map((line, i) => (
               <div key={i}>{renderMarkdown(line)}</div>
@@ -378,8 +378,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 觉察 */}
       {reflection.length > 0 && (
-        <div className="mx-4 my-3 bg-yellow-50 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 mb-2">💡 觉察与迭代</h3>
+        <div className="mx-4 my-3 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded-lg">
+          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">💡 觉察与迭代</h3>
           <div className="space-y-1">
             {reflection.map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'reflection')}</div>
@@ -390,11 +390,11 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 荔枝喵说 */}
       {lizhiSays.length > 0 && (
-        <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 mb-2">🧠 荔枝喵说</h3>
+        <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
+          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🧠 荔枝喵说</h3>
           <div className="space-y-1">
             {lizhiSays.map((line, i) => (
-              <div key={i} className="text-sm text-gray-700 italic">{renderMarkdown(line)}</div>
+              <div key={i} className="text-sm text-gray-700 dark:text-gray-200 italic">{renderMarkdown(line)}</div>
             ))}
           </div>
         </div>
@@ -402,7 +402,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 影像记录 */}
       <div className="px-4 py-3">
-        <h3 className="text-xs font-medium text-gray-400 mb-2 flex items-center">
+        <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center">
           <span>📸 影像记录 ({images.length}张)</span>
           <ImageUploadButton onImageUploaded={loadDiary} />
         </h3>
@@ -415,7 +415,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
                   setCurrentImageIndex(i);
                   setShowImageModal(true);
                 }}
-                className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100"
+                className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100 dark:bg-gray-700"
               >
                 <img
                   src={url}
@@ -436,7 +436,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       {/* 空状态 */}
       {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
         <div className="px-4 py-6">
-          <div className="text-center text-gray-400 text-sm">
+          <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
             {error ? '加载失败' : '暂无记录'}
           </div>
         </div>

@@ -108,8 +108,10 @@ export function SettingsPage() {
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const apiUrl = useDiaryStore(state => state.apiUrl);
   const apiToken = useDiaryStore(state => state.apiToken);
+  const darkMode = useDiaryStore(state => state.darkMode);
   const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
+  const setDarkMode = useDiaryStore(state => state.setDarkMode);
 
   // 图片压缩配置（本地编辑状态）
   const imageConfigStore = useDiaryStore(state => state.imageConfig);
@@ -204,14 +206,29 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-[50px]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header */}
-      <header className="bg-white shadow-sm px-4 py-3">
-        <h1 className="text-lg font-semibold text-gray-800">⚙️ 设置</h1>
+      <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
+        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">⚙️ 设置</h1>
       </header>
 
       {/* Main Content */}
       <main className="px-4 py-6 max-w-md mx-auto">
+        {/* 深色模式 */}
+        <CollapsibleSection title="🌓 显示设置">
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={darkMode}
+                onChange={(e) => setDarkMode(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 rounded"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">启用深色模式</span>
+            </label>
+          </div>
+        </CollapsibleSection>
+
         {/* 远程API配置 */}
         <CollapsibleSection title="🌐 远程API设置">
           {/* 模式选择 */}
@@ -226,7 +243,7 @@ export function SettingsPage() {
                 }}
                 className="w-4 h-4 text-indigo-600 rounded"
               />
-              <span className="text-sm text-gray-700">启用远程模式（手机访问Mac mini API）</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">启用远程模式（手机访问Mac mini API）</span>
             </label>
           </div>
 
@@ -234,10 +251,10 @@ export function SettingsPage() {
             <>
               {/* API地址 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">API地址</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">API地址</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   placeholder="https://obsidian.femkits.org"
                   value={apiUrl.replace(/\/api\/v1\/?$/, '')}  // 显示时移除 /api/v1
                   onChange={(e) => {
@@ -248,18 +265,18 @@ export function SettingsPage() {
                     resetDataService();
                   }}
                 />
-                <div className="text-xs text-gray-400 mt-1">
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   基础地址（不包含 /api/v1），例如：https://obsidian.femkits.org
                 </div>
               </div>
 
               {/* API Token */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">API Token</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">API Token</label>
                 <div className="flex gap-2">
                   <input
                     type={showApiToken ? 'text' : 'password'}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                     placeholder="输入Token..."
                     value={apiToken}
                     onChange={(e) => {
@@ -268,7 +285,7 @@ export function SettingsPage() {
                     }}
                   />
                   <button
-                    className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                    className="px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300"
                     onClick={() => setShowApiToken(!showApiToken)}
                   >
                     {showApiToken ? '隐藏' : '显示'}
@@ -277,27 +294,27 @@ export function SettingsPage() {
               </div>
 
               {/* 连接状态提示 */}
-              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded mb-3">
+              <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded mb-3">
                 当前模式：远程API | {apiUrl || '未配置地址'}
               </div>
-              
+
               {/* 测试连接按钮 */}
               <button
-                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 mb-2"
+                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-800 mb-2"
                 onClick={handleTestConnection}
                 disabled={testingConnection || !apiUrl || !apiToken}
               >
                 {testingConnection ? '测试中...' : '测试连接'}
               </button>
-              
+
               {/* 连接状态显示 */}
               {connectionStatus === 'success' && (
-                <div className="text-xs text-green-600 bg-green-50 p-2 rounded flex items-center gap-1">
+                <div className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 p-2 rounded flex items-center gap-1">
                   <span>✅</span> 连接成功！API Server 正常运行
                 </div>
               )}
               {connectionStatus === 'failed' && (
-                <div className="text-xs text-red-600 bg-red-50 p-2 rounded flex items-center gap-1">
+                <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded flex items-center gap-1">
                   <span>❌</span> 连接失败，请检查API地址和Token
                 </div>
               )}
@@ -316,7 +333,7 @@ export function SettingsPage() {
                 onChange={(e) => setAIConfig({ ...aiConfig, enabled: e.target.checked })}
                 className="w-4 h-4 text-indigo-600 rounded"
               />
-              <span className="text-sm text-gray-700">启用AI润色</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">启用AI润色</span>
             </label>
           </div>
 
@@ -324,12 +341,12 @@ export function SettingsPage() {
             <>
               {/* 预设模板 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">快速选择预设</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">快速选择预设</label>
                 <div className="flex flex-wrap gap-1">
                   {presets.map((preset) => (
                     <button
                       key={preset.name}
-                      className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+                      className="px-2 py-1 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-500"
                       onClick={() => handleApplyPreset(preset)}
                     >
                       {preset.name}
@@ -340,10 +357,10 @@ export function SettingsPage() {
 
               {/* 名称 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">服务名称</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">服务名称</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   placeholder="例如：Claude API、本地模型..."
                   value={aiConfig.name}
                   onChange={(e) => setAIConfig({ ...aiConfig, name: e.target.value })}
@@ -352,32 +369,32 @@ export function SettingsPage() {
 
               {/* Base URL */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">API地址 (Base URL)</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">API地址 (Base URL)</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   placeholder="https://api.example.com"
                   value={aiConfig.baseUrl}
                   onChange={(e) => setAIConfig({ ...aiConfig, baseUrl: e.target.value })}
                 />
-                <div className="text-xs text-gray-400 mt-1">
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   Claude API用 api.anthropic.com，OpenAI兼容API用 api.openai.com/v1
                 </div>
               </div>
 
               {/* API Key */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">API Key</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">API Key</label>
                 <div className="flex gap-2">
                   <input
                     type={showApiKey ? 'text' : 'password'}
-                    className="flex-1 p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                     placeholder="输入API Key..."
                     value={aiConfig.apiKey}
                     onChange={(e) => setAIConfig({ ...aiConfig, apiKey: e.target.value })}
                   />
                   <button
-                    className="px-3 py-2 bg-gray-100 rounded-lg text-sm"
+                    className="px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300"
                     onClick={() => setShowApiKey(!showApiKey)}
                   >
                     {showApiKey ? '隐藏' : '显示'}
@@ -385,7 +402,7 @@ export function SettingsPage() {
                 </div>
                 {aiConfig.apiKey && (
                   <button
-                    className="text-xs text-red-500 mt-2 hover:underline"
+                    className="text-xs text-red-500 dark:text-red-400 mt-2 hover:underline"
                     onClick={handleClearApiKey}
                   >
                     清除API Key
@@ -395,10 +412,10 @@ export function SettingsPage() {
 
               {/* 模型名称 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">模型名称</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">模型名称</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   placeholder="例如：gpt-4o-mini、claude-sonnet-4-6..."
                   value={aiConfig.model}
                   onChange={(e) => setAIConfig({ ...aiConfig, model: e.target.value })}
@@ -407,16 +424,16 @@ export function SettingsPage() {
 
               {/* 当前配置显示 */}
               {aiConfig.name && (
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded mb-4">
+                <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded mb-4">
                   当前配置：{aiConfig.name} | {aiConfig.model}
                 </div>
               )}
 
               {/* 自定义润色规则 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-2">润色规则（可自定义）</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">润色规则（可自定义）</label>
                 <textarea
-                  className="w-full p-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   placeholder="自定义润色规则..."
                   rows={10}
                   value={aiConfig.polishPrompt || DEFAULT_POLISH_PROMPT}
@@ -424,13 +441,13 @@ export function SettingsPage() {
                 />
                 <div className="flex gap-2 mt-2">
                   <button
-                    className="text-xs text-gray-500 hover:text-indigo-600"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
                     onClick={() => setAIConfig({ ...aiConfig, polishPrompt: DEFAULT_POLISH_PROMPT })}
                   >
                     重置为默认规则
                   </button>
-                  <span className="text-xs text-gray-400">|</span>
-                  <span className="text-xs text-gray-400">修改后点击保存生效</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">|</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">修改后点击保存生效</span>
                 </div>
               </div>
             </>
@@ -438,7 +455,7 @@ export function SettingsPage() {
 
           {/* 保存按钮 */}
           <button
-            className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+            className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
             onClick={handleSave}
             disabled={saving}
           >
@@ -450,7 +467,7 @@ export function SettingsPage() {
         <CollapsibleSection title="📷 图片压缩设置">
           {/* 最大长边 */}
           <div className="mb-4">
-            <label className="block text-xs text-gray-500 mb-2">最大长边 (px)</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">最大长边 (px)</label>
             <input
               type="number"
               min="800"
@@ -458,13 +475,13 @@ export function SettingsPage() {
               step="100"
               value={imageDraft.maxLongSide}
               onChange={(e) => setImageDraft({ ...imageDraft, maxLongSide: parseInt(e.target.value) || 2000 })}
-              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
             />
           </div>
 
           {/* 最大文件大小 */}
           <div className="mb-4">
-            <label className="block text-xs text-gray-500 mb-2">最大文件大小 (MB)</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">最大文件大小 (MB)</label>
             <input
               type="number"
               min="0.5"
@@ -472,13 +489,13 @@ export function SettingsPage() {
               step="0.5"
               value={imageDraft.maxSizeMB}
               onChange={(e) => setImageDraft({ ...imageDraft, maxSizeMB: parseFloat(e.target.value) || 2 })}
-              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
             />
           </div>
 
           {/* JPEG质量 */}
           <div className="mb-4">
-            <label className="block text-xs text-gray-500 mb-2">JPEG 质量 (0.3-1.0)</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">JPEG 质量 (0.3-1.0)</label>
             <input
               type="number"
               min="0.3"
@@ -486,25 +503,25 @@ export function SettingsPage() {
               step="0.05"
               value={imageDraft.quality}
               onChange={(e) => setImageDraft({ ...imageDraft, quality: parseFloat(e.target.value) || 0.7 })}
-              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
             />
           </div>
 
           {/* 文件名格式 */}
           <div className="mb-4">
-            <label className="block text-xs text-gray-500 mb-2">文件名格式</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">文件名格式</label>
             <input
               type="text"
-              className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-mono"
+              className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 font-mono bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
               placeholder="Image-{date}-{seq}"
               value={imageDraft.nameFormat}
               onChange={(e) => setImageDraft({ ...imageDraft, nameFormat: e.target.value })}
             />
-            <div className="text-xs text-gray-400 mt-1">
-              可用占位符: <code className="bg-gray-100 px-1 rounded">{'{date}'}</code> = YYYYMMDD, <code className="bg-gray-100 px-1 rounded">{'{seq}'}</code> = 序号
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              可用占位符: <code className="bg-gray-100 dark:bg-gray-600 px-1 rounded">{'{date}'}</code> = YYYYMMDD, <code className="bg-gray-100 dark:bg-gray-600 px-1 rounded">{'{seq}'}</code> = 序号
             </div>
-            <div className="text-xs text-gray-400">
-              预览: <span className="text-indigo-600 font-mono">
+            <div className="text-xs text-gray-400 dark:text-gray-500">
+              预览: <span className="text-indigo-600 dark:text-indigo-400 font-mono">
                 {imageDraft.nameFormat.replace('{date}', '20260515').replace('{seq}', '001')}.jpg
               </span>
             </div>
@@ -513,14 +530,14 @@ export function SettingsPage() {
           {/* 操作按钮 */}
           <div className="flex gap-2">
             <button
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300"
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
               onClick={handleImageSave}
               disabled={imageSaving}
             >
               {imageSaving ? '保存中...' : '保存设置'}
             </button>
             <button
-              className="px-4 py-2 text-sm text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100"
+              className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
               onClick={() => setImageDraft({ maxLongSide: 2000, maxSizeMB: 2, quality: 0.7, nameFormat: 'Image-{date}-{seq}' })}
             >
               恢复默认
@@ -529,9 +546,9 @@ export function SettingsPage() {
         </CollapsibleSection>
 
         {/* 关于 */}
-        <section className="bg-white rounded-xl p-4 shadow-sm">
-          <h2 className="text-sm font-medium text-gray-500 mb-3">📋 关于</h2>
-          <div className="text-xs text-gray-600">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
+          <div className="text-xs text-gray-600 dark:text-gray-400">
             <p>日记APP v0.6.8</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
           </div>
