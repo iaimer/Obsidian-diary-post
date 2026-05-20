@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { resetDataService } from '../services/dataService';
 import { CollapsibleSection } from './CollapsibleSection';
+import { DarkIcon, LightIcon, SettingsIcon } from './Icons';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -109,9 +110,10 @@ export function SettingsPage() {
   const apiUrl = useDiaryStore(state => state.apiUrl);
   const apiToken = useDiaryStore(state => state.apiToken);
   const darkMode = useDiaryStore(state => state.darkMode);
+  const themePreference = useDiaryStore(state => state.themePreference);
   const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
-  const setDarkMode = useDiaryStore(state => state.setDarkMode);
+  const setThemePreference = useDiaryStore(state => state.setThemePreference);
 
   // 图片压缩配置（本地编辑状态）
   const imageConfigStore = useDiaryStore(state => state.imageConfig);
@@ -209,25 +211,37 @@ export function SettingsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">⚙️ 设置</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><SettingsIcon /> 设置</h1>
+          <button
+            onClick={() => {
+              const next: Record<string, 'dark' | 'light' | 'system'> = {
+                dark: 'light',
+                light: 'system',
+                system: 'dark'
+              };
+              setThemePreference(next[themePreference]);
+            }}
+            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+            title={
+              themePreference === 'dark' ? '深色模式 · 点击切换' :
+              themePreference === 'light' ? '浅色模式 · 点击切换' : '跟随系统 · 点击切换'
+            }
+          >
+            {themePreference === 'dark' ? <DarkIcon /> :
+             themePreference === 'light' ? <LightIcon /> :
+             darkMode ? <DarkIcon /> : <LightIcon />}
+            {themePreference === 'system' && (
+              <span className="absolute bottom-0.5 right-0.5 text-[8px] font-bold text-indigo-500 dark:text-indigo-400 bg-white dark:bg-gray-800 rounded-full leading-none px-0.5">
+                A
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
       <main className="px-4 py-6 max-w-md mx-auto">
-        {/* 深色模式 */}
-        <CollapsibleSection title="🌓 显示设置">
-          <div className="mb-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={darkMode}
-                onChange={(e) => setDarkMode(e.target.checked)}
-                className="w-4 h-4 text-indigo-600 rounded"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">启用深色模式</span>
-            </label>
-          </div>
-        </CollapsibleSection>
 
         {/* 远程API配置 */}
         <CollapsibleSection title="🌐 远程API设置">
@@ -549,7 +563,7 @@ export function SettingsPage() {
         <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600 dark:text-gray-400">
-            <p>日记APP v0.6.8</p>
+            <p>日记APP v0.6.9</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
           </div>
         </section>
