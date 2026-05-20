@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import HabitStats, { HabitStatsRef } from './HabitStats';
 import { PullToRefresh } from './PullToRefresh';
+import { StatsIcon } from './Icons';
 
 export default function StatsPage() {
   const habitStatsRef = useRef<HabitStatsRef>(null);
@@ -15,7 +16,7 @@ export default function StatsPage() {
         {/* 头部 */}
         <div className="bg-white dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
           <div className="p-4 max-w-md mx-auto">
-            <h1 className="text-lg font-medium text-gray-800 dark:text-gray-100">📊 习惯统计（近30天）</h1>
+            <h1 className="text-lg font-medium text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><StatsIcon /> 习惯统计（近30天）</h1>
           </div>
         </div>
 

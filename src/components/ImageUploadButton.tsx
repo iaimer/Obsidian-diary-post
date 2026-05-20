@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
+import { UploadPhotoIcon } from './Icons';
 
 interface ImageUploadButtonProps {
   onImageUploaded?: () => void;
@@ -58,7 +59,14 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
             : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
         }`}
       >
-        {status === 'processing' ? progress : '添加照片'}
+        {status === 'processing' ? (
+          progress
+        ) : (
+          <span className="flex items-center gap-1">
+            <UploadPhotoIcon />
+            添加照片
+          </span>
+        )}
       </button>
 
       {status === 'error' && (
