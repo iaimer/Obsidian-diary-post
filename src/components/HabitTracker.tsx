@@ -135,8 +135,6 @@ export default function HabitTracker() {
     }
   };
 
-  // 计算饮水图标数量
-  const waterEmojiCount = Math.floor(habitData.water / 250);
   const waterGoalMet = habitData.water >= HABIT_GOALS.water;
   const stepsGoalMet = habitData.steps >= HABIT_GOALS.steps;
 
@@ -150,21 +148,29 @@ export default function HabitTracker() {
       <div className="space-y-2">
         {/* 饮水 */}
         <div
-          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+          className="relative flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-90 transition-opacity overflow-hidden"
           onClick={() => setEditingType('water')}
         >
-          <div className="flex items-center gap-3">
+          {/* 进度条背景 */}
+          <div
+            className="absolute inset-0 bg-blue-100"
+            style={{ width: '100%' }}
+          />
+          <div
+            className="absolute inset-y-0 left-0 bg-blue-200 transition-all duration-300"
+            style={{ width: `${Math.min(100, (habitData.water / HABIT_GOALS.water) * 100)}%` }}
+          />
+
+          {/* 内容 */}
+          <div className="relative flex items-center gap-3">
             <span className="text-2xl">💧</span>
             <div>
               <div className="text-sm text-gray-700">饮水</div>
               <div className="text-xs text-gray-500">目标 1500 mL</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {waterEmojiCount > 0 && (
-              <span className="text-sm">{'🥤'.repeat(Math.min(waterEmojiCount, 6))}</span>
-            )}
-            <span className={`text-sm font-medium ${waterGoalMet ? 'text-green-600' : 'text-gray-600'}`}>
+          <div className="relative flex items-center">
+            <span className={`text-sm font-medium ${waterGoalMet ? 'text-green-600' : 'text-gray-700'}`}>
               {habitData.water} mL
             </span>
             {waterGoalMet && <span className="text-green-600">✓</span>}
@@ -173,18 +179,29 @@ export default function HabitTracker() {
 
         {/* 运动 */}
         <div
-          className="flex items-center justify-between p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+          className="relative flex items-center justify-between p-3 rounded-lg cursor-pointer hover:opacity-90 transition-opacity overflow-hidden"
           onClick={() => setEditingType('steps')}
         >
-          <div className="flex items-center gap-3">
+          {/* 进度条背景 */}
+          <div
+            className="absolute inset-0"
+            style={{ width: '100%', backgroundColor: '#DDFFE4' }}
+          />
+          <div
+            className="absolute inset-y-0 left-0 transition-all duration-300"
+            style={{ width: `${Math.min(100, (habitData.steps / HABIT_GOALS.steps) * 100)}%`, backgroundColor: '#ADEBB3' }}
+          />
+
+          {/* 内容 */}
+          <div className="relative flex items-center gap-3">
             <span className="text-2xl">🏃</span>
             <div>
               <div className="text-sm text-gray-700">运动</div>
               <div className="text-xs text-gray-500">目标 6000 步</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${stepsGoalMet ? 'text-green-600' : 'text-gray-600'}`}>
+          <div className="relative flex items-center gap-2">
+            <span className={`text-sm font-medium ${stepsGoalMet ? 'text-green-600' : 'text-gray-700'}`}>
               {habitData.steps} 步
             </span>
             {stepsGoalMet && <span className="text-green-600">✓</span>}
