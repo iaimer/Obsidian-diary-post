@@ -384,7 +384,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   ) || [];
   
   const reflection = diary?.sections.reflection.filter(l =>
-    l.trim() && l !== '- ' && !l.includes('<!--')
+    l.trim() && l !== '- ' && !l.includes('<!--') && !l.startsWith('###')
   ) || [];
   
   const lizhiSays = diary?.sections.lizhi_says.filter(l =>
