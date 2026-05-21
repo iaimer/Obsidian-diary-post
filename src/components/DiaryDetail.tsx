@@ -268,7 +268,7 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
 
           {lizhiSays.length > 0 && (
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
-              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🧠 荔枝喵说</h4>
+              <h4 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🧠 人生教练</h4>
               <div className="space-y-1">
                 {lizhiSays.map((line, i) => (
                   <div key={i} className="text-sm text-gray-700 dark:text-gray-200 italic">{renderMarkdown(line)}</div>

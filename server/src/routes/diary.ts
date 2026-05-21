@@ -189,6 +189,54 @@ router.post('/reflection', async (req, res) => {
   }
 });
 
+// 替换荔枝喵说区块
+router.post('/lizhi-says', async (req, res) => {
+  try {
+    const { date, content } = req.body;
+    const diaryDate = date
+      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      : new Date();
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(diaryDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    const updated = replaceLizhiSaysSection(originalContent, content);
+    writeDiary(diaryDate, updated);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// 追加明日寄语
+router.post('/tomorrow', async (req, res) => {
+  try {
+    const { date, content } = req.body;
+    const diaryDate = date
+      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      : new Date();
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(diaryDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    const updated = appendToSection(originalContent, 'tomorrow', `- ${content}`);
+    writeDiary(diaryDate, updated);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // 上传图片（远程模式）：接收 base64 压缩图片，保存到 assets 并追加 WikiLink
 router.post('/image/upload', async (req, res) => {
   try {
@@ -244,6 +292,41 @@ router.post('/image/upload', async (req, res) => {
     res.status(500).json({ error: (error as Error).message });
   }
 });
+
+function replaceLizhiSaysSection(content: string, newText: string): string {
+  const lines = content.split('\n');
+  const newHeader = '### 🧠 人生教练';
+  const oldHeader = '### 🧠 荔枝喵说';
+
+  let startIndex = -1;
+  let endIndex = -1;
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(newHeader) || lines[i].startsWith(oldHeader)) {
+      startIndex = i;
+      break;
+    }
+  }
+  
+  if (startIndex === -1) return content;
+  
+  const allHeaders = ['## 🏃 习惯打卡', '## ✍️ 随手记', '## ✨ 每日小确幸',
+    '## 😰 焦虑时刻', '### 💡 觉察与迭代', newHeader, oldHeader, '### 🌙 明日寄语', '## 📸 影像记录'];
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) {
+      endIndex = i;
+      break;
+    }
+  }
+  
+  if (endIndex === -1) endIndex = lines.length;
+  
+  const newLines = newText.split('\n').map(l => l.trim() ? `- ${l}` : l);
+  const before = lines.slice(0, startIndex);
+  const after = lines.slice(endIndex);
+  
+  return [...before, newHeader, ...newLines, '', ...after].join('\n');
+}
 
 function updateHabitsSection(content: string, habits: string[]): string {
   const lines = content.split('\n');

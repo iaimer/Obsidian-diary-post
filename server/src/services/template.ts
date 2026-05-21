@@ -60,7 +60,7 @@ export function createObsidianDiaryContent(date: Date): string {
   lines.push('<!-- 这里是你的观点和思考，荔枝喵会重点提取 -->');
   lines.push('- ');
   lines.push('');
-  lines.push('### 🧠 荔枝喵说');
+  lines.push('### 🧠 人生教练');
   lines.push('<!-- 基于当天日记的客观反馈：模式识别、矛盾指出、批判性问题 -->');
   lines.push('- ');
   lines.push('');

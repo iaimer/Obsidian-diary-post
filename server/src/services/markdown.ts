@@ -4,10 +4,13 @@ const sectionHeaders: Record<string, string> = {
   happiness: '## ✨ 每日小确幸',
   anxiety: '## 😰 焦虑时刻',
   reflection: '### 💡 觉察与迭代',
-  lizhi_says: '### 🧠 荔枝喵说',
+  lizhi_says: '### 🧠 人生教练',
   tomorrow: '### 🌙 明日寄语',
   images: '## 📸 影像记录'
 };
+
+// 旧版标题（向后兼容）
+const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
 
 export function parseDiary(content: string) {
   const lines = content.split('\n');
@@ -63,13 +66,13 @@ export function parseDiary(content: string) {
     
     for (const section of sectionKeys) {
       const header = sectionHeaders[section];
-      if (line.startsWith(header)) {
+      if (line.startsWith(header) || (section === 'lizhi_says' && line.startsWith(LEGACY_LIZHI_SAYS))) {
         currentSection = section;
         break;
       }
     }
     
-    if (Object.values(sectionHeaders).some(h => line.startsWith(h))) {
+    if (Object.values(sectionHeaders).some(h => line.startsWith(h)) || line.startsWith(LEGACY_LIZHI_SAYS)) {
       continue;
     }
     

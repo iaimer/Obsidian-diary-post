@@ -11,10 +11,13 @@ const sectionHeaders: Record<DiarySection, string> = {
   [DiarySection.HAPPINESS]: '## ✨ 每日小确幸',
   [DiarySection.ANXIETY]: '## 😰 焦虑时刻',
   [DiarySection.REFLECTION]: '### 💡 觉察与迭代',
-  [DiarySection.LIZHI_SAYS]: '### 🧠 荔枝喵说',
+  [DiarySection.LIZHI_SAYS]: '### 🧠 人生教练',
   [DiarySection.TOMORROW]: '### 🌙 明日寄语',
   [DiarySection.IMAGES]: '## 📸 影像记录'
 };
+
+// 旧版标题（向后兼容）
+const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
 
 // 创建符合Obsidian模板的日记内容
 function createObsidianDiaryContent(date: Date): string {
@@ -212,9 +215,9 @@ export class FileSyncService {
     let sectionStartIndex = -1;
     let nextSectionIndex = -1;
 
-    // 找到当前区块开始位置
+    // 找到当前区块开始位置（含旧版标题兼容）
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(header)) {
+      if (lines[i].startsWith(header) || (section === DiarySection.LIZHI_SAYS && lines[i].startsWith(LEGACY_LIZHI_SAYS))) {
         sectionStartIndex = i;
         break;
       }
@@ -234,8 +237,8 @@ export class FileSyncService {
       }
     }
 
-    // 找到下一个区块的位置（用于确定插入点）
-    const allHeaders = Object.values(sectionHeaders);
+    // 找到下一个区块的位置（含旧版标题兼容）
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
       if (allHeaders.some(h => lines[i].startsWith(h))) {
         nextSectionIndex = i;
@@ -290,6 +293,11 @@ export class FileSyncService {
     await this.appendToSection(new Date(), DiarySection.HAPPINESS, formatted);
   }
 
+  // 追加明日寄语
+  async appendTomorrow(content: string): Promise<void> {
+    await this.appendToSection(new Date(), DiarySection.TOMORROW, `- ${content}`);
+  }
+
   // 更新习惯打卡（替换整个习惯区块）
   async updateHabits(habitData: HabitData): Promise<void> {
     if (!this.vaultHandle) {
@@ -322,7 +330,7 @@ export class FileSyncService {
       throw new Error('Habits section not found');
     }
 
-    const allHeaders = Object.values(sectionHeaders);
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
       if (allHeaders.some(h => lines[i].startsWith(h))) {
         nextSectionIndex = i;
@@ -338,6 +346,60 @@ export class FileSyncService {
     const before = lines.slice(0, sectionStartIndex + 1);
     const after = lines.slice(deleteEnd);
     const updatedLines = [...before, ...newHabits, '', ...after];
+
+    const updatedContent = updatedLines.join('\n');
+    await this.writeFile(date, updatedContent);
+
+    const entry = parseDiary(updatedContent);
+    entry.date = getDateString(date);
+    await cacheDiary(entry);
+  }
+
+  // 替换荔枝喵说区块（先删后写）
+  async replaceLizhiSays(date: Date, content: string): Promise<void> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    let originalContent: string;
+    try {
+      originalContent = await this.readFile(date);
+    } catch (error) {
+      throw new Error('日记文件不存在，请先创建');
+    }
+
+    const lines = originalContent.split('\n');
+
+    const header = sectionHeaders[DiarySection.LIZHI_SAYS];
+    let sectionStartIndex = -1;
+    let nextSectionIndex = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header) || lines[i].startsWith(LEGACY_LIZHI_SAYS)) {
+        sectionStartIndex = i;
+        break;
+      }
+    }
+
+    if (sectionStartIndex === -1) {
+      throw new Error('LizhiSays section not found');
+    }
+
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
+    for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) {
+        nextSectionIndex = i;
+        break;
+      }
+    }
+
+    const deleteEnd = nextSectionIndex !== -1 ? nextSectionIndex : lines.length;
+    const newContent = content.split('\n').map(l => l.trim() ? `- ${l}` : l);
+
+    // 始终写入新版标题（替换旧版）
+    const before = lines.slice(0, sectionStartIndex);
+    const after = lines.slice(deleteEnd);
+    const updatedLines = [...before, header, ...newContent, '', ...after];
 
     const updatedContent = updatedLines.join('\n');
     await this.writeFile(date, updatedContent);

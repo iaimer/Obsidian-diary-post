@@ -166,53 +166,52 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
+      {/* Header - 固定在 PullToRefresh 外部，不受下拉影响 */}
+      <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 sticky top-0 z-10">
+        <div className="flex justify-between items-center">
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+            <span className="inline-flex items-center gap-2">
+              <TodayIcon />
+              {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+            </span>
+          </h1>
+          {remoteMode ? (
+            <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+              ✓ 远程模式
+            </span>
+          ) : (
+            <button
+              onClick={vaultConnected ? handleDisconnect : handleConnect}
+              disabled={connecting}
+              className={`px-3 py-1 rounded-full text-sm ${
+                vaultConnected
+                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  : connecting
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                    : wasConnected
+                      ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
+                      : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
+              }`}
+            >
+              {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* 重新连接提示 */}
+      {!remoteMode && wasConnected && !vaultConnected && (
+        <div className="px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border-b dark:border-gray-700">
+          <div className="text-sm text-orange-700 dark:text-orange-300 text-center">
+            页面刷新后需要重新授权Vault访问
+          </div>
+        </div>
+      )}
 
       <PullToRefresh onRefresh={async () => {
         await diaryViewRef.current?.reload();
       }}>
         <div className="min-h-screen">
-          {/* Header */}
-          <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
-            <div className="flex justify-between items-center">
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                <span className="inline-flex items-center gap-2">
-                  <TodayIcon />
-                  {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
-                </span>
-              </h1>
-              {remoteMode ? (
-                <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
-                  ✓ 远程模式
-                </span>
-              ) : (
-                <button
-                  onClick={vaultConnected ? handleDisconnect : handleConnect}
-                  disabled={connecting}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    vaultConnected
-                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                      : connecting
-                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                        : wasConnected
-                          ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
-                          : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
-                  }`}
-                >
-                  {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
-                </button>
-              )}
-            </div>
-          </header>
-
-          {/* 重新连接提示 */}
-          {!remoteMode && wasConnected && !vaultConnected && (
-            <div className="px-4 py-2 bg-orange-50 dark:bg-orange-900/30 border-b dark:border-gray-700">
-              <div className="text-sm text-orange-700 dark:text-orange-300 text-center">
-                页面刷新后需要重新授权Vault访问
-              </div>
-            </div>
-          )}
-
           {/* Main Content */}
           <main className="px-4 py-6 max-w-md mx-auto">
             {/* Quick Input */}

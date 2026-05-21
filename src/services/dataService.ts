@@ -1,4 +1,4 @@
-import { DiaryEntry, HabitData } from '../types';
+import { DiaryEntry, DiarySection, HabitData } from '../types';
 import { getFileSyncService } from './fileSync';
 import { useDiaryStore } from '../stores/diaryStore';
 import { compressImage, blobToBase64, generateImageFilename } from './imageService';
@@ -30,6 +30,12 @@ export interface DataService {
   
   // 更新习惯
   updateHabits(habitData: HabitData): Promise<void>;
+
+  // 替换荔枝喵说区块
+  replaceLizhiSays(date: Date, content: string): Promise<void>;
+
+  // 追加明日寄语
+  appendTomorrow(date: Date, content: string): Promise<void>;
   
   // 检查是否已连接
   isConnected(): boolean;
@@ -72,6 +78,14 @@ export class LocalDataService implements DataService {
   
   async updateHabits(habitData: HabitData): Promise<void> {
     await this.fileSync.updateHabits(habitData);
+  }
+
+  async replaceLizhiSays(date: Date, content: string): Promise<void> {
+    await this.fileSync.replaceLizhiSays(date, content);
+  }
+
+  async appendTomorrow(date: Date, content: string): Promise<void> {
+    await this.fileSync.appendToSection(date, DiarySection.TOMORROW, content);
   }
 
   async uploadImage(file: File, date: Date): Promise<void> {
@@ -169,6 +183,22 @@ export class RemoteDataService implements DataService {
     await this.fetchAPI('/api/v1/diary/habit', {
       method: 'POST',
       body: JSON.stringify(habitData)
+    });
+  }
+
+  async replaceLizhiSays(date: Date, content: string): Promise<void> {
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/lizhi-says', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, content })
+    });
+  }
+
+  async appendTomorrow(date: Date, content: string): Promise<void> {
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/tomorrow', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, content })
     });
   }
 

@@ -7,6 +7,7 @@ import { getCachedDiary } from '../db';
 import { getDateString } from '../utils/date';
 import ImageUploadButton from './ImageUploadButton';
 import { ImageModal } from './ImageModal';
+import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
 
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
@@ -144,6 +145,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [generatingLizhi, setGeneratingLizhi] = useState(false);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -277,6 +279,57 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     }
   };
 
+  // 生成人生教练
+  const handleGenerateLizhiSays = async () => {
+    if (!isAIConfigured()) {
+      alert('请先在设置页面配置AI API');
+      return;
+    }
+    if (!diary) return;
+
+    // 收集当天日记有内容的所有区块
+    const sections: string[] = [];
+    const addSection = (title: string, items: string[]) => {
+      if (items.length > 0) {
+        sections.push(`【${title}】`);
+        items.forEach(item => sections.push(item));
+      }
+    };
+    addSection('随手记', quickNotes);
+    addSection('小确幸', happiness);
+    addSection('焦虑时刻', diary.sections.anxiety.filter(l => l.trim() && !l.includes('<!--')));
+    addSection('觉察', reflection);
+    addSection('明日寄语', diary.sections.tomorrow.filter(l => l.trim() && !l.includes('<!--')));
+
+    const diaryContext = sections.join('\n') || '今天暂无日记内容';
+
+    setGeneratingLizhi(true);
+    try {
+      const config = getAIConfig();
+      const result = await generateLizhiSays(diaryContext, config);
+
+      // 解析行动建议，从人生教练中抽出写到明日寄语
+      const actionMatch = result.match(/🎯\s*行动建议\s*\n?([\s\S]*?)(?=💬\s*暖心鼓励|$)/);
+      if (actionMatch) {
+        const actionContent = actionMatch[1].trim();
+        if (actionContent) {
+          await getDataService().appendTomorrow(new Date(), actionContent);
+        }
+      }
+      const lizhiSaysContent = actionMatch
+        ? result.replace(actionMatch[0], '').replace(/\n{3,}/g, '\n\n').trim()
+        : result;
+
+      await getDataService().replaceLizhiSays(new Date(), lizhiSaysContent);
+      useDiaryStore.getState().triggerRefresh();
+    } catch (err) {
+      console.error('生成人生教练失败:', err);
+      alert('生成失败: ' + (err as Error).message);
+    } finally {
+      setGeneratingLizhi(false);
+    }
+  };
+
   useEffect(() => {
     if (vaultConnected || remoteMode) loadDiary();
   }, [vaultConnected, remoteMode, refreshKey]); // 监听refreshKey变化
@@ -343,6 +396,11 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     l.trim() && l.includes('![[')
   ) || [];
 
+  // 明日寄语：过滤空行和HTML注释
+  const tomorrow = diary?.sections.tomorrow.filter(l =>
+    l.trim() && l !== '- ' && !l.includes('<!--')
+  ) || [];
+
   return (
     <>
     <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 overflow-hidden">
@@ -390,13 +448,50 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         </div>
       )}
 
-      {/* 荔枝喵说 */}
-      {lizhiSays.length > 0 && (
-        <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🧠 荔枝喵说</h3>
+      {/* 人生教练 */}
+      <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
+        <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center justify-between">
+          <span>🧠 人生教练</span>
+          {lizhiSays.length > 0 && !loading && (
+            <button
+              onClick={handleGenerateLizhiSays}
+              disabled={generatingLizhi}
+              className="text-[10px] text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 disabled:opacity-50"
+            >
+              {generatingLizhi ? '生成中...' : '🔄 重新生成'}
+            </button>
+          )}
+        </h3>
+        {generatingLizhi ? (
+          <div className="text-center py-4 text-sm text-gray-400 dark:text-gray-500">
+            {diary ? '正在分析今天的日记...' : '生成中...'}
+          </div>
+        ) : lizhiSays.length > 0 ? (
           <div className="space-y-1">
             {lizhiSays.map((line, i) => (
-              <div key={i} className="text-sm text-gray-700 dark:text-gray-200 italic">{renderMarkdown(line)}</div>
+              <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line)}</div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <button
+              onClick={handleGenerateLizhiSays}
+              disabled={generatingLizhi}
+              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🧠 生成今日教练反馈
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 明日寄语 */}
+      {tomorrow.length > 0 && (
+        <div className="mx-4 my-3 bg-sky-50 dark:bg-sky-900/20 px-3 py-2 rounded-lg">
+          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🌙 明日寄语</h3>
+          <div className="space-y-1">
+            {tomorrow.map((line, i) => (
+              <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line)}</div>
             ))}
           </div>
         </div>
@@ -436,7 +531,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       </div>
 
       {/* 空状态 */}
-      {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
+      {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && tomorrow.length === 0 && images.length === 0 && (
         <div className="px-4 py-6">
           <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
             {error ? '加载失败' : '暂无记录'}
