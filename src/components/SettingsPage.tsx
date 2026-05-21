@@ -9,11 +9,12 @@ const AI_CONFIG_KEY = 'diary-ai-config';
 
 interface AIConfig {
   enabled: boolean;
-  name: string;        // 自定义名称
-  baseUrl: string;     // 自定义API地址
+  name: string;
+  baseUrl: string;
   apiKey: string;
-  model: string;       // 自定义模型名称
-  polishPrompt: string; // 自定义润色规则
+  model: string;
+  polishPrompt: string;
+  coachPrompt: string;
 }
 
 // 默认润色规则
@@ -60,6 +61,28 @@ const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输�
 
 注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
 
+// 默认教练提示词
+const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。
+
+按以下结构输出，模块间空行分隔：
+
+📌 模式识别
+今天的行为模式或思维惯性
+
+⚠️ 矛盾指出
+温和指出言行不一致的地方
+
+🎯 行动建议
+明天可做的具体小改进
+
+💬 暖心鼓励
+注入一点情绪价值，给继续记录、持续改进的勇气
+
+铁律：
+- 总字数严格 250-300 字，不超出、不偷懒
+- 只基于原文，不编造
+- 教练口吻，客观直接，不说教`;
+
 // 默认配置
 const defaultAIConfig: AIConfig = {
   enabled: false,
@@ -67,7 +90,8 @@ const defaultAIConfig: AIConfig = {
   baseUrl: '',
   apiKey: '',
   model: '',
-  polishPrompt: DEFAULT_POLISH_PROMPT
+  polishPrompt: DEFAULT_POLISH_PROMPT,
+  coachPrompt: DEFAULT_COACH_PROMPT
 };
 
 // 获取保存的配置
@@ -78,6 +102,9 @@ function getSavedAIConfig(): AIConfig {
       const config = JSON.parse(saved);
       if (!config.polishPrompt) {
         config.polishPrompt = DEFAULT_POLISH_PROMPT;
+      }
+      if (!config.coachPrompt || config.coachPrompt.includes('第一人称')) {
+        config.coachPrompt = DEFAULT_COACH_PROMPT;
       }
       return config;
     } catch {
@@ -98,6 +125,7 @@ const presets = [
 
 export function SettingsPage() {
   const [aiConfig, setAIConfig] = useState<AIConfig>(getSavedAIConfig());
+  const [promptTab, setPromptTab] = useState<'polish' | 'coach'>('polish');
   const [saving, setSaving] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showApiToken, setShowApiToken] = useState(false);
@@ -443,26 +471,68 @@ export function SettingsPage() {
                 </div>
               )}
 
-              {/* 自定义润色规则 */}
+              {/* 提示词规则 */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-2">润色规则（可自定义）</label>
-                <textarea
-                  className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-                  placeholder="自定义润色规则..."
-                  rows={10}
-                  value={aiConfig.polishPrompt || DEFAULT_POLISH_PROMPT}
-                  onChange={(e) => setAIConfig({ ...aiConfig, polishPrompt: e.target.value })}
-                />
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mb-2">
                   <button
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                    onClick={() => setAIConfig({ ...aiConfig, polishPrompt: DEFAULT_POLISH_PROMPT })}
+                    className={`text-xs px-3 py-1 rounded-full ${
+                      promptTab === 'polish'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                    onClick={() => setPromptTab('polish')}
                   >
-                    重置为默认规则
+                    润色规则
                   </button>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">|</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">修改后点击保存生效</span>
+                  <button
+                    className={`text-xs px-3 py-1 rounded-full ${
+                      promptTab === 'coach'
+                        ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                    onClick={() => setPromptTab('coach')}
+                  >
+                    教练提示词
+                  </button>
                 </div>
+                {promptTab === 'polish' ? (
+                  <>
+                    <textarea
+                      className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                      placeholder="自定义润色规则..."
+                      rows={10}
+                      value={aiConfig.polishPrompt || DEFAULT_POLISH_PROMPT}
+                      onChange={(e) => setAIConfig({ ...aiConfig, polishPrompt: e.target.value })}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                        onClick={() => setAIConfig({ ...aiConfig, polishPrompt: DEFAULT_POLISH_PROMPT })}
+                      >
+                        重置为默认
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <textarea
+                      className="w-full p-2 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                      placeholder="自定义教练提示词..."
+                      rows={10}
+                      value={aiConfig.coachPrompt || DEFAULT_COACH_PROMPT}
+                      onChange={(e) => setAIConfig({ ...aiConfig, coachPrompt: e.target.value })}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                        onClick={() => setAIConfig({ ...aiConfig, coachPrompt: DEFAULT_COACH_PROMPT })}
+                      >
+                        重置为默认
+                      </button>
+                    </div>
+                  </>
+                )}
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">修改后点击保存生效</div>
               </div>
             </>
           )}
@@ -563,7 +633,7 @@ export function SettingsPage() {
         <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600 dark:text-gray-400">
-            <p>日记APP v0.6.9</p>
+            <p>日记APP v0.7.0</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
           </div>
         </section>

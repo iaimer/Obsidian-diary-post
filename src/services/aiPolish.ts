@@ -7,6 +7,7 @@ interface AIConfig {
   apiKey: string;
   model: string;
   polishPrompt?: string;
+  coachPrompt?: string;
 }
 
 // 默认润色提示词
@@ -53,6 +54,28 @@ const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输�
 
 注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
 
+// 默认教练提示词
+const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。
+
+按以下结构输出，模块间空行分隔：
+
+📌 模式识别
+今天的行为模式或思维惯性
+
+⚠️ 矛盾指出
+温和指出言行不一致的地方
+
+🎯 行动建议
+明天可做的具体小改进
+
+💬 暖心鼓励
+注入一点情绪价值，给继续记录、持续改进的勇气
+
+铁律：
+- 总字数严格 250-300 字，不超出、不偷懒
+- 只基于原文，不编造
+- 教练口吻，客观直接，不说教`;
+
 // 润色类型
 export type PolishType = 'quickNote' | 'reflection' | 'happiness';
 
@@ -68,6 +91,21 @@ function getPromptByType(_type: PolishType): string {
     } catch {}
   }
   return DEFAULT_POLISH_PROMPT;
+}
+
+// 获取教练提示词
+function getCoachPrompt(): string {
+  const saved = localStorage.getItem('diary-ai-config');
+  if (saved) {
+    try {
+      const config = JSON.parse(saved);
+      // 检测旧版提示词（含"第一人称"→ 说明是旧缓存），忽略并使用新默认值
+      if (config.coachPrompt && config.coachPrompt.trim() && !config.coachPrompt.includes('第一人称')) {
+        return config.coachPrompt;
+      }
+    } catch {}
+  }
+  return DEFAULT_COACH_PROMPT;
 }
 
 // 判断是否是Claude API
@@ -164,6 +202,89 @@ export async function polishContent(content: string, config: AIConfig, type: Pol
     }
   } catch (error) {
     console.error('Polish failed:', error);
+    throw error;
+  }
+}
+
+// 生成荔枝喵说教练反馈
+export async function generateLizhiSays(content: string, config: AIConfig): Promise<string> {
+  if (!config.enabled || !config.baseUrl || !config.apiKey || !config.model) {
+    throw new Error('请先在设置页面配置AI API');
+  }
+
+  const prompt = getCoachPrompt();
+
+  console.log('Generating LizhiSays with:', config.name, config.model);
+
+  try {
+    if (isClaudeAPI(config.baseUrl)) {
+      const response = await fetch(`${config.baseUrl}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': config.apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          max_tokens: 800,
+          messages: [
+            {
+              role: 'user',
+              content: `${prompt}\n\n今天日记内容：\n${content}`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: { message: 'API调用失败' } }));
+        throw new Error(error.error?.message || 'Claude API调用失败');
+      }
+
+      const data = await response.json();
+      return data.content[0].text.trim();
+    } else {
+      let apiUrl = config.baseUrl;
+
+      if (!apiUrl.includes('/v1') && !apiUrl.endsWith('/chat/completions')) {
+        apiUrl = `${apiUrl}/v1/chat/completions`;
+      } else if (!apiUrl.endsWith('/chat/completions')) {
+        apiUrl = `${apiUrl}/chat/completions`;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`
+        },
+        body: JSON.stringify({
+          model: config.model,
+          max_tokens: 800,
+          messages: [
+            {
+              role: 'system',
+              content: prompt
+            },
+            {
+              role: 'user',
+              content: `今天日记内容：\n${content}`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: { message: 'API调用失败' } }));
+        throw new Error(error.error?.message || 'API调用失败');
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    }
+  } catch (error) {
+    console.error('Generate LizhiSays failed:', error);
     throw error;
   }
 }

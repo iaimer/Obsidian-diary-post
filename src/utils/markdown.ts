@@ -7,10 +7,13 @@ const sectionHeaders: Record<DiarySection, string> = {
   [DiarySection.HAPPINESS]: '## ✨ 每日小确幸',
   [DiarySection.ANXIETY]: '## 😰 焦虑时刻',
   [DiarySection.REFLECTION]: '### 💡 觉察与迭代',
-  [DiarySection.LIZHI_SAYS]: '### 🧠 荔枝喵说',
+  [DiarySection.LIZHI_SAYS]: '### 🧠 人生教练',
   [DiarySection.TOMORROW]: '### 🌙 明日寄语',
   [DiarySection.IMAGES]: '## 📸 影像记录'
 };
+
+// 旧版标题映射（向后兼容）
+const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
 
 // 解析日记Markdown内容
 export function parseDiary(content: string): DiaryEntry {
@@ -66,16 +69,16 @@ export function parseDiary(content: string): DiaryEntry {
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i];
 
-    // 检查是否是区块标题
+    // 检查是否是区块标题（含旧版兼容）
     for (const [section, header] of Object.entries(sectionHeaders)) {
-      if (line.startsWith(header)) {
+      if (line.startsWith(header) || (section === 'lizhi_says' && line.startsWith(LEGACY_LIZHI_SAYS))) {
         currentSection = section as DiarySection;
         break;
       }
     }
 
-    // 如果当前行是区块标题，跳过
-    if (Object.values(sectionHeaders).some(h => line.startsWith(h))) {
+    // 如果当前行是区块标题（含旧版），跳过
+    if (Object.values(sectionHeaders).some(h => line.startsWith(h)) || line.startsWith(LEGACY_LIZHI_SAYS)) {
       continue;
     }
 
