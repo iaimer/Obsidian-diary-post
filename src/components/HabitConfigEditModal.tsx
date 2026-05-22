@@ -115,23 +115,13 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
 
           {/* Emoji */}
           <div>
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Emoji 图标</label>
-            <div className="flex items-center gap-2">
-              <button
-                className="w-10 h-10 text-2xl border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              >
-                {emoji}
-              </button>
-              <input
-                type="text"
-                className="w-20 h-10 px-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500"
-                value={emoji}
-                onChange={e => setEmoji(e.target.value.slice(-2) || '✅')}
-                maxLength={2}
-                placeholder="直接输入"
-              />
-            </div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">图标</label>
+            <button
+              className="w-10 h-10 text-2xl border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              {emoji}
+            </button>
             {showEmojiPicker && (
               <div className="mt-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 p-2">
                 {EMOJI_GROUPS.map(group => (
