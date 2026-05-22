@@ -58,15 +58,34 @@ export function HistoryPage() {
       if (remoteMode) {
         const data = await fetchRemoteMonthData(year, month);
         setMonthData(data);
+        // 自动预览昨天的日记
+        autoSelectYesterday(data);
       } else {
         const historyService = getHistoryService();
         const data = await historyService.getMonthDiaries(year, month);
         setMonthData(data);
+        // 自动预览昨天的日记
+        autoSelectYesterday(data);
       }
     } catch (error) {
       console.error('Failed to load month data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 自动选择昨天的日记（首次进入页面时）
+  const autoSelectYesterday = (data: { year: number; month: number; diaries: DiaryMeta[] } | null) => {
+    if (!data || selectedDate) return; // 已有选择则不自动选择
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // 检查昨天是否有日记
+    const hasDiary = data.diaries.some(d => d.date === yesterdayStr);
+    if (hasDiary) {
+      setSelectedDate(yesterday);
     }
   };
 
