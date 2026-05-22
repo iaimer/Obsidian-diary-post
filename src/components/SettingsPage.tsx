@@ -3,6 +3,8 @@ import { useDiaryStore } from '../stores/diaryStore';
 import { resetDataService } from '../services/dataService';
 import { CollapsibleSection } from './CollapsibleSection';
 import { DarkIcon, LightIcon, SettingsIcon } from './Icons';
+import { HabitConfigEditModal } from './HabitConfigEditModal';
+import { HabitConfig } from '../types';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -133,6 +135,10 @@ export function SettingsPage() {
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'failed'>('none');
   const [imageSaving, setImageSaving] = useState(false);
 
+  // 习惯配置编辑状态
+  const [editingHabit, setEditingHabit] = useState<HabitConfig | null>(null);
+  const [showHabitModal, setShowHabitModal] = useState(false);
+
   // 远程API配置
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const apiUrl = useDiaryStore(state => state.apiUrl);
@@ -142,6 +148,13 @@ export function SettingsPage() {
   const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
   const setThemePreference = useDiaryStore(state => state.setThemePreference);
+
+  // 习惯配置
+  const habitConfigs = useDiaryStore(state => state.habitConfigs);
+  const addHabitConfig = useDiaryStore(state => state.addHabitConfig);
+  const updateHabitConfig = useDiaryStore(state => state.updateHabitConfig);
+  const removeHabitConfig = useDiaryStore(state => state.removeHabitConfig);
+  const resetHabitConfigs = useDiaryStore(state => state.resetHabitConfigs);
 
   // 图片压缩配置（本地编辑状态）
   const imageConfigStore = useDiaryStore(state => state.imageConfig);
@@ -235,6 +248,46 @@ export function SettingsPage() {
     });
   };
 
+  // 习惯配置处理
+  const handleAddHabit = () => {
+    setEditingHabit(null);
+    setShowHabitModal(true);
+  };
+
+  const handleEditHabit = (config: HabitConfig) => {
+    setEditingHabit(config);
+    setShowHabitModal(true);
+  };
+
+  const handleSaveHabit = (config: HabitConfig) => {
+    if (editingHabit) {
+      // 编辑现有习惯
+      updateHabitConfig(config.id, config);
+    } else {
+      // 添加新习惯
+      const maxOrder = habitConfigs.reduce((max, c) => Math.max(max, c.order), 0);
+      addHabitConfig({ ...config, order: maxOrder + 1 });
+    }
+    setShowHabitModal(false);
+    setEditingHabit(null);
+  };
+
+  const handleDeleteHabit = (id: string) => {
+    if (confirm('确定要删除这个习惯吗？')) {
+      removeHabitConfig(id);
+    }
+  };
+
+  const handleToggleHabitEnabled = (id: string, enabled: boolean) => {
+    updateHabitConfig(id, { enabled });
+  };
+
+  const handleResetHabits = () => {
+    if (confirm('确定要恢复默认习惯配置吗？')) {
+      resetHabitConfigs();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header */}
@@ -270,6 +323,73 @@ export function SettingsPage() {
 
       {/* Main Content */}
       <main className="px-4 py-6 max-w-md mx-auto">
+
+        {/* 习惯管理 */}
+        <CollapsibleSection title="🏃 习惯管理">
+          <div className="space-y-2">
+            {/* 习惯列表 */}
+            {habitConfigs.sort((a, b) => a.order - b.order).map(config => (
+              <div
+                key={config.id}
+                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{config.emoji}</span>
+                  <div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-200">{config.name}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500">
+                      {config.type === 'number' ? `数值型 · 目标 ${config.goal}${config.unit || ''}` : '勾选型'}
+                      {!config.enabled && ' · 已禁用'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* 启用/禁用开关 */}
+                  <button
+                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                      config.enabled
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-400'
+                    }`}
+                    onClick={() => handleToggleHabitEnabled(config.id, !config.enabled)}
+                  >
+                    {config.enabled ? '✓' : ''}
+                  </button>
+                  {/* 编辑按钮 */}
+                  <button
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    onClick={() => handleEditHabit(config)}
+                  >
+                    ✏️
+                  </button>
+                  {/* 删除按钮 */}
+                  <button
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                    onClick={() => handleDeleteHabit(config.id)}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* 操作按钮 */}
+            <div className="flex gap-2 pt-2">
+              <button
+                className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                onClick={handleAddHabit}
+              >
+                + 添加新习惯
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={handleResetHabits}
+              >
+                恢复默认
+              </button>
+            </div>
+          </div>
+        </CollapsibleSection>
 
         {/* 远程API配置 */}
         <CollapsibleSection title="🌐 远程API设置">
@@ -638,6 +758,18 @@ export function SettingsPage() {
           </div>
         </section>
       </main>
+
+      {/* 习惯配置编辑弹窗 */}
+      {showHabitModal && (
+        <HabitConfigEditModal
+          config={editingHabit}
+          onSave={handleSaveHabit}
+          onClose={() => {
+            setShowHabitModal(false);
+            setEditingHabit(null);
+          }}
+        />
+      )}
     </div>
   );
 }
