@@ -8,6 +8,7 @@ interface CalendarDayCellProps {
   isToday: boolean;
   isSelected: boolean;
   hasDiary: boolean;
+  hasContent: boolean;
   onClick: () => void;
 }
 
@@ -36,6 +37,7 @@ export function CalendarDayCell({
   isToday,
   isSelected,
   hasDiary,
+  hasContent,
   onClick
 }: CalendarDayCellProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -162,8 +164,8 @@ export function CalendarDayCell({
         <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 dark:bg-indigo-500 mt-0.5" />
       )}
 
-      {/* 有记录指示点 */}
-      {!imageUrl && !loading && hasDiary && !isToday && !isSelected && (
+      {/* 有内容指示点（随手记/小确幸/觉察/焦虑时刻） */}
+      {!imageUrl && !loading && hasContent && !isToday && !isSelected && (
         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-500 mt-0.5" />
       )}
     </button>
