@@ -10,13 +10,18 @@ interface HabitConfigEditModalProps {
 // 常用 emoji 选择器
 const COMMON_EMOJIS = ['💧', '🏃', '📖', '🇬🇧', '💊', '🥛', '🧘', '🥤', '🍎', '🥗', '💤', '☀️', '🌙', '💪', '🎯', '✅', '📝', '🧠', '❤️', '🧹'];
 
-// 颜色选项
+// 颜色选项（扩展到10种）
 const COLOR_OPTIONS = [
   { value: 'blue', label: '蓝色', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  { value: 'sky', label: '天蓝', bg: 'bg-sky-100 dark:bg-sky-900/30' },
   { value: 'green', label: '绿色', bg: 'bg-green-100 dark:bg-green-900/30' },
+  { value: 'emerald', label: '翠绿', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
   { value: 'orange', label: '橙色', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  { value: 'amber', label: '琥珀', bg: 'bg-amber-100 dark:bg-amber-900/30' },
   { value: 'purple', label: '紫色', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+  { value: 'violet', label: '紫罗兰', bg: 'bg-violet-100 dark:bg-violet-900/30' },
   { value: 'pink', label: '粉色', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+  { value: 'rose', label: '玫瑰', bg: 'bg-rose-100 dark:bg-rose-900/30' },
 ];
 
 export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEditModalProps) {
@@ -29,6 +34,20 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
   const [enabled, setEnabled] = useState(config?.enabled ?? true);
   const [color, setColor] = useState(config?.color || 'purple');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // 当 config 改变时同步所有状态（修复编辑不同习惯时状态不更新的问题）
+  useEffect(() => {
+    if (config) {
+      setName(config.name || '');
+      setEmoji(config.emoji || '✅');
+      setType(config.type || 'boolean');
+      setGoal(config.goal || 100);
+      setUnit(config.unit || '');
+      setDescription(config.description || '');
+      setEnabled(config.enabled ?? true);
+      setColor(config.color || 'purple');
+    }
+  }, [config]);
 
   // 初始化时设置类型相关字段
   useEffect(() => {

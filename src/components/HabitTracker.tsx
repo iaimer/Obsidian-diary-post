@@ -85,10 +85,15 @@ function getColorClasses(color: string | undefined, type: 'number' | 'boolean', 
 } {
   const colorMap: Record<string, { light: string; dark: string; progress: string }> = {
     blue: { light: 'bg-blue-100', dark: 'dark:bg-blue-900/30', progress: 'bg-blue-200 dark:bg-blue-700/50' },
+    sky: { light: 'bg-sky-100', dark: 'dark:bg-sky-900/30', progress: 'bg-sky-200 dark:bg-sky-700/50' },
     green: { light: 'bg-green-100', dark: 'dark:bg-green-900/30', progress: 'bg-green-200 dark:bg-green-700/50' },
+    emerald: { light: 'bg-emerald-100', dark: 'dark:bg-emerald-900/30', progress: 'bg-emerald-200 dark:bg-emerald-700/50' },
     orange: { light: 'bg-orange-100', dark: 'dark:bg-orange-900/30', progress: 'bg-orange-200 dark:bg-orange-700/50' },
+    amber: { light: 'bg-amber-100', dark: 'dark:bg-amber-900/30', progress: 'bg-amber-200 dark:bg-amber-700/50' },
     purple: { light: 'bg-purple-100', dark: 'dark:bg-purple-900/30', progress: 'bg-purple-200 dark:bg-purple-700/50' },
+    violet: { light: 'bg-violet-100', dark: 'dark:bg-violet-900/30', progress: 'bg-violet-200 dark:bg-violet-700/50' },
     pink: { light: 'bg-pink-100', dark: 'dark:bg-pink-900/30', progress: 'bg-pink-200 dark:bg-pink-700/50' },
+    rose: { light: 'bg-rose-100', dark: 'dark:bg-rose-900/30', progress: 'bg-rose-200 dark:bg-rose-700/50' },
   };
 
   const defaultColor = type === 'number'
