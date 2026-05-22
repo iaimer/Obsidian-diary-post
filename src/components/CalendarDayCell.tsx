@@ -97,21 +97,19 @@ export function CalendarDayCell({
     <button
       onClick={onClick}
       className={`w-full h-full flex flex-col items-center justify-center rounded-lg relative overflow-hidden transition-all duration-200
-        ${isSelected
-          ? 'ring-2 ring-indigo-600 ring-offset-1 dark:ring-offset-gray-800'
-          : ''
-        }
-        ${isToday && !imageUrl && !loading
-          ? 'bg-indigo-600 text-white font-medium shadow-md'
-          : hasDiary && !imageUrl && !loading
-            ? 'bg-blue-50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900/50'
-            : !hasDiary && !imageUrl && !loading
-              ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
-              : imageUrl
-                ? 'hover:shadow-lg'
-                : loading
-                  ? 'bg-gray-100 dark:bg-gray-700'
-                  : ''
+        ${isSelected && !imageUrl && !loading
+          ? 'bg-indigo-600 text-white font-medium shadow-md ring-2 ring-indigo-400'
+          : isToday && !imageUrl && !loading
+            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
+            : hasDiary && !imageUrl && !loading
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+              : !hasDiary && !imageUrl && !loading
+                ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : imageUrl
+                  ? 'hover:shadow-lg'
+                  : loading
+                    ? 'bg-gray-100 dark:bg-gray-700'
+                    : ''
         }`}
       style={{
         backgroundImage: imageUrl ? `url(${imageUrl})` : undefined,
@@ -121,7 +119,7 @@ export function CalendarDayCell({
     >
       {/* 图片背景遮罩层 */}
       {imageUrl && (
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/40" />
+        <div className={`absolute inset-0 ${isSelected ? 'bg-gradient-to-b from-indigo-500/40 via-indigo-600/50 to-indigo-700/60' : 'bg-gradient-to-b from-black/20 via-black/30 to-black/40'}`} />
       )}
 
       {/* 加载状态 */}
@@ -140,23 +138,32 @@ export function CalendarDayCell({
 
       {/* 日期数字 */}
       <span className={`text-sm relative z-10 transition-all
-        ${isToday && imageUrl
+        ${isSelected && imageUrl
           ? 'text-white font-bold drop-shadow-lg'
-          : isToday
+          : isSelected
             ? 'font-bold'
-            : imageUrl
-              ? 'text-white font-semibold drop-shadow-lg'
-              : loading
-                ? 'text-gray-400 dark:text-gray-500'
-                : error
-                  ? 'text-red-400 dark:text-red-500'
-                  : ''
+            : isToday && imageUrl
+              ? 'text-white font-medium drop-shadow-lg'
+              : isToday
+                ? 'font-medium'
+                : imageUrl
+                  ? 'text-white font-semibold drop-shadow-lg'
+                  : loading
+                    ? 'text-gray-400 dark:text-gray-500'
+                    : error
+                      ? 'text-red-400 dark:text-red-500'
+                      : ''
         }`}>
         {date.getDate()}
       </span>
 
+      {/* 今天标记（小点） */}
+      {isToday && !isSelected && !imageUrl && !loading && (
+        <span className="w-1 h-1 rounded-full bg-indigo-400 dark:bg-indigo-500 mt-0.5" />
+      )}
+
       {/* 有记录指示点 */}
-      {!imageUrl && !loading && hasDiary && (
+      {!imageUrl && !loading && hasDiary && !isToday && !isSelected && (
         <span className="w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-500 mt-0.5" />
       )}
     </button>
