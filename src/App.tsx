@@ -83,7 +83,7 @@ function App() {
 
   const navItems: { label: string; view: PageView; icon: React.ReactNode }[] = [
     { label: '今天', view: 'home', icon: <TodayIcon /> },
-    { label: '历史', view: 'history', icon: <HistoryIcon /> },
+    { label: '过往', view: 'history', icon: <HistoryIcon /> },
     { label: '统计', view: 'stats', icon: <StatsIcon /> },
     { label: '设置', view: 'settings', icon: <SettingsIcon /> }
   ];
@@ -154,7 +154,7 @@ function App() {
     );
   }
 
-  // 历史页面
+  // 过往页面
   if (currentView === 'history') {
     return (
       <>

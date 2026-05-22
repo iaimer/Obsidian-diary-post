@@ -88,7 +88,7 @@ export function HistoryPage() {
         <div className="min-h-screen">
           <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 历史日记</h1>
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 过往日记</h1>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {remoteMode ? '远程模式' : vaultConnected ? '✓ 已连接' : '未连接'}
               </span>
