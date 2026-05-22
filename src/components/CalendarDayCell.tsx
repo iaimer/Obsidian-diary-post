@@ -6,6 +6,7 @@ interface CalendarDayCellProps {
   date: Date;
   imageName?: string;
   isToday: boolean;
+  isSelected: boolean;
   hasDiary: boolean;
   onClick: () => void;
 }
@@ -33,6 +34,7 @@ export function CalendarDayCell({
   date,
   imageName,
   isToday,
+  isSelected,
   hasDiary,
   onClick
 }: CalendarDayCellProps) {
@@ -95,6 +97,10 @@ export function CalendarDayCell({
     <button
       onClick={onClick}
       className={`w-full h-full flex flex-col items-center justify-center rounded-lg relative overflow-hidden transition-all duration-200
+        ${isSelected
+          ? 'ring-2 ring-indigo-600 ring-offset-1 dark:ring-offset-gray-800'
+          : ''
+        }
         ${isToday && !imageUrl && !loading
           ? 'bg-indigo-600 text-white font-medium shadow-md'
           : hasDiary && !imageUrl && !loading

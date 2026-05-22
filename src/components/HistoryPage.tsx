@@ -128,11 +128,12 @@ export function HistoryPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <CalendarView 
+                <CalendarView
                   onDateSelect={handleDateSelect}
                   onMonthChange={loadMonthData}
                   diaryMetas={monthData?.diaries || []}
                   loading={loading}
+                  selectedDate={selectedDate}
                 />
 
                 {selectedDate && (
