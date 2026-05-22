@@ -24,8 +24,22 @@ Eight sections defined in `src/types/index.ts` (DiarySection enum):
 
 ### State Management
 - **Zustand** with persist middleware (`src/stores/diaryStore.ts`)
-- Persisted: `wasConnected`, `habitData`
+- Persisted: `wasConnected`, `habitData`, `habitConfigs`
 - Non-persisted: `vaultConnected`, `currentDiary`, `refreshKey`
+
+### Habit Configuration
+- **Dynamic habit configs** (`src/types/index.ts`)
+  - `HabitConfig` interface: id, name, emoji, type, goal, unit, description, enabled, order, color
+  - Default 5 habits: water, steps, reading, language, supplements
+  - Users can add/edit/delete habits in Settings page
+- **HabitTracker** (`src/components/HabitTracker.tsx`)
+  - Renders habits dynamically from `habitConfigs`
+  - Number type: progress bar with custom color
+  - Boolean type: checkbox with custom color
+- **HabitConfigEditModal** (`src/components/HabitConfigEditModal.tsx`)
+  - Add/edit habit configuration
+  - 10 color options: blue, sky, green, emerald, orange, amber, purple, violet, pink, rose
+  - Grouped emoji picker (常用, 生活, 食物, 学习, 活动, 表情)
 
 ### Offline Storage
 - **IndexedDB** via Dexie (`src/db/index.ts`)

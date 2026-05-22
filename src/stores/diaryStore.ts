@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DiaryEntry, HabitData } from '../types';
+import { DiaryEntry, HabitData, HabitConfig, DEFAULT_HABIT_CONFIGS } from '../types';
 
 export interface ImageCompressConfig {
   maxLongSide: number;    // 最大长边像素
@@ -46,6 +46,9 @@ interface DiaryState {
   // 习惯数据
   habitData: HabitData;
 
+  // 习惯配置
+  habitConfigs: HabitConfig[];
+
   // 刷新触发器（每次写入后更新，触发DiaryView刷新）
   refreshKey: number;
 
@@ -59,7 +62,14 @@ interface DiaryState {
   resetImageConfig: () => void;
   updateHabitData: (data: Partial<HabitData>) => void;
   setCurrentDiary: (diary: DiaryEntry | null) => void;
-  triggerRefresh: () => void; // 触发刷新
+  triggerRefresh: () => void;
+
+  // 习惯配置操作
+  setHabitConfigs: (configs: HabitConfig[]) => void;
+  addHabitConfig: (config: HabitConfig) => void;
+  updateHabitConfig: (id: string, updates: Partial<HabitConfig>) => void;
+  removeHabitConfig: (id: string) => void;
+  resetHabitConfigs: () => void;
 }
 
 // API 默认配置
@@ -105,6 +115,7 @@ export const useDiaryStore = create<DiaryState>()(
       imageConfig: defaultImageConfig,
       currentDiary: null,
       habitData: defaultHabitData,
+      habitConfigs: DEFAULT_HABIT_CONFIGS,
       refreshKey: 0,
 
       setVaultConnected: (connected: boolean) => {
@@ -167,6 +178,35 @@ export const useDiaryStore = create<DiaryState>()(
 
       triggerRefresh: () => {
         set((state) => ({ refreshKey: state.refreshKey + 1 }));
+      },
+
+      // 习惯配置操作
+      setHabitConfigs: (configs: HabitConfig[]) => {
+        set({ habitConfigs: configs });
+      },
+
+      addHabitConfig: (config: HabitConfig) => {
+        set((state) => ({
+          habitConfigs: [...state.habitConfigs, config]
+        }));
+      },
+
+      updateHabitConfig: (id: string, updates: Partial<HabitConfig>) => {
+        set((state) => ({
+          habitConfigs: state.habitConfigs.map(c =>
+            c.id === id ? { ...c, ...updates } : c
+          )
+        }));
+      },
+
+      removeHabitConfig: (id: string) => {
+        set((state) => ({
+          habitConfigs: state.habitConfigs.filter(c => c.id !== id)
+        }));
+      },
+
+      resetHabitConfigs: () => {
+        set({ habitConfigs: DEFAULT_HABIT_CONFIGS });
       }
     }),
     {
@@ -174,6 +214,7 @@ export const useDiaryStore = create<DiaryState>()(
       partialize: (state) => ({
         wasConnected: state.wasConnected,
         habitData: state.habitData,
+        habitConfigs: state.habitConfigs,
         remoteMode: state.remoteMode,
         apiUrl: state.apiUrl,
         apiToken: state.apiToken,
