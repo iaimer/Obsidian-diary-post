@@ -1,10 +1,16 @@
-import { DiaryEntry } from '../types';
+import { DiaryEntry, HabitConfig, HabitData, DEFAULT_HABIT_CONFIGS } from '../types';
 import { getDateString, getWeekdayName } from './date';
 
-// 创建新的日记模板
-export function createNewDiary(date: Date): DiaryEntry {
+// 创建新的日记模板（使用动态配置）
+export function createNewDiary(date: Date, configs: HabitConfig[] = DEFAULT_HABIT_CONFIGS): DiaryEntry {
   const dateString = getDateString(date);
   const weekday = getWeekdayName(date);
+
+  // 使用配置生成习惯区块
+  const habits = formatHabitData(
+    { water: 0, steps: 0, reading: false, language: false, supplements: false },
+    configs
+  );
 
   return {
     date: dateString,
@@ -12,13 +18,7 @@ export function createNewDiary(date: Date): DiaryEntry {
     title: `${weekday} · 此时此刻`,
     quote: '2026 年，如果只选一件事：**让健康和记录成为习惯。**',
     sections: {
-      habits: [
-        '- 🥛🥤饮水 0 mL',
-        '- 🧘 运动/拉伸/快走 0 步',
-        '- [ ] 📖 阅读/亲子共读',
-        '- [ ] 🇬🇧 学语言',
-        '- [ ] 💊 鱼油/植物甾醇'
-      ],
+      habits,
       quick_notes: [],
       happiness: [],
       anxiety: [],
@@ -49,23 +49,33 @@ export function formatHappiness(time: string, content: string, tags: string[] = 
   return `> **${time}** ${content}${tagStr}`;
 }
 
-// 格式化习惯打卡
-export function formatHabitData(habitData: {
-  water: number;
-  steps: number;
-  reading: boolean;
-  language: boolean;
-  supplements: boolean;
-}): string[] {
-  const waterEmoji = '🥤';
-  const waterCount = Math.floor(habitData.water / 250); // 每250ml一个🥤
-  const waterStr = waterCount > 0 ? `🥛${waterEmoji.repeat(waterCount)}饮水 ${habitData.water} mL` : `- 🥛饮水 ${habitData.water} mL`;
+// 格式化习惯打卡（使用动态配置）
+export function formatHabitData(habitData: HabitData, configs: HabitConfig[] = DEFAULT_HABIT_CONFIGS): string[] {
+  // 按顺序排序并只处理启用的习惯
+  const enabledConfigs = configs.filter(c => c.enabled).sort((a, b) => a.order - b.order);
 
-  return [
-    `- ${waterStr}`,
-    `- 🧘 运动/拉伸/快走 ${habitData.steps} 步`,
-    `- [${habitData.reading ? 'x' : ' '}] 📖 阅读/亲子共读`,
-    `- [${habitData.language ? 'x' : ' '}] 🇬🇧 学语言`,
-    `- [${habitData.supplements ? 'x' : ' '}] 💊 鱼油/植物甾醇`
-  ];
+  return enabledConfigs.map(config => {
+    if (config.type === 'number') {
+      const value = habitData[config.id as keyof HabitData];
+      const numValue = typeof value === 'number' ? value : 0;
+
+      // 饮水特殊格式：显示杯子emoji
+      if (config.id === 'water') {
+        const waterEmoji = '🥤';
+        const waterCount = Math.floor(numValue / 250);
+        const waterStr = waterCount > 0
+          ? `🥛${waterEmoji.repeat(waterCount)}饮水 ${numValue} mL`
+          : `- 🥛饮水 ${numValue} mL`;
+        return `- ${waterStr}`;
+      }
+
+      // 其他数值型习惯
+      return `- ${config.emoji} ${config.description || config.name} ${numValue} ${config.unit || ''}`;
+    } else {
+      // 布尔型习惯
+      const value = habitData[config.id as keyof HabitData];
+      const checked = typeof value === 'boolean' ? value : false;
+      return `- [${checked ? 'x' : ' '}] ${config.emoji} ${config.description || config.name}`;
+    }
+  });
 }
