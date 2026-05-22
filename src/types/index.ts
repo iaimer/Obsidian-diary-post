@@ -49,6 +49,7 @@ export interface HabitConfig {
   description?: string;    // 描述文字
   enabled: boolean;        // 是否启用
   order: number;           // 显示顺序
+  color?: string;          // 背景颜色（如 'blue', 'green', 'orange', 'purple', 'pink'）
 }
 
 // 动态习惯数据
@@ -66,7 +67,8 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
     goal: 1500,
     unit: 'mL',
     enabled: true,
-    order: 1
+    order: 1,
+    color: 'blue'
   },
   {
     id: 'steps',
@@ -77,7 +79,8 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
     unit: '步',
     description: '运动/拉伸/快走',
     enabled: true,
-    order: 2
+    order: 2,
+    color: 'green'
   },
   {
     id: 'reading',
@@ -86,7 +89,8 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
     type: 'boolean',
     description: '阅读/亲子共读',
     enabled: true,
-    order: 3
+    order: 3,
+    color: 'orange'
   },
   {
     id: 'language',
@@ -94,7 +98,8 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
     emoji: '🇬🇧',
     type: 'boolean',
     enabled: true,
-    order: 4
+    order: 4,
+    color: 'purple'
   },
   {
     id: 'supplements',
@@ -103,7 +108,8 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
     type: 'boolean',
     description: '鱼油/植物甾醇',
     enabled: true,
-    order: 5
+    order: 5,
+    color: 'pink'
   }
 ];
 

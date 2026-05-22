@@ -77,6 +77,33 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
   );
 }
 
+// 获取颜色样式类
+function getColorClasses(color: string | undefined, type: 'number' | 'boolean', checked: boolean): {
+  bg: string;
+  progressBg: string;
+  text: string;
+} {
+  const colorMap: Record<string, { light: string; dark: string; progress: string }> = {
+    blue: { light: 'bg-blue-100', dark: 'dark:bg-blue-900/30', progress: 'bg-blue-200 dark:bg-blue-700/50' },
+    green: { light: 'bg-green-100', dark: 'dark:bg-green-900/30', progress: 'bg-green-200 dark:bg-green-700/50' },
+    orange: { light: 'bg-orange-100', dark: 'dark:bg-orange-900/30', progress: 'bg-orange-200 dark:bg-orange-700/50' },
+    purple: { light: 'bg-purple-100', dark: 'dark:bg-purple-900/30', progress: 'bg-purple-200 dark:bg-purple-700/50' },
+    pink: { light: 'bg-pink-100', dark: 'dark:bg-pink-900/30', progress: 'bg-pink-200 dark:bg-pink-700/50' },
+  };
+
+  const defaultColor = type === 'number'
+    ? { light: 'bg-blue-100', dark: 'dark:bg-blue-900/30', progress: 'bg-blue-200 dark:bg-blue-700/50' }
+    : { light: 'bg-purple-100', dark: 'dark:bg-purple-900/30', progress: 'bg-purple-200 dark:bg-purple-700/50' };
+
+  const c = colorMap[color || ''] || defaultColor;
+
+  return {
+    bg: `${c.light} ${c.dark}`,
+    progressBg: c.progress,
+    text: type === 'boolean' && checked ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+  };
+}
+
 export default function HabitTracker() {
   const habitData = useDiaryStore(state => state.habitData);
   const habitConfigs = useDiaryStore(state => state.habitConfigs);
@@ -153,6 +180,8 @@ export default function HabitTracker() {
 
       <div className="space-y-2">
         {enabledConfigs.map(config => {
+          const colors = getColorClasses(config.color, config.type, config.type === 'boolean' && getBooleanValue(config.id));
+
           if (config.type === 'number') {
             // 数值型习惯：进度条样式
             const value = getNumberValue(config.id);
@@ -166,9 +195,9 @@ export default function HabitTracker() {
                 onClick={() => setEditingConfig(config)}
               >
                 {/* 进度条背景 */}
-                <div className="absolute inset-0 bg-blue-100 dark:bg-blue-900/30" style={{ width: '100%' }} />
+                <div className={`absolute inset-0 ${colors.bg}`} style={{ width: '100%' }} />
                 <div
-                  className="absolute inset-y-0 left-0 bg-blue-200 dark:bg-blue-700/50 transition-all duration-300"
+                  className={`absolute inset-y-0 left-0 ${colors.progressBg} transition-all duration-300`}
                   style={{ width: `${Math.min(100, (value / goal) * 100)}%` }}
                 />
 
@@ -176,12 +205,12 @@ export default function HabitTracker() {
                 <div className="relative flex items-center gap-3">
                   <span className="text-2xl">{config.emoji}</span>
                   <div>
-                    <div className="text-sm text-gray-700 dark:text-gray-200">{config.name}</div>
+                    <div className={`text-sm ${colors.text}`}>{config.name}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">目标 {goal} {config.unit || ''}</div>
                   </div>
                 </div>
                 <div className="relative flex items-center">
-                  <span className={`text-sm font-medium ${goalMet ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-200'}`}>
+                  <span className={`text-sm font-medium ${goalMet ? 'text-green-600 dark:text-green-400' : colors.text}`}>
                     {value} {config.unit || ''}
                   </span>
                   {goalMet && <span className="text-green-600 dark:text-green-400">✓</span>}
@@ -191,19 +220,16 @@ export default function HabitTracker() {
           } else {
             // 布尔型习惯：复选框样式
             const checked = getBooleanValue(config.id);
-            const bgColor = checked
-              ? 'bg-purple-100 dark:bg-purple-900/30'
-              : 'bg-purple-50 dark:bg-purple-900/20';
 
             return (
               <div
                 key={config.id}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${bgColor}`}
+                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${colors.bg}`}
                 onClick={() => handleToggleBoolean(config.id)}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{config.emoji}</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-200">{config.description || config.name}</span>
+                  <span className={`text-sm ${colors.text}`}>{config.description || config.name}</span>
                 </div>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                   checked ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'

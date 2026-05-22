@@ -10,6 +10,15 @@ interface HabitConfigEditModalProps {
 // 常用 emoji 选择器
 const COMMON_EMOJIS = ['💧', '🏃', '📖', '🇬🇧', '💊', '🥛', '🧘', '🥤', '🍎', '🥗', '💤', '☀️', '🌙', '💪', '🎯', '✅', '📝', '🧠', '❤️', '🧹'];
 
+// 颜色选项
+const COLOR_OPTIONS = [
+  { value: 'blue', label: '蓝色', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  { value: 'green', label: '绿色', bg: 'bg-green-100 dark:bg-green-900/30' },
+  { value: 'orange', label: '橙色', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  { value: 'purple', label: '紫色', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+  { value: 'pink', label: '粉色', bg: 'bg-pink-100 dark:bg-pink-900/30' },
+];
+
 export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEditModalProps) {
   const [name, setName] = useState(config?.name || '');
   const [emoji, setEmoji] = useState(config?.emoji || '✅');
@@ -18,6 +27,7 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
   const [unit, setUnit] = useState(config?.unit || '');
   const [description, setDescription] = useState(config?.description || '');
   const [enabled, setEnabled] = useState(config?.enabled ?? true);
+  const [color, setColor] = useState(config?.color || 'purple');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // 初始化时设置类型相关字段
@@ -41,6 +51,7 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
       type,
       enabled,
       order: config?.order || 999,
+      color,
       ...(type === 'number' ? { goal, unit } : {}),
       ...(description.trim() ? { description: description.trim() } : {})
     };
@@ -102,6 +113,25 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 颜色 */}
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">背景颜色</label>
+            <div className="flex gap-2">
+              {COLOR_OPTIONS.map(c => (
+                <button
+                  key={c.value}
+                  className={`w-8 h-8 rounded-lg ${c.bg} border-2 ${
+                    color === c.value
+                      ? 'border-indigo-600 dark:border-indigo-400'
+                      : 'border-transparent'
+                  }`}
+                  onClick={() => setColor(c.value)}
+                  title={c.label}
+                />
+              ))}
             </div>
           </div>
 
