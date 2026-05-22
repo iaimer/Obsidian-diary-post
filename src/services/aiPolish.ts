@@ -214,8 +214,6 @@ export async function generateLizhiSays(content: string, config: AIConfig): Prom
 
   const prompt = getCoachPrompt();
 
-  console.log('Generating LizhiSays with:', config.name, config.model);
-
   try {
     if (isClaudeAPI(config.baseUrl)) {
       const response = await fetch(`${config.baseUrl}/v1/messages`, {

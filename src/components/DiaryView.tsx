@@ -323,7 +323,6 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       await getDataService().replaceLizhiSays(new Date(), lizhiSaysContent);
       useDiaryStore.getState().triggerRefresh();
     } catch (err) {
-      console.error('生成人生教练失败:', err);
       alert('生成失败: ' + (err as Error).message);
     } finally {
       setGeneratingLizhi(false);
