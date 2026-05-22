@@ -78,7 +78,7 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
 }
 
 // 获取颜色样式类
-function getColorClasses(color: string | undefined, type: 'number' | 'boolean', checked: boolean): {
+function getColorClasses(color: string | undefined, type: 'number' | 'boolean'): {
   bg: string;
   progressBg: string;
   text: string;
@@ -105,7 +105,7 @@ function getColorClasses(color: string | undefined, type: 'number' | 'boolean', 
   return {
     bg: `${c.light} ${c.dark}`,
     progressBg: c.progress,
-    text: type === 'boolean' && checked ? 'text-white' : 'text-gray-700 dark:text-gray-200'
+    text: 'text-gray-700 dark:text-gray-200'
   };
 }
 
@@ -185,7 +185,7 @@ export default function HabitTracker() {
 
       <div className="space-y-2">
         {enabledConfigs.map(config => {
-          const colors = getColorClasses(config.color, config.type, config.type === 'boolean' && getBooleanValue(config.id));
+          const colors = getColorClasses(config.color, config.type);
 
           if (config.type === 'number') {
             // 数值型习惯：进度条样式
