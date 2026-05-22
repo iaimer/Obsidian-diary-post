@@ -7,9 +7,10 @@ interface CalendarViewProps {
   onMonthChange?: (year: number, month: number) => void;
   diaryMetas?: DiaryMeta[];
   loading?: boolean;
+  selectedDate?: Date | null;
 }
 
-export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loading }: CalendarViewProps) {
+export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loading, selectedDate }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const getDaysInMonth = (date: Date) => {
@@ -55,6 +56,13 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
     return date.getFullYear() === today.getFullYear() &&
            date.getMonth() === today.getMonth() &&
            date.getDate() === today.getDate();
+  };
+
+  const isSelected = (date: Date) => {
+    if (!selectedDate) return false;
+    return date.getFullYear() === selectedDate.getFullYear() &&
+           date.getMonth() === selectedDate.getMonth() &&
+           date.getDate() === selectedDate.getDate();
   };
 
   const getDiaryMeta = (date: Date): DiaryMeta | undefined => {
@@ -113,6 +121,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
                 date={date}
                 imageName={imageName}
                 isToday={isToday(date)}
+                isSelected={isSelected(date)}
                 hasDiary={hasDiary}
                 onClick={() => onDateSelect?.(date)}
               />
