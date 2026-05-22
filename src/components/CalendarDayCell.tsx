@@ -159,7 +159,7 @@ export function CalendarDayCell({
 
       {/* 今天标记（小点） */}
       {isToday && !isSelected && !imageUrl && !loading && (
-        <span className="w-1 h-1 rounded-full bg-indigo-400 dark:bg-indigo-500 mt-0.5" />
+        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 dark:bg-indigo-500 mt-0.5" />
       )}
 
       {/* 有记录指示点 */}
