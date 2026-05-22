@@ -140,7 +140,9 @@ async function callClaudeAPI(content: string, config: AIConfig, type: PolishType
     throw new Error(error.error?.message || 'Claude API调用失败');
   }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => {
+    throw new Error('API返回了非JSON内容，请检查API地址配置');
+  });
   return data.content[0].text.trim();
 }
 
@@ -182,7 +184,9 @@ async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: 
     throw new Error(error.error?.message || 'API调用失败');
   }
 
-  const data = await response.json();
+  const data = await response.json().catch(() => {
+    throw new Error('API返回了非JSON内容，请检查API地址配置');
+  });
   return data.choices[0].message.content.trim();
 }
 
@@ -240,7 +244,9 @@ export async function generateLizhiSays(content: string, config: AIConfig): Prom
         throw new Error(error.error?.message || 'Claude API调用失败');
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => {
+        throw new Error('API返回了非JSON内容，请检查API地址配置');
+      });
       return data.content[0].text.trim();
     } else {
       let apiUrl = config.baseUrl;
@@ -278,7 +284,9 @@ export async function generateLizhiSays(content: string, config: AIConfig): Prom
         throw new Error(error.error?.message || 'API调用失败');
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => {
+        throw new Error('API返回了非JSON内容，请检查API地址配置');
+      });
       return data.choices[0].message.content.trim();
     }
   } catch (error) {
