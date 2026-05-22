@@ -314,7 +314,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         const actionContent = actionMatch[1].trim();
         if (actionContent) {
           // 直接用AI行动建议完整替换明日寄语
-          await getDataService().replaceTomorrowAction(new Date(), actionContent);
+          await getDataService().replaceTomorrowSection(new Date(), actionContent);
         }
       }
       const lizhiSaysContent = actionMatch
