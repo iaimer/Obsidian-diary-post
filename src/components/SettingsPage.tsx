@@ -346,18 +346,21 @@ export function SettingsPage() {
                 <div className="flex items-center gap-2">
                   {/* 启用/禁用开关 */}
                   <button
-                    className={`w-6 h-6 rounded flex items-center justify-center ${
-                      config.enabled
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-400 dark:text-gray-500'
-                    }`}
+                    className="w-6 h-6 rounded flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400"
                     onClick={() => handleToggleHabitEnabled(config.id, !config.enabled)}
                     title={config.enabled ? '禁用' : '启用'}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M8 12.5L11 15.5L16 9.5" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
+                    {config.enabled ? (
+                      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 12.5L11 15.5L16 9.5" />
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 15L9 9.00001M15 9L9.00001 15" />
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                    )}
                   </button>
                   {/* 编辑按钮 */}
                   <button
