@@ -1,9 +1,11 @@
+const path = require('path');
+
 module.exports = {
   apps: [
     {
       name: 'diary-api',
       script: 'dist/index.js',
-      cwd: '/Users/yezi/Coding/Obsidian Diary Post/server',
+      cwd: __dirname,
       instances: 1,
       autorestart: true,
       watch: false,
@@ -18,20 +20,20 @@ module.exports = {
     },
     {
       name: 'diary-app',
-      script: 'serve',
-      args: '-s -l 4000',
-      cwd: '/Users/yezi/Coding/Obsidian Diary Post',
+      script: 'python3',
+      args: `-m http.server 4000 --directory ${path.join(__dirname, '..', 'dist')}`,
+      cwd: __dirname,
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      error_file: './server/logs/app-error.log',
-      out_file: './server/logs/app-out.log',
+      error_file: './logs/app-error.log',
+      out_file: './logs/app-out.log',
       merge_logs: false,
       env: {
         NODE_ENV: 'production'
       }
     }
   ]
-}
+};
