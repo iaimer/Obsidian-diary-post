@@ -237,6 +237,30 @@ router.post('/tomorrow', async (req, res) => {
   }
 });
 
+// 替换明日寄语中的行动建议
+router.post('/tomorrow/action', async (req, res) => {
+  try {
+    const { date, content } = req.body;
+    const diaryDate = date
+      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      : new Date();
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(diaryDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    const updated = replaceTomorrowAction(originalContent, content);
+    writeDiary(diaryDate, updated);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // 上传图片（远程模式）：接收 base64 压缩图片，保存到 assets 并追加 WikiLink
 router.post('/image/upload', async (req, res) => {
   try {
@@ -358,6 +382,62 @@ function updateHabitsSection(content: string, habits: string[]): string {
   const after = lines.slice(endIndex);
   
   return [...before, ...habits, '', ...after].join('\n');
+}
+
+// 替换明日寄语中的行动建议（删除旧的带标记的内容，添加新的）
+function replaceTomorrowAction(content: string, newAction: string): string {
+  const lines = content.split('\n');
+  const header = '### 🌙 明日寄语';
+
+  // 删除旧的行动建议（带 <!-- action --> 标记的内容）
+  const newLines: string[] = [];
+  let inActionBlock = false;
+  for (const line of lines) {
+    if (line.includes('<!-- action -->')) {
+      inActionBlock = true;
+      continue;
+    }
+    if (line.includes('<!-- /action -->')) {
+      inActionBlock = false;
+      continue;
+    }
+    if (!inActionBlock) {
+      newLines.push(line);
+    }
+  }
+
+  // 在明日寄语区块末尾添加新的行动建议（带标记）
+  const actionMarkerStart = '<!-- action -->';
+  const actionMarkerEnd = '<!-- /action -->';
+  const actionLine = `- ${newAction}`;
+
+  const allHeaders = ['## 🏃 习惯打卡', '## ✍️ 随手记', '## ✨ 每日小确幸',
+    '## 😰 焦虑时刻', '### 💡 觉察与迭代', '### 🧠 人生教练', '### 🧠 荔枝喵说', header, '## 📸 影像记录'];
+
+  // 找到插入位置：明日寄语区块末尾（下一个区块之前）
+  let insertIndex = -1;
+  for (let i = 0; i < newLines.length; i++) {
+    if (newLines[i].startsWith(header)) {
+      // 找到明日寄语标题后，找到下一个区块或末尾
+      for (let j = i + 1; j < newLines.length; j++) {
+        if (allHeaders.some(h => newLines[j].startsWith(h))) {
+          insertIndex = j;
+          break;
+        }
+      }
+      if (insertIndex === -1) {
+        insertIndex = newLines.length;
+      }
+      break;
+    }
+  }
+
+  // 插入新的行动建议
+  if (insertIndex !== -1) {
+    newLines.splice(insertIndex, 0, actionMarkerStart, actionLine, actionMarkerEnd);
+  }
+
+  return newLines.join('\n');
 }
 
 router.get('/image/:year/:imageName', async (req, res) => {

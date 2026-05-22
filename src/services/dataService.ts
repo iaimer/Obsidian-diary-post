@@ -36,6 +36,9 @@ export interface DataService {
 
   // 追加明日寄语
   appendTomorrow(date: Date, content: string): Promise<void>;
+
+  // 替换明日寄语中的行动建议（删除旧的，添加新的）
+  replaceTomorrowAction(date: Date, content: string): Promise<void>;
   
   // 检查是否已连接
   isConnected(): boolean;
@@ -86,6 +89,10 @@ export class LocalDataService implements DataService {
 
   async appendTomorrow(date: Date, content: string): Promise<void> {
     await this.fileSync.appendToSection(date, DiarySection.TOMORROW, content);
+  }
+
+  async replaceTomorrowAction(date: Date, content: string): Promise<void> {
+    await this.fileSync.replaceTomorrowAction(date, content);
   }
 
   async uploadImage(file: File, date: Date): Promise<void> {
@@ -197,6 +204,14 @@ export class RemoteDataService implements DataService {
   async appendTomorrow(date: Date, content: string): Promise<void> {
     const dateStr = this.formatDate(date);
     await this.fetchAPI('/api/v1/diary/tomorrow', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, content })
+    });
+  }
+
+  async replaceTomorrowAction(date: Date, content: string): Promise<void> {
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/tomorrow/action', {
       method: 'POST',
       body: JSON.stringify({ date: dateStr, content })
     });
