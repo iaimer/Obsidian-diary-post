@@ -56,3 +56,4 @@ openspec/
 # Misc
 *.bak
 *.orig
+.opencode/
