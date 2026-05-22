@@ -49,7 +49,6 @@ tmp/
 # AI agent docs
 AGENTS.md
 CLAUDE.md
-/PLAN.md
 
 # Openspec (不要推送)
 openspec/
