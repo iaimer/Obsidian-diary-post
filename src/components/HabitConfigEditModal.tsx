@@ -7,8 +7,15 @@ interface HabitConfigEditModalProps {
   onClose: () => void;
 }
 
-// 常用 emoji 选择器
-const COMMON_EMOJIS = ['💧', '🏃', '📖', '🇬🇧', '💊', '🥛', '🧘', '🥤', '🍎', '🥗', '💤', '☀️', '🌙', '💪', '🎯', '✅', '📝', '🧠', '❤️', '🧹'];
+// Emoji 分组
+const EMOJI_GROUPS = [
+  { name: '常用', emojis: ['✅', '📝', '🎯', '⭐', '🔥', '💪', '💡', '❤️'] },
+  { name: '生活', emojis: ['💧', '🥛', '☕', '🧘', '🏃', '🚶', '💤', '☀️', '🌙', '🧹', '💊', '🧴'] },
+  { name: '食物', emojis: ['🍎', '🥗', '🥑', '🥦', '🥕', '🍋', '🍌', '🍇', '🥩', '🍗'] },
+  { name: '学习', emojis: ['📖', '📚', '🇬🇧', '🇯🇵', '🇺🇸', '🇨🇳', '✏️', '🖊️', '🎓', '🧠'] },
+  { name: '活动', emojis: ['🎵', '🎸', '🎮', '🖥️', '📱', '🎬', '🎨', '📷', '🎤', '🎹'] },
+  { name: '表情', emojis: ['😊', '😄', '🥰', '😍', '🤗', '🙌', '👏', '🎉', '🏆', '💯'] },
+];
 
 // 颜色选项（扩展到10种）
 const COLOR_OPTIONS = [
@@ -110,29 +117,46 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Emoji 图标</label>
             <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="w-10 h-10 text-2xl text-center border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500"
+                value={emoji}
+                onChange={e => setEmoji(e.target.value.slice(-2) || '✅')}
+                maxLength={2}
+                placeholder="✅"
+              />
               <button
-                className="w-10 h-10 text-2xl border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               >
-                {emoji}
+                {showEmojiPicker ? '收起' : '选择'}
               </button>
-              {showEmojiPicker && (
-                <div className="flex flex-wrap gap-1 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600">
-                  {COMMON_EMOJIS.map(e => (
-                    <button
-                      key={e}
-                      className="w-8 h-8 text-lg hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                      onClick={() => {
-                        setEmoji(e);
-                        setShowEmojiPicker(false);
-                      }}
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
+            {showEmojiPicker && (
+              <div className="mt-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 p-2">
+                {EMOJI_GROUPS.map(group => (
+                  <div key={group.name} className="mb-2">
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">{group.name}</div>
+                    <div className="flex flex-wrap gap-1">
+                      {group.emojis.map(e => (
+                        <button
+                          key={e}
+                          className={`w-7 h-7 text-base hover:bg-gray-200 dark:hover:bg-gray-600 rounded ${
+                            emoji === e ? 'bg-indigo-100 dark:bg-indigo-900/50' : ''
+                          }`}
+                          onClick={() => {
+                            setEmoji(e);
+                            setShowEmojiPicker(false);
+                          }}
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 颜色 */}
