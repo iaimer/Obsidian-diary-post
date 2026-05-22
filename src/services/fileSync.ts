@@ -299,6 +299,59 @@ export class FileSyncService {
     await this.appendToSection(new Date(), DiarySection.TOMORROW, `- ${content}`);
   }
 
+  // 替换明日寄语区块（先删后写）
+  async replaceTomorrowSection(date: Date, content: string): Promise<void> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    let originalContent: string;
+    try {
+      originalContent = await this.readFile(date);
+    } catch (error) {
+      throw new Error('日记文件不存在，请先创建');
+    }
+
+    const lines = originalContent.split('\n');
+
+    const header = sectionHeaders[DiarySection.TOMORROW];
+    let sectionStartIndex = -1;
+    let nextSectionIndex = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header)) {
+        sectionStartIndex = i;
+        break;
+      }
+    }
+
+    if (sectionStartIndex === -1) {
+      throw new Error('Tomorrow section not found');
+    }
+
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
+    for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) {
+        nextSectionIndex = i;
+        break;
+      }
+    }
+
+    const deleteEnd = nextSectionIndex !== -1 ? nextSectionIndex : lines.length;
+    const newContent = content.split('\n').map(l => l.trim() ? `- ${l}` : l);
+
+    const before = lines.slice(0, sectionStartIndex);
+    const after = lines.slice(deleteEnd);
+    const updatedLines = [...before, header, ...newContent, '', ...after];
+
+    const updatedContent = updatedLines.join('\n');
+    await this.writeFile(date, updatedContent);
+
+    const entry = parseDiary(updatedContent);
+    entry.date = getDateString(date);
+    await cacheDiary(entry);
+  }
+
   // 更新习惯打卡（替换整个习惯区块）
   async updateHabits(habitData: HabitData): Promise<void> {
     if (!this.vaultHandle) {

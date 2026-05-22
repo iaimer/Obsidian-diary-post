@@ -252,7 +252,7 @@ router.post('/tomorrow/action', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
 
-    const updated = replaceTomorrowAction(originalContent, content);
+    const updated = replaceTomorrowSection(originalContent, content);
     writeDiary(diaryDate, updated);
 
     res.json({ success: true });
@@ -350,6 +350,41 @@ function replaceLizhiSaysSection(content: string, newText: string): string {
   const after = lines.slice(endIndex);
   
   return [...before, newHeader, ...newLines, '', ...after].join('\n');
+}
+
+function replaceTomorrowSection(content: string, newText: string): string {
+  const lines = content.split('\n');
+  const header = '### 🌙 明日寄语';
+  
+  let startIndex = -1;
+  let endIndex = -1;
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(header)) {
+      startIndex = i;
+      break;
+    }
+  }
+  
+  if (startIndex === -1) return content;
+  
+  const allHeaders = ['## 🏃 习惯打卡', '## ✍️ 随手记', '## ✨ 每日小确幸',
+    '## 😰 焦虑时刻', '### 💡 觉察与迭代', '### 🧠 人生教练',
+    '### 🧠 荔枝喵说', '### 🌙 明日寄语', '## 📸 影像记录'];
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) {
+      endIndex = i;
+      break;
+    }
+  }
+  
+  if (endIndex === -1) endIndex = lines.length;
+  
+  const newLines = newText.split('\n').map(l => l.trim() ? `- ${l}` : l);
+  const before = lines.slice(0, startIndex);
+  const after = lines.slice(endIndex);
+  
+  return [...before, header, ...newLines, '', ...after].join('\n');
 }
 
 function updateHabitsSection(content: string, habits: string[]): string {
