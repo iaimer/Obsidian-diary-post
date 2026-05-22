@@ -69,7 +69,7 @@ export class HistoryService {
   extractDiaryMeta(diary: DiaryEntry): DiaryMeta {
     const images = diary.sections.images || [];
     const hasImages = images.length > 0 && images.some(line => line.includes('![['));
-    
+
     let firstImage: string | undefined;
     if (hasImages) {
       const imageLine = images.find(line => line.includes('![['));
@@ -83,12 +83,28 @@ export class HistoryService {
       .filter(l => l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签'))
       .length;
 
+    // 检查是否有实际内容（随手记、小确幸、觉察、焦虑时刻）
+    const hasQuickNotes = (diary.sections.quick_notes || [])
+      .some(l => l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签') && !l.startsWith('- '));
+
+    const hasHappiness = (diary.sections.happiness || [])
+      .some(l => l.trim() && !l.includes('<!--') && !l.match(/^>\s*$/) && !l.includes('总有事件值得感恩'));
+
+    const hasReflection = (diary.sections.reflection || [])
+      .some(l => l.trim() && !l.includes('<!--') && l !== '- ');
+
+    const hasAnxiety = (diary.sections.anxiety || [])
+      .some(l => l.trim() && !l.includes('<!--') && !l.match(/^>\s*$/));
+
+    const hasContent = hasQuickNotes || hasHappiness || hasReflection || hasAnxiety;
+
     return {
       date: diary.date,
       hasImages,
       firstImage,
       quickNotesCount,
-      exists: true
+      exists: true,
+      hasContent
     };
   }
 

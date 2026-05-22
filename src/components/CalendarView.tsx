@@ -113,6 +113,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
 
           const meta = getDiaryMeta(date);
           const hasDiary = meta?.exists || false;
+          const hasContent = meta?.hasContent || false;
           const imageName = meta?.firstImage;
 
           return (
@@ -123,6 +124,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
                 isToday={isToday(date)}
                 isSelected={isSelected(date)}
                 hasDiary={hasDiary}
+                hasContent={hasContent}
                 onClick={() => onDateSelect?.(date)}
               />
             </div>

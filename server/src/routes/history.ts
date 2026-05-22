@@ -35,13 +35,29 @@ router.get('/:year/:month', async (req, res) => {
         const quickNotesCount = entry.sections.quick_notes
           .filter(l => l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签'))
           .length;
-        
+
+        // 检查是否有实际内容（随手记、小确幸、觉察、焦虑时刻）
+        const hasQuickNotes = entry.sections.quick_notes
+          .some(l => l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签') && l.length > 2);
+
+        const hasHappiness = entry.sections.happiness
+          .some(l => l.trim() && !l.includes('<!--') && !l.match(/^>\s*$/) && !l.includes('总有事件值得感恩'));
+
+        const hasReflection = entry.sections.reflection
+          .some(l => l.trim() && !l.includes('<!--') && l !== '- ');
+
+        const hasAnxiety = entry.sections.anxiety
+          .some(l => l.trim() && !l.includes('<!--') && !l.match(/^>\s*$/));
+
+        const hasContent = hasQuickNotes || hasHappiness || hasReflection || hasAnxiety;
+
         diaries.push({
           date: dateStr,
           hasImages,
           firstImage,
           quickNotesCount,
-          exists: true
+          exists: true,
+          hasContent
         });
       } catch (error) {
         console.error(`Failed to parse diary ${dateStr}:`, error);
