@@ -411,6 +411,76 @@ export class FileSyncService {
     await cacheDiary(entry);
   }
 
+  // 替换明日寄语中的行动建议（删除旧的带标记的内容，添加新的）
+  async replaceTomorrowAction(date: Date, content: string): Promise<void> {
+    if (!this.vaultHandle) {
+      throw new Error('Vault not connected');
+    }
+
+    let originalContent: string;
+    try {
+      originalContent = await this.readFile(date);
+    } catch (error) {
+      throw new Error('日记文件不存在，请先创建');
+    }
+
+    const lines = originalContent.split('\n');
+    const header = sectionHeaders[DiarySection.TOMORROW];
+
+    // 删除旧的行动建议（带 <!-- action --> 标记的内容）
+    const newLines: string[] = [];
+    let inActionBlock = false;
+    for (const line of lines) {
+      if (line.includes('<!-- action -->')) {
+        inActionBlock = true;
+        continue;
+      }
+      if (line.includes('<!-- /action -->')) {
+        inActionBlock = false;
+        continue;
+      }
+      if (!inActionBlock) {
+        newLines.push(line);
+      }
+    }
+
+    // 在明日寄语区块末尾添加新的行动建议（带标记）
+    const actionMarkerStart = '<!-- action -->';
+    const actionMarkerEnd = '<!-- /action -->';
+    const actionLine = `- ${content}`;
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
+
+    // 找到插入位置：明日寄语区块末尾（下一个区块之前）
+    let insertIndex = -1;
+    for (let i = 0; i < newLines.length; i++) {
+      if (newLines[i].startsWith(header)) {
+        // 找到明日寄语标题后，找到下一个区块或末尾
+        for (let j = i + 1; j < newLines.length; j++) {
+          if (allHeaders.some(h => newLines[j].startsWith(h))) {
+            insertIndex = j;
+            break;
+          }
+        }
+        if (insertIndex === -1) {
+          insertIndex = newLines.length;
+        }
+        break;
+      }
+    }
+
+    // 插入新的行动建议
+    if (insertIndex !== -1) {
+      newLines.splice(insertIndex, 0, actionMarkerStart, actionLine, actionMarkerEnd);
+    }
+
+    const updatedContent = newLines.join('\n');
+    await this.writeFile(date, updatedContent);
+
+    const entry = parseDiary(updatedContent);
+    entry.date = getDateString(date);
+    await cacheDiary(entry);
+  }
+
   // 获取 assets 目录句柄（自动创建不存在的目录）
   async getAssetsDirectoryHandle(date: Date): Promise<FileSystemDirectoryHandle> {
     if (!this.vaultHandle) {

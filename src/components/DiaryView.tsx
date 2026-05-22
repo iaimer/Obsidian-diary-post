@@ -308,12 +308,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       const config = getAIConfig();
       const result = await generateLizhiSays(diaryContext, config);
 
-      // 解析行动建议，从人生教练中抽出写到明日寄语
+      // 解析行动建议，从人生教练中抽出写到明日寄语（用标记包裹，便于替换）
       const actionMatch = result.match(/🎯\s*行动建议\s*\n?([\s\S]*?)(?=💬\s*暖心鼓励|$)/);
       if (actionMatch) {
         const actionContent = actionMatch[1].trim();
         if (actionContent) {
-          await getDataService().appendTomorrow(new Date(), actionContent);
+          await getDataService().replaceTomorrowAction(new Date(), actionContent);
         }
       }
       const lizhiSaysContent = actionMatch
