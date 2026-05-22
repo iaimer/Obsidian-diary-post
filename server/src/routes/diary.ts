@@ -228,7 +228,7 @@ router.post('/tomorrow', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
 
-    const updated = appendToSection(originalContent, 'tomorrow', `- ${content}`);
+    const updated = replaceTomorrowSection(originalContent, content);
     writeDiary(diaryDate, updated);
 
     res.json({ success: true });
