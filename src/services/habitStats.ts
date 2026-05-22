@@ -1,6 +1,6 @@
 // 习惯统计数据服务
 
-import { HabitData, DiaryEntry } from '../types';
+import { HabitData, DiaryEntry, HabitConfig, DEFAULT_HABIT_CONFIGS } from '../types';
 import { getAllCachedDiaries, cacheDiary } from '../db';
 import { getFileSyncService } from './fileSync';
 import { parseDiary } from '../utils/markdown';
@@ -10,21 +10,12 @@ import { useDiaryStore } from '../stores/diaryStore';
 // 日习惯统计
 export interface DailyHabitStats {
   date: string;         // YYYY-MM-DD
-  water: number;        // mL
-  steps: number;        // 步
-  reading: boolean;
-  language: boolean;
-  supplements: boolean;
+  [habitId: string]: number | boolean | string;  // 动态习惯数据
 }
 
-// 习惯目标
-const HABIT_GOALS = {
-  water: 1500,
-  steps: 6000
-};
-
-// 解析习惯数据从日记区块行
-function parseHabitLines(lines: string[]): HabitData {
+// 解析习惯数据从日记区块行（使用动态配置）
+function parseHabitLines(lines: string[], configs: HabitConfig[]): HabitData {
+  // 先用默认值初始化
   const data: HabitData = {
     water: 0,
     steps: 0,
@@ -33,6 +24,7 @@ function parseHabitLines(lines: string[]): HabitData {
     supplements: false
   };
 
+  // 兼容旧格式解析（确保向后兼容）
   for (const line of lines) {
     // 饮水格式：'- 🥛🥤🥤饮水 500 mL'
     if (line.includes('饮水')) {
@@ -64,9 +56,36 @@ function parseHabitLines(lines: string[]): HabitData {
     if (line.includes('💊')) {
       data.supplements = line.includes('[x]');
     }
+
+    // 动态习惯解析：匹配配置中的 emoji 或名称
+    for (const config of configs) {
+      // 跳过默认习惯（已有专门解析）
+      if (['water', 'steps', 'reading', 'language', 'supplements'].includes(config.id)) continue;
+
+      if (line.includes(config.emoji) || line.includes(config.name) || (config.description && line.includes(config.description))) {
+        if (config.type === 'number') {
+          const match = line.match(/(\d+)/);
+          if (match) {
+            // 对于自定义习惯，使用默认值（暂不支持）
+            // data[config.id] = parseInt(match[1], 10);
+          }
+        }
+      }
+    }
   }
 
   return data;
+}
+
+// 获取习惯目标值（从配置）
+function getHabitGoals(configs: HabitConfig[]): Record<string, number> {
+  const goals: Record<string, number> = {};
+  for (const config of configs) {
+    if (config.type === 'number' && config.goal) {
+      goals[config.id] = config.goal;
+    }
+  }
+  return goals;
 }
 
 // 获取最近N天的日期列表
@@ -84,9 +103,9 @@ function getRecentDates(days: number): string[] {
   return dates;
 }
 
-// 从日记条目转换为日统计
-function entryToStats(entry: DiaryEntry): DailyHabitStats {
-  const habitData = parseHabitLines(entry.sections.habits);
+// 从日记条目转换为日统计（使用配置）
+function entryToStats(entry: DiaryEntry, configs: HabitConfig[]): DailyHabitStats {
+  const habitData = parseHabitLines(entry.sections.habits, configs);
   return {
     date: entry.date,
     ...habitData
@@ -94,7 +113,7 @@ function entryToStats(entry: DiaryEntry): DailyHabitStats {
 }
 
 // 从文件读取指定日期的习惯数据
-async function readHabitFromFile(dateStr: string): Promise<DailyHabitStats | null> {
+async function readHabitFromFile(dateStr: string, configs: HabitConfig[]): Promise<DailyHabitStats | null> {
   try {
     const fileSync = getFileSyncService();
     const [year, month, day] = dateStr.split('-');
@@ -107,7 +126,7 @@ async function readHabitFromFile(dateStr: string): Promise<DailyHabitStats | nul
     // 缓存到IndexedDB
     await cacheDiary(entry);
 
-    return entryToStats(entry);
+    return entryToStats(entry, configs);
   } catch (error) {
     console.log(`No diary file for ${dateStr}:`, error);
     return null;
@@ -133,8 +152,9 @@ async function fetchRemoteHabitStats(days: number): Promise<DailyHabitStats[]> {
 }
 
 export async function getHabitStats(days: number, forceReload = false): Promise<DailyHabitStats[]> {
-  const { remoteMode, apiUrl, apiToken } = useDiaryStore.getState();
-  
+  const { remoteMode, apiUrl, apiToken, habitConfigs } = useDiaryStore.getState();
+  const configs = habitConfigs || DEFAULT_HABIT_CONFIGS;
+
   if (remoteMode && apiUrl && apiToken) {
     return await fetchRemoteHabitStats(days);
   }
@@ -152,69 +172,76 @@ export async function getHabitStats(days: number, forceReload = false): Promise<
     if (!forceReload) {
       const cachedEntry = diaryMap.get(date);
       if (cachedEntry) {
-        stats.push(entryToStats(cachedEntry));
+        stats.push(entryToStats(cachedEntry, configs));
         continue;
       }
     }
 
-    const fileStats = await readHabitFromFile(date);
+    const fileStats = await readHabitFromFile(date, configs);
     if (fileStats) {
       stats.push(fileStats);
     } else {
-      stats.push({
-        date,
-        water: 0,
-        steps: 0,
-        reading: false,
-        language: false,
-        supplements: false
-      });
+      // 创建空统计
+      const emptyStats: DailyHabitStats = { date };
+      for (const config of configs) {
+        emptyStats[config.id] = config.type === 'number' ? 0 : false;
+      }
+      stats.push(emptyStats);
     }
   }
 
   return stats;
 }
 
-// 计算汇总统计
-export function calculateSummary(stats: DailyHabitStats[]) {
+// 计算汇总统计（使用动态配置）
+export function calculateSummary(stats: DailyHabitStats[], configs: HabitConfig[] = DEFAULT_HABIT_CONFIGS) {
   if (stats.length === 0) {
-    return {
-      avgWater: 0,
-      avgSteps: 0,
-      waterGoalRate: 0,
-      stepsGoalRate: 0,
-      readingRate: 0,
-      languageRate: 0,
-      supplementsRate: 0
-    };
+    const emptySummary: Record<string, number> = {};
+    for (const config of configs) {
+      if (config.type === 'number') {
+        emptySummary[`avg${config.id}`] = 0;
+        emptySummary[`${config.id}GoalRate`] = 0;
+      } else {
+        emptySummary[`${config.id}Rate`] = 0;
+      }
+    }
+    return emptySummary;
   }
 
-  const totalWater = stats.reduce((sum, s) => sum + s.water, 0);
-  const totalSteps = stats.reduce((sum, s) => sum + s.steps, 0);
+  const goals = getHabitGoals(configs);
+  const summary: Record<string, number> = {};
 
-  const waterGoalMet = stats.filter(s => s.water >= HABIT_GOALS.water).length;
-  const stepsGoalMet = stats.filter(s => s.steps >= HABIT_GOALS.steps).length;
+  for (const config of configs) {
+    if (config.type === 'number') {
+      const total = stats.reduce((sum, s) => sum + (s[config.id] as number || 0), 0);
+      summary[`avg${config.id}`] = Math.round(total / stats.length);
 
-  const readingCompleted = stats.filter(s => s.reading).length;
-  const languageCompleted = stats.filter(s => s.language).length;
-  const supplementsCompleted = stats.filter(s => s.supplements).length;
+      const goal = goals[config.id] || 100;
+      const goalMet = stats.filter(s => (s[config.id] as number || 0) >= goal).length;
+      summary[`${config.id}GoalRate`] = Math.round((goalMet / stats.length) * 100);
+    } else {
+      const completed = stats.filter(s => s[config.id] as boolean).length;
+      summary[`${config.id}Rate`] = Math.round((completed / stats.length) * 100);
+    }
+  }
 
-  return {
-    avgWater: Math.round(totalWater / stats.length),
-    avgSteps: Math.round(totalSteps / stats.length),
-    waterGoalRate: Math.round((waterGoalMet / stats.length) * 100),
-    stepsGoalRate: Math.round((stepsGoalMet / stats.length) * 100),
-    readingRate: Math.round((readingCompleted / stats.length) * 100),
-    languageRate: Math.round((languageCompleted / stats.length) * 100),
-    supplementsRate: Math.round((supplementsCompleted / stats.length) * 100)
-  };
+  // 兼容旧接口
+  summary.avgWater = summary.avgwater || 0;
+  summary.avgSteps = summary.avgsteps || 0;
+  summary.waterGoalRate = summary.waterGoalRate || 0;
+  summary.stepsGoalRate = summary.stepsGoalRate || 0;
+  summary.readingRate = summary.readingRate || 0;
+  summary.languageRate = summary.languageRate || 0;
+  summary.supplementsRate = summary.supplementsRate || 0;
+
+  return summary;
 }
 
 // 获取趋势数据（用于折线图）
 export function getTrendData(stats: DailyHabitStats[], type: 'water' | 'steps') {
   return stats.map(s => ({
     date: s.date.slice(5), // MM-DD格式
-    value: s[type]
+    value: s[type] as number
   }));
 }
 
@@ -222,8 +249,15 @@ export function getTrendData(stats: DailyHabitStats[], type: 'water' | 'steps') 
 export function getHeatmapData(stats: DailyHabitStats[], type: 'reading' | 'language' | 'supplements') {
   return stats.map(s => ({
     date: s.date,
-    completed: s[type]
+    completed: s[type] as boolean
   }));
 }
 
-export { HABIT_GOALS };
+// 获取习惯目标值（导出供外部使用）
+export function getHabitGoal(configs: HabitConfig[] = DEFAULT_HABIT_CONFIGS, habitId: string): number {
+  const config = configs.find(c => c.id === habitId);
+  return config?.goal || 100;
+}
+
+// 兼容导出
+export const HABIT_GOALS = { water: 1500, steps: 6000 };

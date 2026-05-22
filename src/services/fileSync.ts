@@ -1,8 +1,9 @@
-import { DiaryEntry, DiarySection, HabitData } from '../types';
+import { DiaryEntry, DiarySection, HabitData, DEFAULT_HABIT_CONFIGS } from '../types';
 import { parseDiary } from '../utils/markdown';
 import { getDateString, getTimestamp, getWeekdayName } from '../utils/date';
 import { formatQuickNote, formatHappiness, formatReflection, formatHabitData } from '../utils/template';
 import { cacheDiary } from '../db';
+import { useDiaryStore } from '../stores/diaryStore';
 
 // 区块标题映射
 const sectionHeaders: Record<DiarySection, string> = {
@@ -340,7 +341,8 @@ export class FileSyncService {
 
     // 删除旧的习内容
     const deleteEnd = nextSectionIndex !== -1 ? nextSectionIndex : lines.length;
-    const newHabits = formatHabitData(habitData);
+    const habitConfigs = useDiaryStore.getState().habitConfigs || DEFAULT_HABIT_CONFIGS;
+    const newHabits = formatHabitData(habitData, habitConfigs);
 
     // 替换习惯区块内容
     const before = lines.slice(0, sectionStartIndex + 1);
