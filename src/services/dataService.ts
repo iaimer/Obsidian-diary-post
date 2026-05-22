@@ -34,6 +34,9 @@ export interface DataService {
   // 替换荔枝喵说区块
   replaceLizhiSays(date: Date, content: string): Promise<void>;
 
+  // 替换明日寄语区块
+  replaceTomorrowSection(date: Date, content: string): Promise<void>;
+
   // 追加明日寄语
   appendTomorrow(date: Date, content: string): Promise<void>;
 
@@ -85,6 +88,10 @@ export class LocalDataService implements DataService {
 
   async replaceLizhiSays(date: Date, content: string): Promise<void> {
     await this.fileSync.replaceLizhiSays(date, content);
+  }
+
+  async replaceTomorrowSection(date: Date, content: string): Promise<void> {
+    await this.fileSync.replaceTomorrowSection(date, content);
   }
 
   async appendTomorrow(date: Date, content: string): Promise<void> {
@@ -196,6 +203,14 @@ export class RemoteDataService implements DataService {
   async replaceLizhiSays(date: Date, content: string): Promise<void> {
     const dateStr = this.formatDate(date);
     await this.fetchAPI('/api/v1/diary/lizhi-says', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, content })
+    });
+  }
+
+  async replaceTomorrowSection(date: Date, content: string): Promise<void> {
+    const dateStr = this.formatDate(date);
+    await this.fetchAPI('/api/v1/diary/tomorrow', {
       method: 'POST',
       body: JSON.stringify({ date: dateStr, content })
     });
