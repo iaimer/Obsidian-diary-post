@@ -427,7 +427,7 @@ export class FileSyncService {
     const lines = originalContent.split('\n');
     const header = sectionHeaders[DiarySection.TOMORROW];
 
-    // 删除旧的行动建议（带 <!-- action --> 标记的内容）
+    // 删除旧的行动建议（带 <!-- action --> 标记的内容，或以 🎯 开头的行）
     const newLines: string[] = [];
     let inActionBlock = false;
     for (const line of lines) {
@@ -437,6 +437,10 @@ export class FileSyncService {
       }
       if (line.includes('<!-- /action -->')) {
         inActionBlock = false;
+        continue;
+      }
+      // 也删除以 🎯 开头的行（旧的未标记的行动建议）
+      if (line.includes('🎯')) {
         continue;
       }
       if (!inActionBlock) {
