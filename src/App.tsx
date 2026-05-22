@@ -175,27 +175,35 @@ function App() {
               {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
             </span>
           </h1>
-          {remoteMode ? (
-            <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
-              ✓ 远程模式
-            </span>
-          ) : (
-            <button
-              onClick={vaultConnected ? handleDisconnect : handleConnect}
-              disabled={connecting}
-              className={`px-3 py-1 rounded-full text-sm ${
-                vaultConnected
-                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                  : connecting
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
-                    : wasConnected
-                      ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
-                      : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
-              }`}
-            >
-              {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
-            </button>
-          )}
+          {/* 本地环境显示连接状态，生产环境隐藏远程模式提示 */}
+          {(() => {
+            const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
+            if (isProduction) return null;
+            if (remoteMode) {
+              return (
+                <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                  ✓ 远程模式
+                </span>
+              );
+            }
+            return (
+              <button
+                onClick={vaultConnected ? handleDisconnect : handleConnect}
+                disabled={connecting}
+                className={`px-3 py-1 rounded-full text-sm ${
+                  vaultConnected
+                    ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                    : connecting
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                      : wasConnected
+                        ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300'
+                        : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300'
+                }`}
+              >
+                {connecting ? '连接中...' : vaultConnected ? '✓ 已连接' : wasConnected ? '重新连接' : '连接Vault'}
+              </button>
+            );
+          })()}
         </div>
       </header>
 
