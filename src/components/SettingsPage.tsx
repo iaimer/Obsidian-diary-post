@@ -346,28 +346,43 @@ export function SettingsPage() {
                 <div className="flex items-center gap-2">
                   {/* 启用/禁用开关 */}
                   <button
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    className={`w-6 h-6 rounded flex items-center justify-center ${
                       config.enabled
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-400'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-gray-400 dark:text-gray-500'
                     }`}
                     onClick={() => handleToggleHabitEnabled(config.id, !config.enabled)}
+                    title={config.enabled ? '禁用' : '启用'}
                   >
-                    {config.enabled ? '✓' : ''}
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 12.5L11 15.5L16 9.5" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
                   </button>
                   {/* 编辑按钮 */}
                   <button
-                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    className="w-6 h-6 rounded flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400"
                     onClick={() => handleEditHabit(config)}
+                    title="编辑"
                   >
-                    ✏️
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16.4745 5.40801L18.5917 7.52524M17.8358 3.54289L12.1086 9.27005C11.8131 9.56562 11.6116 9.94206 11.5296 10.3519L11 13L13.6481 12.4704C14.0579 12.3884 14.4344 12.1869 14.7299 11.8914L20.4571 6.16423C21.181 5.44037 21.181 4.26676 20.4571 3.5429C19.7332 2.81904 18.5596 2.81903 17.8358 3.54289Z" />
+                      <path d="M19 15V18C19 19.1046 18.1046 20 17 20H6C4.89543 20 4 19.1046 4 18V7C4 5.89543 4.89543 5 6 5H9" />
+                    </svg>
                   </button>
                   {/* 删除按钮 */}
                   <button
-                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                    className="w-6 h-6 rounded flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400"
                     onClick={() => handleDeleteHabit(config.id)}
+                    title="删除"
                   >
-                    🗑️
+                    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 6H20L18.4199 20.2209C18.3074 21.2337 17.4512 22 16.4321 22H7.56786C6.54876 22 5.69264 21.2337 5.5801 20.2209L4 6Z" />
+                      <path d="M7.34491 3.14716C7.67506 2.44685 8.37973 2 9.15396 2H14.846C15.6203 2 16.3249 2.44685 16.6551 3.14716L18 6H6L7.34491 3.14716Z" />
+                      <path d="M2 6H22" />
+                      <path d="M10 11V16" />
+                      <path d="M14 11V16" />
+                    </svg>
                   </button>
                 </div>
               </div>
