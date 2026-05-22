@@ -389,7 +389,7 @@ function replaceTomorrowAction(content: string, newAction: string): string {
   const lines = content.split('\n');
   const header = '### 🌙 明日寄语';
 
-  // 删除旧的行动建议（带 <!-- action --> 标记的内容）
+  // 删除旧的行动建议（带 <!-- action --> 标记的内容，或以 🎯 开头的行）
   const newLines: string[] = [];
   let inActionBlock = false;
   for (const line of lines) {
@@ -399,6 +399,10 @@ function replaceTomorrowAction(content: string, newAction: string): string {
     }
     if (line.includes('<!-- /action -->')) {
       inActionBlock = false;
+      continue;
+    }
+    // 也删除以 🎯 开头的行（旧的未标记的行动建议）
+    if (line.includes('🎯')) {
       continue;
     }
     if (!inActionBlock) {
