@@ -2,24 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
+import { TAG_SYSTEM } from '../config/tags';
 
 interface QuickInputModalProps {
   onClose: () => void;
 }
-
-// 三层标签体系
-const TAG_SYSTEM = {
-  domain: ['亲子', '育儿', '工作', '学习', '阅读', '技术'] as const,
-  capability: {
-    '亲子': ['情绪管理', '表达能力', '语言发育', '成长观察', '自信心', '自主探索'],
-    '育儿': ['情绪管理', '表达能力', '语言发育', '成长观察', '自信心', '自主探索'],
-    '工作': ['任务执行', '沟通协作', '问题解决', '决策能力', '效率管理'],
-    '学习': ['理解能力', '记忆能力', '专注力', '学习迁移'],
-    '阅读': ['信息提取', '理解深度', '批判思维'],
-    '技术': ['系统理解', '调试能力', '架构理解', '实现能力']
-  } as Record<string, string[]>,
-  method: ['反思', '方法论', '问题分析', '记录'] as const
-};
 
 function parseTagsFromPolished(text: string): { content: string; tags: string[] } {
   const tagMatches = text.match(/#\S+/g) || [];
