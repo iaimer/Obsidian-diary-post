@@ -30,7 +30,7 @@ const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输�
 ⚠️ 重要：必须包含2个必选标签 + 0-1个可选标签，总共2-3个标签！
 
 第一层：领域层（必选1个）
-#亲子 #育儿 #工作 #学习 #阅读 #技术
+#亲子 #育儿 #工作 #学习 #阅读 #技术 #生活
 
 第二层：能力层（必选1个，必须根据领域严格选择对应的能力标签）
 - 亲子/育儿领域：#情绪管理 #表达能力 #语言发育 #成长观察 #自信心 #自主探索
@@ -38,18 +38,21 @@ const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输�
 - 学习领域：#理解能力 #记忆能力 #专注力 #学习迁移
 - 阅读领域：#信息提取 #理解深度 #批判思维
 - 技术领域：#系统理解 #调试能力 #架构理解 #实现能力
+- 生活领域：#健康管理 #财务管理 #生活整理 #兴趣探索 #日常记录
 
 第三层：方法层（可选0-1个）
-#反思 #方法论 #问题分析 #记录
+#反思 #方法论 #问题分析 #记录 #回忆
 
 【领域判断优先级】
 1. 涉及孩子/亲子互动 → #亲子 或 #育儿
-2. 涉及工作/职业/实验/检测 → #工作
-3. 涉及学习/知识/技能 → #学习
-4. 涉及阅读/书籍 → #阅读
-5. 涉及工具/代码/AI/Obsidian → #技术
+2. 涉及日常生活/健康/睡眠/情绪/财务/兴趣/饮食 → #生活（不明确归属日常的优先归入此类）
+3. 涉及工作/职业/实验/检测 → #工作
+4. 涉及学习/知识/技能 → #学习
+5. 涉及阅读/书籍 → #阅读
+6. 涉及工具/代码/AI/Obsidian → #技术
 
 请直接输出润色后的内容和标签，格式示例：
+半夜醒来翻来覆去睡不着。 #生活 #健康管理 #记录
 带娃去公园撒了个欢，跑得满头大汗。 #亲子 #自主探索 #记录
 
 注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
@@ -79,13 +82,18 @@ const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天�
 // 润色类型
 export type PolishType = 'quickNote' | 'reflection' | 'happiness';
 
-// 获取润色提示词（优先使用用户自定义）
+// 检测缓存提示词是否过期（缺 #生活 等新标签则回退到默认）
+function isPromptStale(prompt: string): boolean {
+  return !prompt.includes('#生活') || !prompt.includes('#回忆');
+}
+
+// 获取润色提示词（优先使用用户自定义，但过期缓存自动降级）
 function getPromptByType(_type: PolishType): string {
   const saved = localStorage.getItem('diary-ai-config');
   if (saved) {
     try {
       const config = JSON.parse(saved);
-      if (config.polishPrompt && config.polishPrompt.trim()) {
+      if (config.polishPrompt && config.polishPrompt.trim() && !isPromptStale(config.polishPrompt)) {
         return config.polishPrompt;
       }
     } catch {}

@@ -90,7 +90,11 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
     try {
       const config = getAIConfig();
       const result = await polishContent(content.trim(), config, 'reflection');
-      const { tags } = parseTagsFromPolished(result);
+      const { content: pureContent, tags } = parseTagsFromPolished(result);
+      if (!pureContent) {
+        alert('润色结果为空，请重试');
+        return;
+      }
       setParsedTags(tags);
       setPolishedContent(result);
       setShowPolishedPreview(true);
@@ -104,7 +108,9 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
 
   const handleUsePolished = () => {
     const { content: pureContent } = parseTagsFromPolished(polishedContent);
-    setContent(pureContent);
+    if (pureContent) {
+      setContent(pureContent);
+    }
     setShowPolishedPreview(false);
     setPolishedContent('');
   };
