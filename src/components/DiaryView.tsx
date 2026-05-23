@@ -10,7 +10,15 @@ import { ImageModal } from './ImageModal';
 import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
 
 // 简单的Markdown渲染（阅读模式）
-function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
+function renderMarkdown(line: string, section?: string): React.ReactNode {
+  const colors: Record<string, { time: string; tag: string }> = {
+    notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-gray-300 dark:text-gray-500' },
+    happiness:  { time: 'text-amber-600 dark:text-amber-400',    tag: 'text-gray-300 dark:text-gray-500' },
+    anxiety:    { time: 'text-orange-600 dark:text-orange-400',   tag: 'text-gray-300 dark:text-gray-500' },
+    reflection: { time: 'text-emerald-600 dark:text-emerald-400', tag: 'text-gray-300 dark:text-gray-500' },
+    tomorrow:   { time: 'text-sky-600 dark:text-sky-400',         tag: 'text-gray-300 dark:text-gray-500' },
+  };
+  const sc = colors[section || ''] || colors.notes;
   // 移除HTML注释
   if (line.includes('<!--')) return null;
 
@@ -25,18 +33,20 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
+    const bc = colors.happiness || sc;
+
     return (
       <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
-            <span className="text-green-600 dark:text-green-400 font-medium shrink-0">{time}</span>
+            <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
           )}
           <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
             {tags.map(tag => (
-              <span key={tag} className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
+              <span key={tag} className={`text-xs ${bc.tag}`}>
                 {tag}
               </span>
             ))}
@@ -57,24 +67,18 @@ function renderMarkdown(line: string, section?: 'reflection'): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    const isReflection = section === 'reflection';
-    const timeColor = isReflection ? 'text-yellow-600 dark:text-yellow-400' : 'text-indigo-600 dark:text-indigo-400';
-    const tagClass = isReflection
-      ? 'text-xs text-yellow-700 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded'
-      : 'text-xs text-gray-400';
-
     return (
       <div className="text-sm text-gray-700 dark:text-gray-200">
         <div className="flex items-start gap-2">
           {time && (
-            <span className={`font-medium shrink-0 ${timeColor}`}>{time}</span>
+            <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
           )}
           <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1 mt-1 ml-8">
             {tags.map(tag => (
-              <span key={tag} className={tagClass}>
+              <span key={tag} className={`text-xs ${sc.tag}`}>
                 {tag}
               </span>
             ))}
@@ -336,15 +340,18 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
   if (loading && !diary) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
-        <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">加载中...</div>
+      <section className="mb-4">
+        <div className="flex items-center justify-center py-8">
+          <div className="w-5 h-5 border-2 border-gray-200 dark:border-gray-700 border-t-amber-600 rounded-full animate-spin-slow" />
+          <span className="ml-3 text-sm text-gray-400 dark:text-gray-500">加载中...</span>
+        </div>
       </section>
     );
   }
 
   if (!vaultConnected && !remoteMode) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+      <section className="mb-4">
         <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">今日记录</h2>
         <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">请先连接Obsidian Vault</div>
       </section>
@@ -354,7 +361,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   // 日记不存在，显示新建按钮
   if (!loading && diaryExists === false) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+      <section className="mb-4">
         <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📝 今日日记</h2>
         <div className="text-center py-6">
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">今天还没有日记</p>
@@ -382,7 +389,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     !l.includes('[!') && 
     !(l.startsWith('> ') && l.slice(2).trim() === '')
   ) || [];
-  
+
+  // 焦虑时刻：过滤空行和HTML注释
+  const anxiety = diary?.sections.anxiety.filter(l =>
+    l.trim() && !l.includes('<!--')
+  ) || [];
+
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--') && !l.startsWith('###')
   ) || [];
@@ -403,22 +415,19 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
   return (
     <>
-    <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 overflow-hidden">
-      <div className="px-4 py-3 border-b dark:border-gray-700">
-        <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">📝 今日日记</h2>
-      </div>
+    <section className="mb-8">
 
       {error && (
-        <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs">加载失败: {error}</div>
+        <div className="py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs px-3 rounded-lg mb-3">加载失败: {error}</div>
       )}
 
       {/* 随手记 */}
       {quickNotes.length > 0 && (
-        <div className="px-4 py-3">
-          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">✍️ 随手记</h3>
+        <div className="py-3 border-l-2 border-rose-200 dark:border-rose-700 pl-3">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✍️ 随手记</h3>
           <div className="space-y-1.5">
             {quickNotes.map((line, i) => (
-              <div key={i}>{renderMarkdown(line)}</div>
+              <div key={i}>{renderMarkdown(line, 'notes')}</div>
             ))}
           </div>
         </div>
@@ -426,11 +435,11 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 小确幸 */}
       {happiness.length > 0 && (
-        <div className="mx-4 my-3 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">✨ 每日小确幸</h3>
+        <div className="py-3 border-l-2 border-amber-200 dark:border-amber-700 pl-3">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✨ 每日小确幸</h3>
           <div className="space-y-1">
             {happiness.map((line, i) => (
-              <div key={i}>{renderMarkdown(line)}</div>
+              <div key={i}>{renderMarkdown(line, 'happiness')}</div>
             ))}
           </div>
         </div>
@@ -438,8 +447,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 觉察 */}
       {reflection.length > 0 && (
-        <div className="mx-4 my-3 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">💡 觉察与迭代</h3>
+        <div className="py-3 border-l-2 border-emerald-300 dark:border-emerald-600 pl-3">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">💡 觉察与迭代</h3>
           <div className="space-y-1">
             {reflection.map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'reflection')}</div>
@@ -449,22 +458,25 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 人生教练 */}
-      <div className="mx-4 my-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-3 py-2 rounded-lg">
-        <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center justify-between">
+      <div className="py-3 border-l-2 border-teal-300 dark:border-teal-700 pl-3">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
           <span>🧠 人生教练</span>
           {lizhiSays.length > 0 && !loading && (
             <button
               onClick={handleGenerateLizhiSays}
               disabled={generatingLizhi}
-              className="text-[10px] text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 disabled:opacity-50"
+              className="text-[10px] text-teal-500 dark:text-teal-400 hover:text-teal-600 dark:hover:text-teal-300 disabled:opacity-50"
             >
               {generatingLizhi ? '生成中...' : '🔄 重新生成'}
             </button>
           )}
         </h3>
         {generatingLizhi ? (
-          <div className="text-center py-4 text-sm text-gray-400 dark:text-gray-500">
-            {diary ? '正在分析今天的日记...' : '生成中...'}
+          <div className="flex items-center justify-center py-4">
+            <div className="w-4 h-4 border-2 border-gray-200 dark:border-gray-700 border-t-amber-600 rounded-full animate-spin-slow" />
+            <span className="ml-2 text-sm text-gray-400 dark:text-gray-500">
+              {diary ? '正在分析今天的日记...' : '生成中...'}
+            </span>
           </div>
         ) : lizhiSays.length > 0 ? (
           <div className="space-y-1">
@@ -477,7 +489,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
             <button
               onClick={handleGenerateLizhiSays}
               disabled={generatingLizhi}
-              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🧠 生成今日教练反馈
             </button>
@@ -487,19 +499,19 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
 
       {/* 明日寄语 */}
       {tomorrow.length > 0 && (
-        <div className="mx-4 my-3 bg-sky-50 dark:bg-sky-900/20 px-3 py-2 rounded-lg">
-          <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2">🌙 明日寄语</h3>
+        <div className="py-3 border-l-2 border-sky-200 dark:border-sky-700 pl-3">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🌙 明日寄语</h3>
           <div className="space-y-1">
             {tomorrow.map((line, i) => (
-              <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line)}</div>
+              <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line, 'tomorrow')}</div>
             ))}
           </div>
         </div>
       )}
 
       {/* 影像记录 */}
-      <div className="px-4 py-3">
-        <h3 className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 flex items-center">
+      <div className="py-3 border-l-2 border-violet-300 dark:border-violet-700 pl-3">
+        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center">
           <span>📸 影像记录 ({images.length}张)</span>
           <ImageUploadButton onImageUploaded={loadDiary} />
         </h3>
@@ -531,8 +543,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       </div>
 
       {/* 空状态 */}
-      {quickNotes.length === 0 && happiness.length === 0 && reflection.length === 0 && tomorrow.length === 0 && images.length === 0 && (
-        <div className="px-4 py-6">
+      {quickNotes.length === 0 && happiness.length === 0 && anxiety.length === 0 && reflection.length === 0 && tomorrow.length === 0 && images.length === 0 && (
+        <div className="py-6">
           <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
             {error ? '加载失败' : '暂无记录'}
           </div>

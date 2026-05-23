@@ -52,7 +52,7 @@ export function ImageModal({ images, currentIndex, onClose }: ImageModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center animate-overlay-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

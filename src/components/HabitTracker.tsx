@@ -15,8 +15,8 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
   const goal = config.goal || 100;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-sm">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-sm animate-modal-in">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">{config.emoji} {config.name}</h2>
           <button className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" onClick={onClose}>✕</button>
@@ -177,8 +177,8 @@ export default function HabitTracker() {
   };
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
-      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+    <section className="mb-4">
+      <h2 className="text-sm font-medium text-gray-400 dark:text-gray-500 mb-3">
         🏃 今日习惯
         {isSyncing && <span className="ml-2 text-xs text-gray-400">同步中...</span>}
       </h2>

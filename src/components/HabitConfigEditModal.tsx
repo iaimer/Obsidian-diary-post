@@ -86,8 +86,8 @@ export function HabitConfigEditModal({ config, onSave, onClose }: HabitConfigEdi
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md animate-modal-in">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">
             {config ? '编辑习惯' : '添加新习惯'}

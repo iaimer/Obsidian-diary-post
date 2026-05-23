@@ -105,7 +105,7 @@ export function HistoryPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="min-h-screen">
-          <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
+          <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50 px-4 py-3">
             <div className="flex justify-between items-center">
               <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 过往日记</h1>
               {/* 本地环境显示连接状态，生产环境隐藏 */}

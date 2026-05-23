@@ -159,8 +159,8 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md animate-modal-in">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">💡 觉察与迭代</h2>
           <button
@@ -268,7 +268,7 @@ export function ReflectionModal({ onClose }: ReflectionModalProps) {
             <div className="flex gap-2 mt-3">
               {isAIConfigured() && (
                 <button
-                  className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg text-sm hover:bg-purple-200 dark:hover:bg-purple-900/50 disabled:opacity-50"
+                  className="px-3 py-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:opacity-50"
                   onClick={handlePolish}
                   disabled={isPolishing || !content.trim()}
                 >

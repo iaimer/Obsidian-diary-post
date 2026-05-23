@@ -291,7 +291,7 @@ export function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-3 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><SettingsIcon /> 设置</h1>
           <button
@@ -768,7 +768,7 @@ export function SettingsPage() {
         </CollapsibleSection>
 
         {/* 关于 */}
-        <section className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+        <section className="bg-white dark:bg-gray-800 rounded-xl p-4">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600 dark:text-gray-400">
             <p>日记APP v0.8.0</p>
