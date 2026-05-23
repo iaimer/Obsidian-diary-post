@@ -322,7 +322,7 @@ export function SettingsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 max-w-md mx-auto">
+      <main className="px-4 py-6 pb-[80px] max-w-md mx-auto">
 
         {/* 习惯管理 */}
         <CollapsibleSection title="🏃 习惯管理">
