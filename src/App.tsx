@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from './stores/diaryStore';
 import { getFileSyncService } from './services/fileSync';
 import { resetDataService } from './services/dataService';
-import QuickInput from './components/QuickInput';
+import QuickInputModal from './components/QuickInputModal';
+import FloatingButton from './components/FloatingButton';
 import { ReflectionModal } from './components/ReflectionModal';
 import { HappinessModal } from './components/HappinessModal';
 import HabitTracker from './components/HabitTracker';
@@ -30,6 +31,7 @@ function App() {
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
+  const [showQuickInput, setShowQuickInput] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
@@ -222,25 +224,6 @@ function App() {
         <div className="min-h-screen">
           {/* Main Content */}
           <main className="px-4 py-6 max-w-md mx-auto">
-            {/* Quick Input */}
-            <QuickInput />
-
-            {/* Quick Actions */}
-            <section className="flex gap-3 mb-4">
-              <button
-                className="flex-1 py-3 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl text-sm font-medium hover:bg-yellow-100 dark:hover:bg-yellow-900/50"
-                onClick={() => setShowReflection(true)}
-              >
-                💡 觉察
-              </button>
-              <button
-                className="flex-1 py-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl text-sm font-medium hover:bg-green-100 dark:hover:bg-green-900/50"
-                onClick={() => setShowHappiness(true)}
-              >
-                ✨ 小确幸
-              </button>
-            </section>
-
             {/* Habits */}
             <HabitTracker />
 
@@ -253,7 +236,17 @@ function App() {
       {/* Bottom Navigation */}
       {renderBottomNav()}
 
+      {/* Floating Button - 只在主页显示 */}
+      {currentView === 'home' && (
+        <FloatingButton
+          onQuickNote={() => setShowQuickInput(true)}
+          onReflection={() => setShowReflection(true)}
+          onHappiness={() => setShowHappiness(true)}
+        />
+      )}
+
       {/* Modals */}
+      {showQuickInput && <QuickInputModal onClose={() => setShowQuickInput(false)} />}
       {showReflection && <ReflectionModal onClose={() => setShowReflection(false)} />}
       {showHappiness && <HappinessModal onClose={() => setShowHappiness(false)} />}
     </div>
