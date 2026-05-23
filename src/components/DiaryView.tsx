@@ -313,7 +313,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       const result = await generateLizhiSays(diaryContext, config);
 
       // 解析行动建议，从人生教练中抽出写到明日寄语（用标记包裹，便于替换）
-      const actionMatch = result.match(/🎯\s*\*{0,2}\s*行动建议\s*\*{0,2}\s*\n?([\s\S]*?)(?=💬\s*\*{0,2}\s*暖心鼓励\s*\*{0,2}|$)/);
+      const actionMatch = result.match(/(?:###\s+)?\*{0,2}\s*🎯\s*\*{0,2}\s*行动建议\s*\*{0,2}\s*\n?([\s\S]*?)(?=(?:###\s+)?\*{0,2}\s*💬\s*\*{0,2}\s*暖心鼓励\s*\*{0,2}|$)/);
       if (actionMatch) {
         const actionContent = actionMatch[1].trim();
         if (actionContent) {
