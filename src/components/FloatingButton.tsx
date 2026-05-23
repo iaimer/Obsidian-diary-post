@@ -84,7 +84,7 @@ export default function FloatingButton({ onQuickNote, onReflection, onHappiness 
           style={{ marginBottom: 0 }}
         >
           <img
-            src="/icons/pencil.svg"
+            src="/icons/notebook.svg"
             alt="快速记录"
             className={`w-8 h-8 transition-opacity duration-200 ${isOpen ? 'opacity-0' : 'opacity-100'}`}
           />
