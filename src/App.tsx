@@ -91,7 +91,7 @@ function App() {
   ];
 
   const renderBottomNav = () => (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-2 py-1 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-100/50 dark:border-gray-700/50 px-2 py-1 z-50">
       <div className="flex justify-around max-w-md mx-auto">
         {navItems.map(item => (
           <button
@@ -169,7 +169,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header - 固定在 PullToRefresh 外部，不受下拉影响 */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 sticky top-0 z-10">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
             <span className="inline-flex items-center gap-2">

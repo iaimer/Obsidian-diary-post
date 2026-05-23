@@ -56,7 +56,7 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
         className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
           status === 'processing'
             ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
-            : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50'
+            : 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50'
         }`}
       >
         {status === 'processing' ? (

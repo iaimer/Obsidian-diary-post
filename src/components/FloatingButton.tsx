@@ -59,7 +59,7 @@ export default function FloatingButton({ onQuickNote, onReflection, onHappiness 
             <button
               key={btn.id}
               onClick={() => handleClick(btn)}
-              className="absolute w-12 h-12 rounded-full bg-white dark:bg-gray-700 shadow-lg flex items-center justify-center transition-all duration-300 ease-out"
+              className="absolute w-11 h-11 rounded-full bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm shadow-md flex items-center justify-center transition-all duration-300 ease-out"
               style={{
                 right: 0,
                 bottom: 0,
@@ -80,7 +80,7 @@ export default function FloatingButton({ onQuickNote, onReflection, onHappiness 
         {/* 主按钮 */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 rounded-full bg-white dark:bg-gray-700 shadow-lg flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95 z-50 relative"
+          className="w-13 h-13 rounded-full bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm shadow-md flex items-center justify-center transition-transform duration-200 hover:scale-105 active:scale-95 z-50 relative"
           style={{ marginBottom: 0 }}
         >
           <img
