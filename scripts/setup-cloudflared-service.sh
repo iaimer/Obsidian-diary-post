@@ -37,6 +37,6 @@ if launchctl list | grep -q "com.cloudflare.cloudflared"; then
     echo "重启 Mac 后会自动启动，无需干预。"
 else
     echo ""
-    echo "❌ 服务未成功启动，请检查日志: cat /tmp/cloudflared.err"
+    echo "❌ 服务未成功启动，请检查日志: cat /tmp/cloudflared.log"
     exit 1
 fi
