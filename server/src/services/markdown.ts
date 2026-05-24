@@ -144,7 +144,7 @@ export function appendToSection(content: string, section: string, newLine: strin
     }
   }
   
-  const allHeaders = Object.values(sectionHeaders);
+  const allHeaders = [...Object.values(sectionHeaders), '## 📈 每日复盘'];
   for (let i = startIndex + 1; i < lines.length; i++) {
     if (allHeaders.some(h => lines[i].startsWith(h))) {
       endIndex = i;

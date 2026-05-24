@@ -23,6 +23,8 @@ Port 4000 is **strictly enforced** (`strictPort: true`). This ensures localStora
 - Habits use `updateHabits()` which replaces the entire section
 - 人生教练 uses `replaceLizhiSays()` which replaces the entire section
 - 明日寄语 uses `appendTomorrow()` for AI-extracted action suggestions
+- 焦虑引导 uses `RecordWizard` which collects 4 answers → calls `appendAnxiety()` → `appendToSection(DiarySection.ANXIETY, ...)`
+- `## 📈 每日复盘` is NOT a registered section but IS a boundary marker in `appendToSection` (added to `allHeaders`)
 
 ### Timezone
 All timestamps use **Asia/Shanghai** timezone.

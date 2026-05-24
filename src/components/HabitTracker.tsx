@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { HabitConfig } from '../types';
+import { CheckmarkIcon } from './Icons';
 
 interface HabitEditModalProps {
   config: HabitConfig;
@@ -218,7 +219,7 @@ export default function HabitTracker() {
                   <span className={`text-sm font-medium ${goalMet ? 'text-green-600 dark:text-green-400' : colors.text}`}>
                     {value} {config.unit || ''}
                   </span>
-                  {goalMet && <span className="text-green-600 dark:text-green-400">✓</span>}
+                  {goalMet && <CheckmarkIcon />}
                 </div>
               </div>
             );
@@ -239,7 +240,7 @@ export default function HabitTracker() {
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                   checked ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'
                 }`}>
-                  {checked ? '✓' : ''}
+                  {checked ? <CheckmarkIcon /> : ''}
                 </div>
               </div>
             );

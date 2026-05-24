@@ -189,6 +189,34 @@ router.post('/reflection', async (req, res) => {
   }
 });
 
+router.post('/anxiety', async (req, res) => {
+  try {
+    const { content, tags } = req.body;
+    const date = new Date();
+    const time = date.toLocaleTimeString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(date);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
+    const updated = appendToSection(originalContent, 'anxiety', `- **${time}** ${content}${tagStr}`);
+    writeDiary(date, updated);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // 替换荔枝喵说区块
 router.post('/lizhi-says', async (req, res) => {
   try {

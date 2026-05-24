@@ -6,6 +6,7 @@ import QuickInputModal from './components/QuickInputModal';
 import FloatingButton from './components/FloatingButton';
 import { ReflectionModal } from './components/ReflectionModal';
 import { HappinessModal } from './components/HappinessModal';
+import RecordWizard from './components/RecordWizard';
 import HabitTracker from './components/HabitTracker';
 import DiaryView, { DiaryViewRef } from './components/DiaryView';
 import { SettingsPage } from './components/SettingsPage';
@@ -32,6 +33,7 @@ function App() {
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
   const [showQuickInput, setShowQuickInput] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
@@ -92,8 +94,28 @@ function App() {
 
   const renderBottomNav = () => (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-100/50 dark:border-gray-700/50 px-2 py-1 z-50">
-      <div className="flex justify-around max-w-md mx-auto">
-        {navItems.map(item => (
+      <div className="flex justify-around max-w-md mx-auto items-center">
+        {navItems.slice(0, 2).map(item => (
+          <button
+            key={item.view}
+            className={`flex flex-col items-center gap-1 px-4 py-2 text-xs ${
+              currentView === item.view
+                ? 'text-indigo-600'
+                : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+            }`}
+            onClick={() => setCurrentView(item.view)}
+          >
+            <span className="text-2xl">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+        <FloatingButton
+          onQuickNote={() => setShowQuickInput(true)}
+          onReflection={() => setShowReflection(true)}
+          onHappiness={() => setShowHappiness(true)}
+          onAnxiety={() => setShowWizard(true)}
+        />
+        {navItems.slice(2).map(item => (
           <button
             key={item.view}
             className={`flex flex-col items-center gap-1 px-4 py-2 text-xs ${
@@ -236,19 +258,11 @@ function App() {
       {/* Bottom Navigation */}
       {renderBottomNav()}
 
-      {/* Floating Button - 只在主页显示 */}
-      {currentView === 'home' && (
-        <FloatingButton
-          onQuickNote={() => setShowQuickInput(true)}
-          onReflection={() => setShowReflection(true)}
-          onHappiness={() => setShowHappiness(true)}
-        />
-      )}
-
       {/* Modals */}
       {showQuickInput && <QuickInputModal onClose={() => setShowQuickInput(false)} />}
       {showReflection && <ReflectionModal onClose={() => setShowReflection(false)} />}
       {showHappiness && <HappinessModal onClose={() => setShowHappiness(false)} />}
+      {showWizard && <RecordWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }

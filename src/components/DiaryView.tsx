@@ -3,6 +3,7 @@ import { DiaryEntry } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService, getFileSyncService } from '../services/dataService';
 import { getHistoryService } from '../services/historyService';
+import { CheckmarkIcon } from './Icons';
 import { getCachedDiary } from '../db';
 import { getDateString } from '../utils/date';
 import ImageUploadButton from './ImageUploadButton';
@@ -33,10 +34,11 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    const bc = colors.happiness || sc;
+    const bc = colors[section || ''] || colors.happiness;
+    const isAnxiety = section === 'anxiety';
 
     return (
-      <div className="text-sm text-gray-700 dark:text-gray-200">
+      <div className={`text-sm ${isAnxiety ? 'text-orange-700 dark:text-orange-300 italic' : 'text-gray-700 dark:text-gray-200'}`}>
         <div className="flex items-start gap-2">
           {time && (
             <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
@@ -67,8 +69,10 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
+    const isAnxiety = section === 'anxiety';
+
     return (
-      <div className="text-sm text-gray-700 dark:text-gray-200">
+      <div className={`text-sm ${isAnxiety ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
         <div className="flex items-start gap-2">
           {time && (
             <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
@@ -97,8 +101,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className={`w-4 h-4 rounded flex items-center justify-center text-xs ${checked ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'}`}>
-          {checked ? '✓' : ''}
+        <span className={`w-4 h-4 rounded flex items-center justify-center ${checked ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600'}`}>
+          {checked ? <CheckmarkIcon /> : ''}
         </span>
         <span className="text-lg">{emoji}</span>
         <span className="text-gray-700 dark:text-gray-200">{rest}</span>
@@ -395,6 +399,11 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     l.trim() && !l.includes('<!--')
   ) || [];
 
+  const hasAnxietyContent = anxiety.some(l =>
+    !(l.startsWith('> ') && l.slice(2).trim() === '') &&
+    !['- 今天什么时候我感到焦虑/紧张？', '- 当时我在担心什么？（具体到一句话)', '- 我做了什么？', '- 这个应对是帮我面对了，还是帮我躲开了？'].includes(l.trim())
+  );
+
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--') && !l.startsWith('###')
   ) || [];
@@ -440,6 +449,18 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {happiness.map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'happiness')}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 焦虑时刻 */}
+      {hasAnxietyContent && (
+        <div className="py-3 border-l-2 border-orange-200 dark:border-orange-700 pl-3">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h3>
+          <div className="space-y-1">
+            {anxiety.map((line, i) => (
+              <div key={i}>{renderMarkdown(line, 'anxiety')}</div>
             ))}
           </div>
         </div>
