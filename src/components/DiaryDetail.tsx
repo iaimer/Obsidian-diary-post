@@ -32,10 +32,11 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    const bc = colors.happiness || sc;
+    const bc = colors[section || ''] || colors.happiness;
+    const isAnxiety = section === 'anxiety';
 
     return (
-      <div className="text-sm text-gray-700 dark:text-gray-200">
+      <div className={`text-sm ${isAnxiety ? 'text-orange-700 dark:text-orange-300 italic' : 'text-gray-700 dark:text-gray-200'}`}>
         <div className="flex items-start gap-2">
           {time && (
             <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
@@ -65,8 +66,10 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     textContent = textContent.replace(/#\S+/g, '').trim();
     textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
+    const isAnxiety = section === 'anxiety';
+
     return (
-      <div className="text-sm text-gray-700 dark:text-gray-200">
+      <div className={`text-sm ${isAnxiety ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
         <div className="flex items-start gap-2">
           {time && (
             <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
@@ -204,6 +207,14 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
     !l.includes('[!') && 
     !(l.startsWith('> ') && l.slice(2).trim() === '')
   ) || [];
+  const anxiety = diary?.sections.anxiety.filter(l =>
+    l.trim() && !l.includes('<!--')
+  ) || [];
+
+  const hasAnxietyContent = anxiety.some(l =>
+    !(l.startsWith('> ') && l.slice(2).trim() === '') &&
+    !['- 今天什么时候我感到焦虑/紧张？', '- 当时我在担心什么？（具体到一句话)', '- 我做了什么？', '- 这个应对是帮我面对了，还是帮我躲开了？'].includes(l.trim())
+  );
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--')
   ) || [];
@@ -255,6 +266,17 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
               <div className="space-y-1">
                 {happiness.map((line, i) => (
                   <div key={i}>{renderMarkdown(line, 'happiness')}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasAnxietyContent && (
+            <div className="py-3 border-l-2 border-orange-200 dark:border-orange-700 pl-3">
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h4>
+              <div className="space-y-1">
+                {anxiety.map((line, i) => (
+                  <div key={i}>{renderMarkdown(line, 'anxiety')}</div>
                 ))}
               </div>
             </div>
@@ -312,7 +334,8 @@ export function DiaryDetail({ date }: DiaryDetailProps) {
           )}
 
           {quickNotes.length === 0 && happiness.length === 0 &&
-           reflection.length === 0 && lizhiSays.length === 0 && images.length === 0 && (
+           anxiety.length === 0 && reflection.length === 0 &&
+           lizhiSays.length === 0 && images.length === 0 && (
             <div className="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
               暂无记录
             </div>

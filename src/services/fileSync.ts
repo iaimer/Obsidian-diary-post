@@ -1,7 +1,7 @@
 import { DiaryEntry, DiarySection, HabitData, DEFAULT_HABIT_CONFIGS } from '../types';
 import { parseDiary } from '../utils/markdown';
 import { getDateString, getTimestamp, getWeekdayName } from '../utils/date';
-import { formatQuickNote, formatHappiness, formatReflection, formatHabitData } from '../utils/template';
+import { formatQuickNote, formatHappiness, formatReflection, formatAnxiety, formatHabitData } from '../utils/template';
 import { cacheDiary } from '../db';
 import { useDiaryStore } from '../stores/diaryStore';
 
@@ -238,8 +238,8 @@ export class FileSyncService {
       }
     }
 
-    // 找到下一个区块的位置（含旧版标题兼容）
-    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS];
+    // 找到下一个区块的位置（含旧版标题兼容 + 非注册分组标题）
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
       if (allHeaders.some(h => lines[i].startsWith(h))) {
         nextSectionIndex = i;
@@ -292,6 +292,13 @@ export class FileSyncService {
     const time = getTimestamp();
     const formatted = formatHappiness(time, content, tags);
     await this.appendToSection(new Date(), DiarySection.HAPPINESS, formatted);
+  }
+
+  // 追加焦虑时刻
+  async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
+    const time = getTimestamp();
+    const formatted = formatAnxiety(time, content, tags);
+    await this.appendToSection(new Date(), DiarySection.ANXIETY, formatted);
   }
 
   // 追加明日寄语

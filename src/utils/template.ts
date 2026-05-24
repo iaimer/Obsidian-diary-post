@@ -49,6 +49,12 @@ export function formatHappiness(time: string, content: string, tags: string[] = 
   return `> **${time}** ${content}${tagStr}`;
 }
 
+// 格式化焦虑时刻
+export function formatAnxiety(_time: string, content: string, tags: string[] = []): string {
+  const tagStr = tags.length > 0 ? ' ' + tags.map(t => `#${t}`).join(' ') : '';
+  return `${content}${tagStr}`;
+}
+
 // 格式化习惯打卡（使用动态配置）
 export function formatHabitData(habitData: HabitData, configs: HabitConfig[] = DEFAULT_HABIT_CONFIGS): string[] {
   // 按顺序排序并只处理启用的习惯

@@ -27,6 +27,9 @@ export interface DataService {
   
   // 追加觉察
   appendReflection(content: string, tags?: string[]): Promise<void>;
+
+  // 追加焦虑时刻
+  appendAnxiety(content: string, tags?: string[]): Promise<void>;
   
   // 更新习惯
   updateHabits(habitData: HabitData): Promise<void>;
@@ -81,7 +84,11 @@ export class LocalDataService implements DataService {
   async appendReflection(content: string, tags: string[] = []): Promise<void> {
     await this.fileSync.appendReflection(content, tags);
   }
-  
+
+  async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
+    await this.fileSync.appendAnxiety(content, tags);
+  }
+
   async updateHabits(habitData: HabitData): Promise<void> {
     await this.fileSync.updateHabits(habitData);
   }
@@ -192,7 +199,14 @@ export class RemoteDataService implements DataService {
       body: JSON.stringify({ content, tags })
     });
   }
-  
+
+  async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
+    await this.fetchAPI('/api/v1/diary/anxiety', {
+      method: 'POST',
+      body: JSON.stringify({ content, tags })
+    });
+  }
+
   async updateHabits(habitData: HabitData): Promise<void> {
     await this.fetchAPI('/api/v1/diary/habit', {
       method: 'POST',

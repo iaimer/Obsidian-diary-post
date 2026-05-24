@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 4000,
-    strictPort: true  // 端口被占用时报错，不自动切换，确保localStorage数据一致
+    strictPort: true,
+    allowedHosts: ['obsidian.femkits.org']
   }
 })
