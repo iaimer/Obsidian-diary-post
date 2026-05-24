@@ -243,16 +243,10 @@ function App() {
       <PullToRefresh onRefresh={async () => {
         await diaryViewRef.current?.reload();
       }}>
-        <div className="min-h-screen">
-          {/* Main Content */}
-          <main className="px-4 pt-1 pb-[80px] max-w-2xl mx-auto">
-            {/* Habits */}
-            <HabitTracker />
-
-            {/* Diary View */}
-            <DiaryView ref={diaryViewRef} />
-          </main>
-        </div>
+        <main className="px-4 pt-1 pb-[80px] max-w-2xl mx-auto">
+          <HabitTracker />
+          <DiaryView ref={diaryViewRef} />
+        </main>
       </PullToRefresh>
 
       {/* Bottom Navigation */}
