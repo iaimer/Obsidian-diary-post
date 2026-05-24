@@ -110,10 +110,10 @@ function App() {
           </button>
         ))}
         <FloatingButton
-          onQuickNote={() => setShowQuickInput(true)}
-          onReflection={() => setShowReflection(true)}
-          onHappiness={() => setShowHappiness(true)}
-          onAnxiety={() => setShowWizard(true)}
+          onQuickNote={() => { if (currentView !== 'home') setCurrentView('home'); setShowQuickInput(true); }}
+          onReflection={() => { if (currentView !== 'home') setCurrentView('home'); setShowReflection(true); }}
+          onHappiness={() => { if (currentView !== 'home') setCurrentView('home'); setShowHappiness(true); }}
+          onAnxiety={() => { if (currentView !== 'home') setCurrentView('home'); setShowWizard(true); }}
         />
         {navItems.slice(2).map(item => (
           <button
