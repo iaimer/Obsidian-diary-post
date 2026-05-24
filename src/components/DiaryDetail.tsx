@@ -41,17 +41,19 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           {time && (
             <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
           )}
-          <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
-        </div>
-        {tags.length > 0 && (
-          <div className="flex gap-1 mt-1 ml-8">
-            {tags.map(tag => (
-              <span key={tag} className={`text-xs ${bc.tag}`}>
-                {tag}
-              </span>
-            ))}
+          <div className="flex-1 min-w-0 break-words">
+            <span dangerouslySetInnerHTML={{ __html: textContent }} />
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {tags.map(tag => (
+                  <span key={tag} className={`text-xs ${bc.tag}`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -74,17 +76,19 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           {time && (
             <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
           )}
-          <span className="flex-1" dangerouslySetInnerHTML={{ __html: textContent }} />
-        </div>
-        {tags.length > 0 && (
-          <div className="flex gap-1 mt-1 ml-8">
-            {tags.map(tag => (
-              <span key={tag} className={`text-xs ${sc.tag}`}>
-                {tag}
-              </span>
-            ))}
+          <div className="flex-1 min-w-0 break-words">
+            <span dangerouslySetInnerHTML={{ __html: textContent }} />
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {tags.map(tag => (
+                  <span key={tag} className={`text-xs ${sc.tag}`}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }
