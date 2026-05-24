@@ -121,7 +121,7 @@ export function HistoryPage() {
             </div>
           </header>
 
-          <main className="px-4 py-6 pb-[80px] max-w-md mx-auto">
+          <main className="px-4 pt-4 pb-[80px] max-w-2xl mx-auto">
             {!isConnected ? (
               <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
                 {remoteMode ? '请配置 API 地址和 Token' : '请先连接 Obsidian Vault'}
