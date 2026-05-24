@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { HabitConfig } from '../types';
@@ -12,12 +13,31 @@ interface HabitEditModalProps {
 }
 
 function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModalProps) {
-  const [value, setValue] = useState(currentValue);
+  const [text, setText] = useState(String(currentValue || ''));
   const goal = config.goal || 100;
+  const num = parseInt(text, 10) || 0;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-sm animate-modal-in">
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleChange = (input: string) => {
+    const cleaned = input.replace(/[^0-9]/g, '');
+    setText(cleaned);
+  };
+
+  const handleSave = () => {
+    const num = parseInt(text, 10);
+    onSave(isNaN(num) ? 0 : num);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-sm animate-modal-in" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">{config.emoji} {config.name}</h2>
           <button className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" onClick={onClose}>✕</button>
@@ -26,23 +46,23 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
         <div className="mb-4">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">目标: {goal} {config.unit || ''}</div>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg text-lg text-center focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-            value={value}
-            onChange={e => setValue(parseInt(e.target.value) || 0)}
-            min={0}
-            max={goal * 3}
+            value={text}
+            onChange={e => handleChange(e.target.value)}
+            autoFocus
           />
         </div>
 
         {/* 快捷按钮 */}
         {config.unit === 'mL' && (
           <div className="flex gap-2 mb-4">
-            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => setValue(Math.max(0, value - 250))}>-250</button>
-            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => setValue(value + 250)}>+250</button>
-            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => setValue(value + 500)}>+500</button>
-            <button className="px-3 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300" onClick={() => setValue(goal)}>目标</button>
-            <button className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => setValue(0)}>清零</button>
+            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(Math.max(0, num - 250)))}>-250</button>
+            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(num + 250))}>+250</button>
+            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(num + 500))}>+500</button>
+            <button className="px-3 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300" onClick={() => handleChange(String(goal))}>目标</button>
+            <button className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleChange('0')}>清零</button>
           </div>
         )}
 
@@ -50,19 +70,19 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
         <div className="mb-4">
           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
             <div
-              className={`h-2 rounded-full ${value >= goal ? 'bg-green-500' : 'bg-indigo-500'}`}
-              style={{ width: `${Math.min(100, (value / goal) * 100)}%` }}
+              className={`h-2 rounded-full ${num >= goal ? 'bg-green-500' : 'bg-indigo-500'}`}
+              style={{ width: `${Math.min(100, (num / goal) * 100)}%` }}
             />
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-            {Math.round((value / goal) * 100)}% 完成
+            {Math.round((num / goal) * 100)}% 完成
           </div>
         </div>
 
         <div className="flex gap-2">
           <button
             className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-            onClick={() => onSave(value)}
+            onClick={handleSave}
           >
             保存
           </button>
@@ -74,7 +94,8 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
