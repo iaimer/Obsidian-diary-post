@@ -29,7 +29,9 @@
 ### Bug修复
 - **习惯编辑弹窗被遮挡**：`PullToRefresh` 的 `transform` 导致 `fixed` 定位失效，改用 `createPortal` 渲染到 `document.body`
 - **数字输入框前导零残留**：`type="number"` 对前导零行为异常，改为 `type="text" inputMode="numeric"` 手动过滤
-- **下拉刷新后内容被 header 遮挡**：`PullToRefresh` 使用 `h-screen` 与 header 叠加超出视口，改为 `flex-1 min-h-0` 弹性填充
+- **所有页面统一 flex 布局**：主页/统计/过往/设置全部改为 `flex flex-col h-screen + flex-1 overflow-y-auto`，header 不再遮挡内容，滚动正常
+- **标签与文字左对齐**：标签移入 `flex-1 min-w-0` 容器，与记录文字对齐，修复 `ml-8` 侵入时间戳区域
+- **中英文混排右侧锯齿**：内容改用 `div` 块级元素 + `text-justify` 两端对齐
 
 ## [0.10.0] - 2026-05-24
 
