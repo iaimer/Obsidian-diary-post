@@ -161,30 +161,30 @@ function App() {
   // 设置页面
   if (currentView === 'settings') {
     return (
-      <>
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <SettingsPage />
         {renderBottomNav()}
-      </>
+      </div>
     );
   }
 
   // 统计页面
   if (currentView === 'stats') {
     return (
-      <>
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <StatsPage />
         {renderBottomNav()}
-      </>
+      </div>
     );
   }
 
   // 过往页面
   if (currentView === 'history') {
     return (
-      <>
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <HistoryPage />
         {renderBottomNav()}
-      </>
+      </div>
     );
   }
 
