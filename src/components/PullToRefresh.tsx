@@ -79,7 +79,7 @@ export function PullToRefresh({ onRefresh, children, className = '' }: PullToRef
   return (
     <div
       ref={containerRef}
-      className={`overflow-y-auto h-[calc(100vh-56px)] ${className}`}
+      className={`overflow-y-auto h-screen ${className}`}
       style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
     >
       {/* 下拉刷新指示器 */}
