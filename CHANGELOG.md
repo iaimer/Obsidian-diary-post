@@ -26,6 +26,11 @@
 - **Vite 允许 Cloudflare Tunnel 转发**：`server.allowedHosts` 添加 `obsidian.femkits.org`
 - **Cloudflare Tunnel**：稳定运行于 PID 81392，双服务（前端 4000 + API 4001）
 
+### Bug修复
+- **习惯编辑弹窗被遮挡**：`PullToRefresh` 的 `transform` 导致 `fixed` 定位失效，改用 `createPortal` 渲染到 `document.body`
+- **数字输入框前导零残留**：`type="number"` 对前导零行为异常，改为 `type="text" inputMode="numeric"` 手动过滤
+- **下拉刷新后内容被 header 遮挡**：`PullToRefresh` 使用 `h-screen` 与 header 叠加超出视口，改为 `flex-1 min-h-0` 弹性填充
+
 ## [0.10.0] - 2026-05-24
 
 ### 布局优化

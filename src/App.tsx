@@ -189,7 +189,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px] flex flex-col">
       {/* Header - 固定在 PullToRefresh 外部，不受下拉影响 */}
       <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex justify-between items-center">

@@ -3,9 +3,10 @@ import { useState, useRef, useEffect } from 'react';
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;
   children: React.ReactNode;
+  className?: string;
 }
 
-export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
+export function PullToRefresh({ onRefresh, children, className = '' }: PullToRefreshProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -78,7 +79,7 @@ export function PullToRefresh({ onRefresh, children }: PullToRefreshProps) {
   return (
     <div
       ref={containerRef}
-      className="overflow-y-auto h-screen"
+      className={`overflow-y-auto flex-1 min-h-0 ${className}`}
       style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}
     >
       {/* 下拉刷新指示器 */}
