@@ -43,10 +43,7 @@ coverage/
 *.temp
 tmp/
 
-# Claude
-.claude/plans/
-
-# AI agent docs
+# AI agent docs (local overrides)
 AGENTS.md
 CLAUDE.md
 

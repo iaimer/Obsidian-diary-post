@@ -100,7 +100,7 @@ export function CalendarDayCell({
       onClick={onClick}
       className={`w-full h-full flex flex-col items-center justify-center rounded-lg relative overflow-hidden transition-all duration-200
         ${isSelected && !imageUrl && !loading
-          ? 'bg-indigo-600 text-white font-medium shadow-md ring-2 ring-indigo-400'
+          ? 'bg-orange-100 text-orange-700 font-medium ring-2 ring-orange-400'
           : isToday && !imageUrl && !loading
             ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
             : hasDiary && !imageUrl && !loading
