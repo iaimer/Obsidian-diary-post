@@ -102,51 +102,46 @@ export function HistoryPage() {
   const isConnected = vaultConnected || remoteMode;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
-      <PullToRefresh onRefresh={handleRefresh}>
-        <div className="min-h-screen">
-          <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50 px-4 py-3">
-            <div className="flex justify-between items-center">
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 过往日记</h1>
-              {/* 本地环境显示连接状态，生产环境隐藏 */}
-              {(() => {
-                const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
-                if (isProduction) return null;
-                return (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {remoteMode ? '远程模式' : vaultConnected ? '✓ 已连接' : '未连接'}
-                  </span>
-                );
-              })()}
-            </div>
-          </header>
-
-          <main className="px-4 pt-4 pb-[80px] max-w-2xl mx-auto">
-            {!isConnected ? (
-              <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
-                {remoteMode ? '请配置 API 地址和 Token' : '请先连接 Obsidian Vault'}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <CalendarView
-                  onDateSelect={handleDateSelect}
-                  onMonthChange={loadMonthData}
-                  diaryMetas={monthData?.diaries || []}
-                  loading={loading}
-                  selectedDate={selectedDate}
-                />
-
-                {selectedDate && (
-                  <DiaryDetail 
-                    date={selectedDate}
-                    onClose={() => setSelectedDate(null)}
-                  />
-                )}
-              </div>
-            )}
-          </main>
+    <PullToRefresh onRefresh={handleRefresh}>
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50 px-4 py-3">
+        <div className="flex justify-between items-center">
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 过往日记</h1>
+          {(() => {
+            const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
+            if (isProduction) return null;
+            return (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {remoteMode ? '远程模式' : vaultConnected ? '✓ 已连接' : '未连接'}
+              </span>
+            );
+          })()}
         </div>
-      </PullToRefresh>
-    </div>
+      </header>
+
+      <main className="px-4 pt-4 pb-[80px] max-w-2xl mx-auto">
+        {!isConnected ? (
+          <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">
+            {remoteMode ? '请配置 API 地址和 Token' : '请先连接 Obsidian Vault'}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <CalendarView
+              onDateSelect={handleDateSelect}
+              onMonthChange={loadMonthData}
+              diaryMetas={monthData?.diaries || []}
+              loading={loading}
+              selectedDate={selectedDate}
+            />
+
+            {selectedDate && (
+              <DiaryDetail 
+                date={selectedDate}
+                onClose={() => setSelectedDate(null)}
+              />
+            )}
+          </div>
+        )}
+      </main>
+    </PullToRefresh>
   );
 }
