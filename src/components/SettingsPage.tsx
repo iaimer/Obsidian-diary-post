@@ -322,7 +322,7 @@ export function SettingsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-6 pb-[80px] max-w-md mx-auto">
+      <main className="px-4 pt-4 pb-[80px] max-w-xl mx-auto">
 
         {/* 习惯管理 */}
         <CollapsibleSection title="🏃 习惯管理">
@@ -771,7 +771,7 @@ export function SettingsPage() {
         <section className="bg-white dark:bg-gray-800 rounded-xl p-4">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600 dark:text-gray-400">
-            <p>日记APP v0.9.0</p>
+            <p>日记APP v0.10.0</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
           </div>
         </section>

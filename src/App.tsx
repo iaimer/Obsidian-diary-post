@@ -223,7 +223,7 @@ function App() {
       }}>
         <div className="min-h-screen">
           {/* Main Content */}
-          <main className="px-4 pt-1 pb-[80px] max-w-md mx-auto">
+          <main className="px-4 pt-1 pb-[80px] max-w-2xl mx-auto">
             {/* Habits */}
             <HabitTracker />
 
