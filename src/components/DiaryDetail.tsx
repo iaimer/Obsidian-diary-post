@@ -41,8 +41,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           {time && (
             <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
           )}
-          <div className="flex-1 min-w-0 break-words">
-            <span dangerouslySetInnerHTML={{ __html: textContent }} />
+          <div className="flex-1 min-w-0 text-justify">
+            <div dangerouslySetInnerHTML={{ __html: textContent }} />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(tag => (
@@ -76,8 +76,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           {time && (
             <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
           )}
-          <div className="flex-1 min-w-0 break-words">
-            <span dangerouslySetInnerHTML={{ __html: textContent }} />
+          <div className="flex-1 min-w-0 text-justify">
+            <div dangerouslySetInnerHTML={{ __html: textContent }} />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(tag => (
