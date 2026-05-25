@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getDataService } from '../services/dataService';
+import { getFileSyncService } from '../services/dataService';
+import { compressImage, blobToBase64, generateImageFilename } from '../services/imageService';
 import { UploadPhotoIcon } from './Icons';
 
 interface ImageUploadButtonProps {
@@ -14,10 +15,12 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cancelRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const handleClick = () => {
     if (status === 'uploading') {
       cancelRef.current = true;
+      abortRef.current?.abort();
       setStatus('idle');
       return;
     }
@@ -31,22 +34,66 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
     setStatus('uploading');
     setErrorMsg('');
     cancelRef.current = false;
+    abortRef.current = new AbortController();
 
     try {
-      const dataService = getDataService();
       for (let i = 0; i < files.length; i++) {
         if (cancelRef.current) return;
-        await dataService.uploadImage(files[i], new Date());
+
+        const config = useDiaryStore.getState().imageConfig;
+
+        const blob = await compressImage(files[i], config);
         if (cancelRef.current) return;
+
+        const date = new Date();
+
+        if (remoteMode) {
+          const base64 = await blobToBase64(blob);
+          if (cancelRef.current) return;
+
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const { apiUrl, apiToken } = useDiaryStore.getState();
+          const response = await fetch(`${apiUrl}/api/v1/diary/image/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Token ${apiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ date: dateStr, imageData: base64 }),
+            signal: abortRef.current.signal
+          });
+          if (cancelRef.current) return;
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: '上传失败' }));
+            throw new Error(err.error || '上传失败');
+          }
+        } else {
+          const fileSync = getFileSyncService();
+          const seq = await fileSync.getNextImageSequence(date, config.nameFormat);
+          if (cancelRef.current) return;
+
+          const filename = generateImageFilename(date, seq, config.nameFormat);
+
+          await fileSync.saveImageToAssets(date, blob, filename);
+          if (cancelRef.current) return;
+
+          await fileSync.appendImageReference(date, filename);
+          if (cancelRef.current) return;
+        }
       }
-      setStatus('idle');
-      e.target.value = '';
-      onImageUploaded?.();
-      useDiaryStore.getState().triggerRefresh();
-    } catch (err) {
-      if (cancelRef.current) return;
+
+      if (!cancelRef.current) {
+        setStatus('idle');
+        e.target.value = '';
+        onImageUploaded?.();
+        useDiaryStore.getState().triggerRefresh();
+      }
+    } catch (err: any) {
+      if (cancelRef.current || err.name === 'AbortError') return;
       setStatus('error');
-      setErrorMsg((err as Error).message);
+      setErrorMsg(err.message || '上传失败');
+    } finally {
+      abortRef.current = null;
     }
   };
 
