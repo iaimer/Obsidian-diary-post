@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
-import { getDataService } from '../services/dataService';
+import { getFileSyncService } from '../services/dataService';
+import { compressImage, blobToBase64, generateImageFilename } from '../services/imageService';
 import { UploadPhotoIcon } from './Icons';
 
 interface ImageUploadButtonProps {
@@ -10,12 +11,19 @@ interface ImageUploadButtonProps {
 export default function ImageUploadButton({ onImageUploaded }: ImageUploadButtonProps) {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
-  const [status, setStatus] = useState<'idle' | 'processing' | 'error'>('idle');
-  const [progress, setProgress] = useState('');
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cancelRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const handleClick = () => {
+    if (status === 'uploading') {
+      cancelRef.current = true;
+      abortRef.current?.abort();
+      setStatus('idle');
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -23,44 +31,89 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setStatus('processing');
+    setStatus('uploading');
     setErrorMsg('');
-    const dataService = getDataService();
+    cancelRef.current = false;
+    abortRef.current = new AbortController();
 
-    for (let i = 0; i < files.length; i++) {
-      setProgress(`${i + 1}/${files.length}`);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        if (cancelRef.current) return;
 
-      try {
-        await dataService.uploadImage(files[i], new Date());
-      } catch (err) {
-        setStatus('error');
-        setErrorMsg((err as Error).message);
-        return;
+        const config = useDiaryStore.getState().imageConfig;
+
+        const blob = await compressImage(files[i], config);
+        if (cancelRef.current) return;
+
+        const date = new Date();
+
+        if (remoteMode) {
+          const base64 = await blobToBase64(blob);
+          if (cancelRef.current) return;
+
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const { apiUrl, apiToken } = useDiaryStore.getState();
+          const response = await fetch(`${apiUrl}/api/v1/diary/image/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Token ${apiToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ date: dateStr, imageData: base64 }),
+            signal: abortRef.current.signal
+          });
+          if (cancelRef.current) return;
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: '上传失败' }));
+            throw new Error(err.error || '上传失败');
+          }
+        } else {
+          const fileSync = getFileSyncService();
+          const seq = await fileSync.getNextImageSequence(date, config.nameFormat);
+          if (cancelRef.current) return;
+
+          const filename = generateImageFilename(date, seq, config.nameFormat);
+
+          await fileSync.saveImageToAssets(date, blob, filename);
+          if (cancelRef.current) return;
+
+          await fileSync.appendImageReference(date, filename);
+          if (cancelRef.current) return;
+        }
       }
-    }
 
-    setStatus('idle');
-    setProgress('');
-    e.target.value = '';
-    onImageUploaded?.();
-    useDiaryStore.getState().triggerRefresh();
+      if (!cancelRef.current) {
+        setStatus('idle');
+        e.target.value = '';
+        onImageUploaded?.();
+        useDiaryStore.getState().triggerRefresh();
+      }
+    } catch (err: any) {
+      if (cancelRef.current || err.name === 'AbortError') return;
+      setStatus('error');
+      setErrorMsg(err.message || '上传失败');
+    } finally {
+      abortRef.current = null;
+    }
   };
 
   if (!vaultConnected && !remoteMode) return null;
 
   return (
-    <span className="ml-auto">
+    <span className="ml-auto inline-flex items-center gap-2">
       <button
         onClick={handleClick}
-        disabled={status === 'processing'}
         className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-          status === 'processing'
-            ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+          status === 'uploading'
+            ? 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50'
             : 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50'
         }`}
       >
-        {status === 'processing' ? (
-          progress
+        {status === 'uploading' ? (
+          <span className="flex items-center gap-1.5">
+            <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-500 border-t-gray-500 dark:border-t-gray-300 rounded-full animate-spin" />
+            取消上传
+          </span>
         ) : (
           <span className="flex items-center gap-1">
             <UploadPhotoIcon />
