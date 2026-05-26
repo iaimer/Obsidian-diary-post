@@ -47,6 +47,8 @@
 - **所有页面统一 flex 布局**：主页/统计/过往/设置全部改为 `flex flex-col h-screen + flex-1 overflow-y-auto`，header 不再遮挡内容，滚动正常
 - **标签与文字左对齐**：标签移入 `flex-1 min-w-0` 容器，与记录文字对齐，修复 `ml-8` 侵入时间戳区域
 - **中英文混排右侧锯齿**：内容改用 `div` 块级元素 + `text-justify` 两端对齐
+- **上传照片支持取消**：拆分为压缩/保存/引用独立步骤，每步检查取消标记；远程模式使用 AbortController 中断 fetch
+- **上传按钮动效**：上传中显示 spinner + "取消上传"，可点击取消
 - **AI 润色结果为空时覆盖原文**：`handlePolish` 增加空结果校验，`handleUsePolished` 保护原始内容不被空结果覆盖
 - **缓存提示词过期问题**：新增 `isPromptStale()` 检测 localStorage 中缓存的旧 prompt（缺 `#生活`/`#回忆`），自动降级到默认
 
