@@ -9,6 +9,7 @@
 - **四步焦虑引导**：点击焦虑图标依次回答 4 个问题，统一写入 `😰 焦虑时刻` 区块
 - **焦虑区块渲染**：日记预览和详情页新增焦虑时刻展示（橙色边框 + 斜体答案）
 - **焦虑区块自动隐藏**：无真实内容时不在首页和过往页显示
+- **非今天页面 FAB 行为优化**：点击记录按钮先切回今天页面再弹窗
 
 ### 子按钮图标更新
 - 小确幸 → 粉红爱心 SVG
@@ -16,24 +17,11 @@
 - 觉察 → 青色云朵气泡 SVG
 - 焦虑时刻 → 黄色忧虑脸 SVG
 
-### Bug修复
-- **焦虑内容写入错误区块**：`appendToSection` 未识别 `## 📈 每日复盘` 为区块边界，修复前后端
-- **blockquote 颜色渲染错误**：引用块渲染一直误用 happiness 配色，修复为使用正确 section 配色
-- **时间戳重复**：焦虑引导不自带时间，由 `formatAnxiety` 统一处理
-- **测试数据残留**：清理日记文件中的测试条目
-
-### 部署
-- **Vite 允许 Cloudflare Tunnel 转发**：`server.allowedHosts` 添加 `obsidian.femkits.org`
-- **Cloudflare Tunnel**：稳定运行于 PID 81392，双服务（前端 4000 + API 4001）
-
-### Bug修复
-- **习惯编辑弹窗被遮挡**：`PullToRefresh` 的 `transform` 导致 `fixed` 定位失效，改用 `createPortal` 渲染到 `document.body`
-- **数字输入框前导零残留**：`type="number"` 对前导零行为异常，改为 `type="text" inputMode="numeric"` 手动过滤
-- **所有页面统一 flex 布局**：主页/统计/过往/设置全部改为 `flex flex-col h-screen + flex-1 overflow-y-auto`，header 不再遮挡内容，滚动正常
-- **标签与文字左对齐**：标签移入 `flex-1 min-w-0` 容器，与记录文字对齐，修复 `ml-8` 侵入时间戳区域
-- **中英文混排右侧锯齿**：内容改用 `div` 块级元素 + `text-justify` 两端对齐
-
-## [0.10.0] - 2026-05-24
+### 标签系统重构
+- **提取 TAG_SYSTEM 共享配置**：`src/config/tags.ts` 统一管理，3 个 Modal 改为 import
+- **新增 `#生活` 领域**：7 个领域标签，含 5 个能力标签（健康管理、财务管理、生活整理、兴趣探索、日常记录）
+  - `#尝鲜种草` 合并入 `#兴趣探索`
+- **新增 `#回忆` 方法标签**：方法层扩展至 5 个
 
 ### 布局优化
 - **页面宽度扩展**：主页/过往页 `max-w-md` → `max-w-2xl`（448→672px），统计页 → `max-w-3xl`（768px），设置页 → `max-w-xl`（576px），大幅减少侧向空白
@@ -41,20 +29,30 @@
 - **统计页底色统一**：`bg-gray-100` → `bg-gray-50`，与其余页面一致
 - **日历选中颜色优化**：深咖啡色 `bg-indigo-600` → 浅橙色 `bg-orange-100` + ring 圆环，与日历整体色调更协调
 
-### 标签系统重构
-- **提取 TAG_SYSTEM 共享配置**：`src/config/tags.ts` 统一管理，3 个 Modal 改为 import
-- **新增 `#生活` 领域**：7 个领域标签，含 5 个能力标签（健康管理、财务管理、生活整理、兴趣探索、日常记录）
-  - `#尝鲜种草` 合并入 `#兴趣探索`
-- **新增 `#回忆` 方法标签**：方法层扩展至 5 个
-
-### Bug修复
-- **AI 润色结果为空时覆盖原文**：`handlePolish` 增加空结果校验，`handleUsePolished` 保护原始内容不被空结果覆盖
-- **缓存提示词过期问题**：新增 `isPromptStale()` 检测 localStorage 中缓存的旧 prompt（缺 `#生活`/`#回忆`），自动降级到默认
-
 ### AI 润色改进
 - **领域优先级重排**：`#生活` 从第 6 位提到第 2 位，明确睡眠/健康/情绪/饮食归入生活
 - **新增润色示例**：`半夜醒来翻来覆去睡不着。 #生活 #健康管理 #记录`
 - **同步更新 `DEFAULT_POLISH_PROMPT`**：标签列表与 `tags.ts` 保持一致
+
+### 日记路径更新
+- **Obsidian 日记目录变更**：`workspace/生活/日记/` → `01.日记/`，同步更新 `fileSync.ts` 和 `historyService.ts` 中所有路径引用
+
+### Bug修复
+- **焦虑内容写入错误区块**：`appendToSection` 未识别 `## 📈 每日复盘` 为区块边界，修复前后端
+- **blockquote 颜色渲染错误**：引用块渲染一直误用 happiness 配色，修复为使用正确 section 配色
+- **时间戳重复**：焦虑引导不自带时间，由 `formatAnxiety` 统一处理
+- **测试数据残留**：清理日记文件中的测试条目
+- **习惯编辑弹窗被遮挡**：`PullToRefresh` 的 `transform` 导致 `fixed` 定位失效，改用 `createPortal` 渲染到 `document.body`
+- **数字输入框前导零残留**：`type="number"` 对前导零行为异常，改为 `type="text" inputMode="numeric"` 手动过滤
+- **所有页面统一 flex 布局**：主页/统计/过往/设置全部改为 `flex flex-col h-screen + flex-1 overflow-y-auto`，header 不再遮挡内容，滚动正常
+- **标签与文字左对齐**：标签移入 `flex-1 min-w-0` 容器，与记录文字对齐，修复 `ml-8` 侵入时间戳区域
+- **中英文混排右侧锯齿**：内容改用 `div` 块级元素 + `text-justify` 两端对齐
+- **AI 润色结果为空时覆盖原文**：`handlePolish` 增加空结果校验，`handleUsePolished` 保护原始内容不被空结果覆盖
+- **缓存提示词过期问题**：新增 `isPromptStale()` 检测 localStorage 中缓存的旧 prompt（缺 `#生活`/`#回忆`），自动降级到默认
+
+### 部署
+- **Vite 允许 Cloudflare Tunnel 转发**：`server.allowedHosts` 添加 `obsidian.femkits.org`
+- **Cloudflare Tunnel**：稳定运行于 PID 81392，双服务（前端 4000 + API 4001）
 
 ## [0.9.0] - 2026-05-23
 

@@ -76,7 +76,7 @@ diary-post/
 
 ## 日记格式
 
-路径格式：`workspace/生活/日记/YYYY/MM.English/YYYY-MM-DD.md`
+路径格式：`01.日记/YYYY/MM.English/YYYY-MM-DD.md`
 
 日记文件包含以下区块：
 - 🏃 习惯打卡

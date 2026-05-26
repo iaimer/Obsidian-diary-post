@@ -24,7 +24,8 @@ export class HistoryService {
     const diaries: DiaryMeta[] = [];
     const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
     
-    const basePath = `workspace/生活/日记/${year}/${monthDirName}`;
+const basePath = `01.日记/${year}/${monthDirName}`;
+
     const pathParts = basePath.split('/').filter(p => p);
 
     try {
@@ -118,7 +119,7 @@ export class HistoryService {
     const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
     const dateStr = getDateString(date);
 
-    const basePath = `workspace/生活/日记/${year}/${monthDirName}`;
+    const basePath = `01.日记/${year}/${monthDirName}`;
     const pathParts = basePath.split('/').filter(p => p);
 
     try {
@@ -153,7 +154,7 @@ export class HistoryService {
     // 优先级1：检查月份assets（YYYY/MM.EnglishMonth/assets）
     if (month) {
       const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
-      const monthAssetsPath = `workspace/生活/日记/${year}/${monthDirName}/assets`;
+      const monthAssetsPath = `01.日记/${year}/${monthDirName}/assets`;
       
       try {
         const url = await this.tryLoadImageFromPath(monthAssetsPath, imageName, cacheKey);
@@ -164,7 +165,7 @@ export class HistoryService {
     }
 
     // 优先级2：检查年份assets（YYYY/assets）
-    const yearAssetsPath = `workspace/生活/日记/${year}/assets`;
+    const yearAssetsPath = `01.日记/${year}/assets`;
     try {
       const url = await this.tryLoadImageFromPath(yearAssetsPath, imageName, cacheKey);
       if (url) return url;
