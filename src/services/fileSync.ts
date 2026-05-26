@@ -557,7 +557,7 @@ export class FileSyncService {
                         'July', 'August', 'September', 'October', 'November', 'December'];
     const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
 
-    const parts = ['workspace', '生活', '日记', year.toString(), monthDirName];
+    const parts = ['01.日记', year.toString(), monthDirName];
 
     let handle = this.vaultHandle;
     for (const part of parts) {
@@ -675,9 +675,7 @@ export class FileSyncService {
     const day = getDateString(date);
 
     return [
-      'workspace',
-      '生活',
-      '日记',
+      '01.日记',
       year.toString(),
       `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`,
       `${day}.md`
