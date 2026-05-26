@@ -58,8 +58,8 @@ function HabitEditModal({ config, currentValue, onClose, onSave }: HabitEditModa
         {/* 快捷按钮 */}
         {config.unit === 'mL' && (
           <div className="flex gap-2 mb-4">
-            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(Math.max(0, num - 250)))}>-250</button>
             <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(num + 250))}>+250</button>
+            <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(num + 475))}>+475</button>
             <button className="px-3 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50" onClick={() => handleChange(String(num + 500))}>+500</button>
             <button className="px-3 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-sm font-medium text-blue-700 dark:text-blue-300" onClick={() => handleChange(String(goal))}>目标</button>
             <button className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600" onClick={() => handleChange('0')}>清零</button>
@@ -144,46 +144,42 @@ export default function HabitTracker() {
   // 获取启用的习惯配置，按顺序排列
   const enabledConfigs = habitConfigs.filter(c => c.enabled).sort((a, b) => a.order - b.order);
 
+  const ensureDiaryExists = async () => {
+    const dataService = getDataService();
+    const exists = await dataService.checkDiaryExists(new Date());
+    if (!exists) {
+      await dataService.createDiary(new Date());
+    }
+  };
+
+  const syncHabits = async (updates: Record<string, any>) => {
+    if (!vaultConnected && !remoteMode) return;
+    setIsSyncing(true);
+    try {
+      const dataService = getDataService();
+      await ensureDiaryExists();
+      await dataService.updateHabits({
+        ...habitData,
+        ...updates
+      });
+      useDiaryStore.getState().triggerRefresh();
+    } catch (error) {
+      console.error('Failed to sync:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleToggleBoolean = async (configId: string) => {
     const newValue = !habitData[configId as keyof typeof habitData];
     updateHabitData({ [configId]: newValue });
-
-    if (vaultConnected || remoteMode) {
-      setIsSyncing(true);
-      try {
-        const dataService = getDataService();
-        await dataService.updateHabits({
-          ...habitData,
-          [configId]: newValue
-        });
-        useDiaryStore.getState().triggerRefresh();
-      } catch (error) {
-        console.error('Failed to sync:', error);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await syncHabits({ [configId]: newValue });
   };
 
   const handleSaveValue = async (configId: string, value: number) => {
     updateHabitData({ [configId]: value });
     setEditingConfig(null);
-
-    if (vaultConnected || remoteMode) {
-      setIsSyncing(true);
-      try {
-        const dataService = getDataService();
-        await dataService.updateHabits({
-          ...habitData,
-          [configId]: value
-        });
-        useDiaryStore.getState().triggerRefresh();
-      } catch (error) {
-        console.error('Failed to sync:', error);
-      } finally {
-        setIsSyncing(false);
-      }
-    }
+    await syncHabits({ [configId]: value });
   };
 
   // 获取数值型习惯的当前值
