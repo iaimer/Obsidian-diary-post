@@ -12,9 +12,7 @@ export function getDiaryPath(date: Date): string {
   
   return join(
     config.vaultPath,
-    'workspace',
-    '生活',
-    '日记',
+    '01.日记',
     year.toString(),
     `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`,
     `${day}.md`
@@ -50,9 +48,7 @@ export function writeDiary(date: Date, content: string): void {
 export function listMonthDiaries(year: number, month: number): string[] {
   const dir = join(
     config.vaultPath,
-    'workspace',
-    '生活',
-    '日记',
+    '01.日记',
     year.toString(),
     `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`
   );
@@ -77,9 +73,7 @@ export function getAssetsDir(date: Date): string {
   
   return join(
     config.vaultPath,
-    'workspace',
-    '生活',
-    '日记',
+    '01.日记',
     year.toString(),
     `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`,
     'assets'
