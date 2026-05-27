@@ -39,7 +39,7 @@ Uses browser **File System Access API**, not Node.js fs. Vault paths are relativ
 
 ### Obsidian Vault Integration
 - Uses **File System Access API** to read/write diary files directly
-- Path format: `workspace/生活/日记/YYYY/MM.EnglishMonth/YYYY-MM-DD.md`
+- Path format: `01.日记/YYYY/MM.EnglishMonth/YYYY-MM-DD.md`
 - **Safe append mode**: reads file first, then appends to specific section without overwriting
 - Section headers are defined in `src/services/fileSync.ts` and `src/utils/markdown.ts`
 
