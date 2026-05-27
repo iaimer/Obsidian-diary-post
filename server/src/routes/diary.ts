@@ -519,9 +519,7 @@ router.get('/image/:year/:imageName', async (req, res) => {
       const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
       const monthAssetsPath = join(
         config.vaultPath,
-        'workspace',
-        '生活',
-        '日记',
+        '01.日记',
         year.toString(),
         monthDirName,
         'assets',
@@ -535,9 +533,7 @@ router.get('/image/:year/:imageName', async (req, res) => {
     if (!imagePath) {
       const yearAssetsPath = join(
         config.vaultPath,
-        'workspace',
-        '生活',
-        '日记',
+        '01.日记',
         year.toString(),
         'assets',
         imageName
