@@ -1,92 +1,130 @@
-# AGENTS.md
+# AGENTS.md — 项目知识库
 
-Instructions for AI agents working in this repository.
+> 本文件也可能命名为 `CLAUDE.md`（取决于使用哪个 AI 工具），内容结构保持一致。
 
-## Commands
+本项目是一个与 Obsidian 无缝集成的日记应用，支持多设备同步、AI 润色、习惯追踪。
+
+## 快速命令
 
 ```bash
-npm run dev      # Dev server at port 4000 (strict)
-npm run build    # TypeScript check + Vite build
-npm run preview  # Preview production build
+npm run dev      # 本地开发（端口 4000，strictPort: true）
+npm run build    # TypeScript 检查 + Vite 构建
+npm run preview  # 预览生产构建
 ```
 
-No lint or test commands exist.
+无 lint 或测试命令。
 
-## Key Constraints
+## 发布前更新流程
 
-### Dev Server Port
-Port 4000 is **strictly enforced** (`strictPort: true`). This ensures localStorage data consistency across sessions. Do not change or auto-switch ports.
+推送前更新以下文件（版本号新增时同步更新）：
+1. **package.json version** — 递增版本号（主版本）
+2. **AGENTS.md** — 项目知识库（架构/约束/决策有变更时更新）
+3. **SESSION_LOG.md** — 追加本次开发会话记录
+4. **CHANGELOG.md** — 按版本记录功能变更
+5. **README.md** — 功能说明/配置/结构/版本号有变更时更新
 
-### Diary Write Operations
-**Critical**: Never overwrite diary files. Use the append pattern:
-- `appendToSection()` in `src/services/fileSync.ts` reads → appends → writes
-- Habits use `updateHabits()` which replaces the entire section
-- 人生教练 uses `replaceLizhiSays()` which replaces the entire section
-- 明日寄语 uses `appendTomorrow()` for AI-extracted action suggestions
-- 焦虑引导 uses `RecordWizard` which collects 4 answers → calls `appendAnxiety()` → `appendToSection(DiarySection.ANXIETY, ...)`
-- `## 📈 每日复盘` is NOT a registered section but IS a boundary marker in `appendToSection` (added to `allHeaders`)
+## 关键约束
 
-### Timezone
-All timestamps use **Asia/Shanghai** timezone.
+### Dev Server 端口
+端口 **4000** 严格固定（`strictPort: true`），确保 localStorage 数据跨 Session 一致。**禁止修改或自动切换端口。**
 
-### UI Language
-UI labels and diary content are in Chinese. Code comments are in Chinese.
+### 日记写入模式
+**禁止覆盖日记文件**，统一使用安全追加模式：
+- `appendToSection()` — 先读 → 追加到指定区块 → 写回
+- 习惯打卡：`updateHabits()` — 替换整个区块
+- 人生教练：`replaceLizhiSays()` — 替换整个区块
+- 明日寄语：`appendTomorrow()` — AI 行动建议追加
+- 焦虑引导：`RecordWizard` 收集 4 个答案 → `appendAnxiety()` → `appendToSection(DiarySection.ANXIETY, ...)`
+- `## 📈 每日复盘` 不是注册区块，但 `appendToSection` 中作为区块边界标记（加入 `allHeaders`）
 
-### File System Access
-Uses browser **File System Access API**, not Node.js fs. Vault paths are relative to user-selected directory root.
+### 时区
+所有时间戳使用 **Asia/Shanghai** 时区。
 
-## Architecture
+### UI 语言
+UI 标签和日记内容均为中文。代码注释用中文。
 
-### Obsidian Vault Integration
-- Uses **File System Access API** to read/write diary files directly
-- Path format: `01.日记/YYYY/MM.EnglishMonth/YYYY-MM-DD.md`
-- **Safe append mode**: reads file first, then appends to specific section without overwriting
-- Section headers are defined in `src/services/fileSync.ts` and `src/utils/markdown.ts`
+### 文件系统
+使用浏览器 **File System Access API**，非 Node.js fs。路径相对于用户选择的 Vault 根目录。
 
-### Diary Sections
-Eight sections defined in `src/types/index.ts` (DiarySection enum):
-- HABITS, QUICK_NOTES, HAPPINESS, ANXIETY, REFLECTION, LIZHI_SAYS, TOMORROW, IMAGES
+## 架构概览
 
-### State Management
-- **Zustand** with persist middleware (`src/stores/diaryStore.ts`)
-- Persisted: `wasConnected`, `habitData`, `habitConfigs`
-- Non-persisted: `vaultConnected`, `currentDiary`, `refreshKey`
+### Vault 路径结构
 
-### Habit Configuration
-- **Dynamic habit configs** (`src/types/index.ts`)
-  - `HabitConfig` interface: id, name, emoji, type, goal, unit, description, enabled, order, color
-  - Default 5 habits: water, steps, reading, language, supplements
-  - Users can add/edit/delete habits in Settings page
-- **HabitTracker** (`src/components/HabitTracker.tsx`)
-  - Renders habits dynamically from `habitConfigs`
-  - Number type: progress bar with custom color
-  - Boolean type: checkbox with custom color
-- **HabitConfigEditModal** (`src/components/HabitConfigEditModal.tsx`)
-  - Add/edit habit configuration
-  - 10 color options: blue, sky, green, emerald, orange, amber, purple, violet, pink, rose
-  - Grouped emoji picker (常用, 生活, 食物, 学习, 活动, 表情)
+```
+01.日记/YYYY/MM.EnglishMonth/YYYY-MM-DD.md
+```
 
-### Offline Storage
-- **IndexedDB** via Dexie (`src/db/index.ts`)
-- Primary key: date string (YYYY-MM-DD)
-- Used for caching diary entries when vault is disconnected
+### 日记区块（DiarySection 枚举）
 
-### Statistics
-- **Recharts** for trend charts (dual Y-axis LineChart)
-- Historical data fetched from Obsidian files via `src/services/habitStats.ts`
-- Habit goals: water ≥1500mL, steps ≥6000
+共 8 个区块（定义在 `src/types/index.ts`）：
 
-### AI Services
-- Located in `src/services/aiPolish.ts`
-- Supports both **Claude API** and **OpenAI-compatible APIs**
-- Config stored in localStorage as `diary-ai-config`
-- **润色**：`polishContent()` — 3-layer tag system (domain + capability + method)
-- **人生教练**：`generateLizhiSays()` — collects all diary sections as context, generates 250-300字 coaching feedback (📌 模式识别 / ⚠️ 矛盾指出 / 💬 暖心鼓励)
-  - 🎯 行动建议 extracted and appended to 明日寄语 section
-  - Coach prompt configurable in Settings via 「教练提示词」tab
-  - Section header `### 🧠 人生教练` (backward compat with legacy `### 🧠 荔枝喵说`)
+| 区块 | 标题 |
+|------|------|
+| HABITS | `🏃 习惯打卡` |
+| QUICK_NOTES | `✍️ 随手记 & 灵感` |
+| HAPPINESS | `✨ 每日小确幸` |
+| ANXIETY | `😰 焦虑时刻` |
+| REFLECTION | `💡 觉察与迭代` |
+| LIZHI_SAYS | `🧠 人生教练` |
+| TOMORROW | `🌙 明日寄语` |
+| IMAGES | `📸 影像记录` |
 
-### Page Navigation
-- Single app with bottom navigation
-- Pages: home, stats, settings (type: `PageView` in App.tsx)
-- Navigation bar is always visible, current page highlighted with `text-indigo-600 font-medium`
+### 状态管理
+- **Zustand** + persist 中间件（`src/stores/diaryStore.ts`）
+- 持久化：`wasConnected`、`habitData`、`habitConfigs`
+- 不持久化：`vaultConnected`、`currentDiary`、`refreshKey`
+
+### 习惯系统
+- **动态配置**：`HabitConfig` 接口（id, name, emoji, type, goal, unit, enabled, order, color）
+- 默认 5 项：饮水、步数、阅读、学语言、补充剂
+- 设置页支持添加/编辑/删除
+- `HabitTracker` 根据配置动态渲染，数值型进度条 + 勾选型复选框
+
+### AI 服务（`src/services/aiPolish.ts`）
+- 支持 **Claude API** 和 **OpenAI 兼容 API**
+- 配置存 localStorage（key: `diary-ai-config`）
+- **润色** `polishContent()`：三层标签系统（领域 + 能力 + 方法）
+- **人生教练** `generateLizhiSays()`：收集所有日记区块 → 生成 250-300 字教练反馈
+  - 格式：📌 模式识别 / ⚠️ 矛盾指出 / 💬 暖心鼓励 + 🎯 行动建议（自动追加到明日寄语）
+  - 教练提示词可在设置页自定义
+  - 区块标题兼容旧版 `### 🧠 荔枝喵说`
+
+### 页面导航
+- 单页应用 + 底部导航（PageView: home / stats / settings）
+- 当前页高亮：`text-indigo-600 font-medium`
+
+### 离线存储
+- **IndexedDB** via Dexie（`src/db/index.ts`）
+- 主键：日期字符串 YYYY-MM-DD
+- Vault 断开时缓存日记条目
+
+### 统计页面
+- **Recharts** 双 Y 轴折线图
+- 历史数据从 Obsidian 文件读取（`src/services/habitStats.ts`）
+- 默认目标：饮水 ≥1500mL，步数 ≥6000
+
+## 标签系统
+
+三层结构，定义在 `src/config/tags.ts`：
+
+| 层级 | 说明 | 数量 |
+|------|------|------|
+| 领域（domain） | #亲子 #育儿 #工作 #学习 #阅读 #技术 #生活 | 7 |
+| 能力（capability） | 每个领域有独立的能力列表 | 30 |
+| 方法（method） | #反思 #方法论 #问题分析 #记录 #回忆 | 5 |
+
+`#生活` 能力标签（6 个）：健康管理、财务管理、生活整理、兴趣探索、日常记录、尝鲜种草
+
+> 标签系统详情见 `src/config/tags.ts` 和 `标签规范.md`。
+
+## 重要决策记录
+
+| 决策 | 原因 | 影响范围 |
+|------|------|----------|
+| File System Access API 而非 Node.js | 浏览器端直接操作 Vault，无需后端 | 全系统 |
+| 追加模式而非全量写入 | 避免多人/多设备并发时覆盖他人内容 | fileSync.ts |
+| 标签系统三层结构 | 平衡分类精度与使用成本 | tags.ts, 3 个 Modal |
+| 标签配置统一提取到 tags.ts | 消除 3 个 Modal 中的三份重复代码 | v0.11.0 |
+| Asia/Shanghai 固定时区 | 用户在中国，避免 UTC 导致的日期偏移 | 全系统 |
+| Zustand 而非 Redux | 简单项目不需要 Redux 的复杂度 | stores/ |
+| 双模式（本地 + 远程） | 手机需要远程访问，Mac 用本地模式 | DataService, server/ |
