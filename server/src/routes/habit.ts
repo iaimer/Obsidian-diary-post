@@ -4,6 +4,7 @@ import { join } from 'path';
 import config from '../config/index.js';
 import { readDiary, listMonthDiaries, getDiaryPath } from '../services/vault.js';
 import { parseDiary } from '../services/markdown.js';
+import { getShanghaiDateString, parseShanghaiDate } from '../utils/date.js';
 
 const router = Router();
 
@@ -12,10 +13,9 @@ router.get('/habit', async (req, res) => {
     const days = parseInt(req.query.days as string) || 30;
     const stats: any[] = [];
     
-    const today = new Date();
+    const today = parseShanghaiDate(getShanghaiDateString(new Date()));
     for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
       
       try {
         const content = readDiary(date);
@@ -23,12 +23,12 @@ router.get('/habit', async (req, res) => {
         const habitData = parseHabitLines(entry.sections.habits);
         
         stats.push({
-          date: getDateString(date),
+          date: getShanghaiDateString(date),
           ...habitData
         });
       } catch {
         stats.push({
-          date: getDateString(date),
+          date: getShanghaiDateString(date),
           water: 0,
           steps: 0,
           reading: false,
@@ -78,13 +78,6 @@ function parseHabitLines(lines: string[]): any {
   }
   
   return data;
-}
-
-function getDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 export default router;

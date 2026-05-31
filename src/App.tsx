@@ -18,7 +18,6 @@ import { TodayIcon, HistoryIcon, StatsIcon, SettingsIcon } from './components/Ic
 type PageView = 'home' | 'history' | 'stats' | 'settings';
 
 // API 默认配置
-const DEFAULT_API_TOKEN = 'diary-app-secret-token-2026';
 const PRODUCTION_API_URL = 'https://obsidian.femkits.org';
 const DEV_API_URL = 'http://localhost:4001';
 
@@ -67,7 +66,7 @@ function App() {
     // 远程环境：强制启用远程模式并配置 API
     if (isProduction) {
       const cleanUrl = apiUrl?.replace(/\/api\/v1\/?$/, '') || PRODUCTION_API_URL;
-      setApiConfig(cleanUrl, apiToken || DEFAULT_API_TOKEN);
+      setApiConfig(cleanUrl, apiToken);
 
       if (!state.remoteMode) {
         setRemoteMode(true);
@@ -76,7 +75,7 @@ function App() {
     } else {
       // 本地环境：确保有默认配置
       if (!apiToken || !apiUrl) {
-        setApiConfig(DEV_API_URL, DEFAULT_API_TOKEN);
+        setApiConfig(DEV_API_URL, '');
       }
     }
 

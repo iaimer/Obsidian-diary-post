@@ -1,13 +1,13 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import config from '../config/index.js';
+import { getShanghaiDateParts, getShanghaiDateString } from '../utils/date.js';
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
 
 export function getDiaryPath(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
+  const { year, month } = getShanghaiDateParts(date);
   const day = getDateString(date);
   
   return join(
@@ -20,10 +20,7 @@ export function getDiaryPath(date: Date): string {
 }
 
 export function getDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return getShanghaiDateString(date);
 }
 
 export function readDiary(date: Date): string {
@@ -68,8 +65,7 @@ export function existsDiary(date: Date): boolean {
 }
 
 export function getAssetsDir(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
+  const { year, month } = getShanghaiDateParts(date);
   
   return join(
     config.vaultPath,

@@ -73,7 +73,7 @@ interface DiaryState {
 }
 
 // API 默认配置
-const DEFAULT_API_TOKEN = 'diary-app-secret-token-2026';
+const DEFAULT_API_TOKEN = '';
 
 // 根据环境获取默认 API 地址
 function getDefaultApiUrl(): string {

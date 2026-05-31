@@ -1,16 +1,11 @@
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                    'July', 'August', 'September', 'October', 'November', 'December'];
+import { getShanghaiDateString, getShanghaiWeekdayName } from '../utils/date.js';
 
 export function getDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return year + '-' + month + '-' + day;
+  return getShanghaiDateString(date);
 }
 
 export function getWeekdayName(date: Date): string {
-  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-  return weekdays[date.getDay()];
+  return getShanghaiWeekdayName(date);
 }
 
 export function createObsidianDiaryContent(date: Date): string {

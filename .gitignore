@@ -8,6 +8,7 @@ build/
 # Server
 server/logs/
 server/dist/
+server/config.json
 
 # IDE
 .vscode/

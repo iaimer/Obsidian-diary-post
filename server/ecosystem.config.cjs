@@ -15,7 +15,8 @@ module.exports = {
       out_file: './logs/out.log',
       merge_logs: false,
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        TZ: 'Asia/Shanghai'
       }
     },
     {

@@ -98,13 +98,23 @@ diary-post/
 
 ### 远程模式配置
 
-API 地址 + Token 配置，详见设置页面。
+服务端配置仅保存在部署机器本地：
+
+```bash
+cd server
+cp config.example.json config.json
+openssl rand -hex 32
+```
+
+将生成的新 Token 和 Vault 路径写入本地 `server/config.json`，再执行 `npm run build` 和 `npm run pm2:restart`。
+
+手机端在设置页填写 API 地址和相同 Token。禁止将真实 Token 提交到 Git；旧 Token 一旦泄露必须立即轮换。
 
 ## 更新日志
 
 详见 [CHANGELOG.md](CHANGELOG.md)
 
-**当前版本：v0.11.0**
+**当前版本：v0.11.1**
 
 ## 开发计划
 

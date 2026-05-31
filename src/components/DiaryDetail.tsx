@@ -5,6 +5,16 @@ import { getDataService } from '../services/dataService';
 import { useDiaryStore } from '../stores/diaryStore';
 import { ImageModal } from './ImageModal';
 
+function renderInlineMarkdown(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
 interface DiaryDetailProps {
   date: Date;
   onClose?: () => void;
@@ -30,7 +40,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const bc = colors[section || ''] || colors.happiness;
     const isAnxiety = section === 'anxiety';
@@ -66,7 +76,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const isAnxiety = section === 'anxiety';
 
@@ -97,8 +107,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     return null;
   }
 
-  let plainText = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  if (plainText !== line) {
+  const plainText = renderInlineMarkdown(line);
+  if (line.includes('**')) {
     return <span className="text-sm text-gray-700 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: plainText }} />;
   }
   return <span className="text-sm text-gray-700 dark:text-gray-200">{line}</span>;
