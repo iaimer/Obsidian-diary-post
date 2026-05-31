@@ -10,6 +10,16 @@ import ImageUploadButton from './ImageUploadButton';
 import { ImageModal } from './ImageModal';
 import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
 
+function renderInlineMarkdown(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string, section?: string): React.ReactNode {
   const colors: Record<string, { time: string; tag: string }> = {
@@ -32,7 +42,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const bc = colors[section || ''] || colors.happiness;
     const isAnxiety = section === 'anxiety';
@@ -69,7 +79,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const isAnxiety = section === 'anxiety';
 
@@ -105,7 +115,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const isAnxiety = section === 'anxiety';
 
@@ -141,7 +151,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     const tags = textContent.match(/#\S+/g) || [];
     textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    textContent = renderInlineMarkdown(textContent);
 
     const isAnxiety = section === 'anxiety';
 
@@ -201,8 +211,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
   }
 
   // 普通文本
-  let plainText = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  if (plainText !== line) {
+  const plainText = renderInlineMarkdown(line);
+  if (line.includes('**')) {
     return <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: plainText }} />;
   }
   return <span className="text-sm text-gray-700">{line}</span>;

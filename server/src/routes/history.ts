@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { readDiary, listMonthDiaries, getDiaryPath } from '../services/vault.js';
 import { parseDiary } from '../services/markdown.js';
+import { parseShanghaiDate } from '../utils/date.js';
 
 const router = Router();
 
@@ -13,8 +14,7 @@ router.get('/:year/:month', async (req, res) => {
     const diaries: any[] = [];
     
     for (const dateStr of diaryDates) {
-      const [y, m, d] = dateStr.split('-');
-      const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+      const date = parseShanghaiDate(dateStr);
       
       try {
         const content = readDiary(date);

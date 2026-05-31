@@ -39,12 +39,19 @@ npm run preview  # 预览生产构建
 
 ### 时区
 所有时间戳使用 **Asia/Shanghai** 时区。
+服务端日期归档必须使用 `server/src/utils/date.ts` 中的上海时区工具，禁止依赖服务器本地时区。
 
 ### UI 语言
 UI 标签和日记内容均为中文。代码注释用中文。
 
 ### 文件系统
 使用浏览器 **File System Access API**，非 Node.js fs。路径相对于用户选择的 Vault 根目录。
+
+### 远程 API 配置
+- `server/config.json` 仅保存在部署机器本地，已加入 `.gitignore`
+- 初始化时复制 `server/config.example.json`，再填写 Vault 路径和随机 Token
+- 禁止将真实 Token、本地路径或内网地址提交到仓库或打包进前端
+- 图片读取必须限制文件名并校验路径仍在目标 `assets` 目录内
 
 ## 架构概览
 
@@ -128,3 +135,5 @@ UI 标签和日记内容均为中文。代码注释用中文。
 | Asia/Shanghai 固定时区 | 用户在中国，避免 UTC 导致的日期偏移 | 全系统 |
 | Zustand 而非 Redux | 简单项目不需要 Redux 的复杂度 | stores/ |
 | 双模式（本地 + 远程） | 手机需要远程访问，Mac 用本地模式 | DataService, server/ |
+| 远程 API 凭据仅运行时配置 | 避免 Token 进入 Git 历史和前端产物 | server/config.json, 前端设置页 |
+| 服务端显式使用 Asia/Shanghai | 避免服务器本地时区导致跨日写错文件 | server/src/utils/date.ts |

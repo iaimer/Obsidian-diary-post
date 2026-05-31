@@ -4,7 +4,7 @@
 
 - Mac mini 已安装 Node.js (v20+)
 - Mac mini 已安装 Tailscale 并连接
-- Obsidian Vault 在 Mac mini 本地路径：`/Users/yezi/Obsidian Vault`
+- 已确认 Obsidian Vault 的本地路径
 
 ## 一键部署
 
@@ -15,7 +15,10 @@
 git clone <repo-url> diary-post
 cd diary-post/server
 
-# 2. 执行部署脚本
+# 2. 创建本地配置并填写私有值
+cp config.example.json config.json
+
+# 3. 执行部署脚本
 ./deploy.sh
 ```
 
@@ -121,7 +124,7 @@ curl http://localhost:4001/health
 
 # 日记接口测试
 curl http://localhost:4001/api/v1/diary/2026-05-12 \
-  -H "Authorization: Token diary-app-secret-token-2026"
+  -H "Authorization: Token <YOUR_PRIVATE_TOKEN>"
 ```
 
 ## 故障排查
@@ -153,21 +156,27 @@ pm2 stop diary-api
 ## 手机端配置
 
 手机浏览器访问：
-- PWA：`http://100.127.58.104:4000`（Mac mini Tailscale）
-- API：`http://100.127.58.104:4001`
+- PWA：`http://<TAILSCALE_IP>:4000`
+- API：`http://<TAILSCALE_IP>:4001`
 
 设置页面：
 - 启用远程模式
-- API地址：`http://100.127.58.104:4001`
-- Token：`diary-app-secret-token-2026`
+- API地址：`http://<TAILSCALE_IP>:4001`
+- Token：使用仅保存在本地配置中的私有 Token
 
 ## 配置文件
+
+复制模板后编辑本地配置。`server/config.json` 已加入 `.gitignore`，禁止提交真实值：
+
+```bash
+cp config.example.json config.json
+```
 
 `server/config.json`：
 ```json
 {
-  "vaultPath": "/Users/yezi/Obsidian Vault",
-  "apiToken": "diary-app-secret-token-2026",
+  "vaultPath": "/path/to/your/Obsidian Vault",
+  "apiToken": "<YOUR_PRIVATE_TOKEN>",
   "port": 4001
 }
 ```

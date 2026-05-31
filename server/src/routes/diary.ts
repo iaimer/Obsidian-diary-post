@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary, getAssetsDir } from '../services/vault.js';
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { isAbsolute, join, relative, resolve } from 'path';
 import config from '../config/index.js';
 import { parseDiary, appendToSection } from '../services/markdown.js';
 import { createObsidianDiaryContent } from '../services/template.js';
+import { parseShanghaiDate } from '../utils/date.js';
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
@@ -15,8 +16,7 @@ const router = Router();
 router.get('/exists/:date', async (req, res) => {
   try {
     const dateStr = req.params.date;
-    const [year, month, day] = dateStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const date = parseShanghaiDate(dateStr);
     
     const exists = existsDiary(date);
     res.json({ exists });
@@ -32,8 +32,7 @@ router.post('/create', async (req, res) => {
     let diaryDate: Date;
     
     if (date) {
-      const [year, month, day] = date.split('-');
-      diaryDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      diaryDate = parseShanghaiDate(date);
     } else {
       diaryDate = new Date();
     }
@@ -55,8 +54,7 @@ router.post('/create', async (req, res) => {
 router.get('/:date', async (req, res) => {
   try {
     const dateStr = req.params.date;
-    const [year, month, day] = dateStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const date = parseShanghaiDate(dateStr);
     
     const content = readDiary(date);
     const entry = parseDiary(content);
@@ -222,7 +220,7 @@ router.post('/lizhi-says', async (req, res) => {
   try {
     const { date, content } = req.body;
     const diaryDate = date
-      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      ? parseShanghaiDate(date)
       : new Date();
 
     let originalContent: string;
@@ -246,7 +244,7 @@ router.post('/tomorrow', async (req, res) => {
   try {
     const { date, content } = req.body;
     const diaryDate = date
-      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      ? parseShanghaiDate(date)
       : new Date();
 
     let originalContent: string;
@@ -270,7 +268,7 @@ router.post('/tomorrow/action', async (req, res) => {
   try {
     const { date, content } = req.body;
     const diaryDate = date
-      ? (([y, m, d]) => new Date(parseInt(y), parseInt(m) - 1, parseInt(d)))(date.split('-'))
+      ? parseShanghaiDate(date)
       : new Date();
 
     let originalContent: string;
@@ -293,9 +291,15 @@ router.post('/tomorrow/action', async (req, res) => {
 router.post('/image/upload', async (req, res) => {
   try {
     const { date: dateStr, imageData } = req.body;
-
+    const uploadDate = parseShanghaiDate(dateStr);
     const [year, monthNum, day] = dateStr.split('-').map(Number);
-    const uploadDate = new Date(year, monthNum - 1, day);
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(uploadDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
 
     const assetsDir = getAssetsDir(uploadDate);
     if (!existsSync(assetsDir)) {
@@ -329,13 +333,6 @@ router.post('/image/upload', async (req, res) => {
     writeFileSync(join(assetsDir, filename), buffer);
 
     // 追加 WikiLink 到日记
-    let originalContent: string;
-    try {
-      originalContent = readDiary(uploadDate);
-    } catch {
-      return res.status(404).json({ error: '日记文件不存在，请先创建' });
-    }
-
     const updated = appendToSection(originalContent, 'images', `![[${filename}]]`);
     writeDiary(uploadDate, updated);
 
@@ -509,35 +506,45 @@ function replaceTomorrowAction(content: string, newAction: string): string {
 
 router.get('/image/:year/:imageName', async (req, res) => {
   try {
-    const year = parseInt(req.params.year);
+    const year = Number(req.params.year);
     const imageName = req.params.imageName;
-    const month = req.query.month ? parseInt(req.query.month as string) : null;
+    const month = req.query.month ? Number(req.query.month) : null;
+
+    if (!Number.isInteger(year) || year < 1000 || year > 9999) {
+      return res.status(400).json({ error: 'Invalid year' });
+    }
+    if (month !== null && (!Number.isInteger(month) || month < 1 || month > 12)) {
+      return res.status(400).json({ error: 'Invalid month' });
+    }
+    if (!isSafeImageName(imageName)) {
+      return res.status(400).json({ error: 'Invalid image name' });
+    }
     
     let imagePath: string | null = null;
     
     if (month) {
       const monthDirName = `${month.toString().padStart(2, '0')}.${monthNames[month - 1]}`;
-      const monthAssetsPath = join(
+      const monthAssetsDir = join(
         config.vaultPath,
         '01.日记',
         year.toString(),
         monthDirName,
-        'assets',
-        imageName
+        'assets'
       );
+      const monthAssetsPath = getSafeAssetPath(monthAssetsDir, imageName);
       if (existsSync(monthAssetsPath)) {
         imagePath = monthAssetsPath;
       }
     }
     
     if (!imagePath) {
-      const yearAssetsPath = join(
+      const yearAssetsDir = join(
         config.vaultPath,
         '01.日记',
         year.toString(),
-        'assets',
-        imageName
+        'assets'
       );
+      const yearAssetsPath = getSafeAssetPath(yearAssetsDir, imageName);
       if (existsSync(yearAssetsPath)) {
         imagePath = yearAssetsPath;
       }
@@ -559,6 +566,22 @@ router.get('/image/:year/:imageName', async (req, res) => {
     res.status(500).json({ error: (error as Error).message });
   }
 });
+
+function isSafeImageName(imageName: string): boolean {
+  return /^[^/\\]+\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(imageName);
+}
+
+function getSafeAssetPath(assetsDir: string, imageName: string): string {
+  const resolvedAssetsDir = resolve(assetsDir);
+  const imagePath = resolve(resolvedAssetsDir, imageName);
+  const relativePath = relative(resolvedAssetsDir, imagePath);
+
+  if (!relativePath || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+    throw new Error('Invalid image path');
+  }
+
+  return imagePath;
+}
 
 function getMimeType(filename: string): string {
   const ext = filename.toLowerCase().split('.').pop();
