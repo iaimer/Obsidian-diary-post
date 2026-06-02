@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
+import { getShanghaiCalendarDate } from '../utils/date';
 import { HabitConfig } from '../types';
 import { CheckmarkIcon } from './Icons';
 
@@ -146,9 +147,9 @@ export default function HabitTracker() {
 
   const ensureDiaryExists = async () => {
     const dataService = getDataService();
-    const exists = await dataService.checkDiaryExists(new Date());
+    const exists = await dataService.checkDiaryExists(getShanghaiCalendarDate());
     if (!exists) {
-      await dataService.createDiary(new Date());
+      await dataService.createDiary(getShanghaiCalendarDate());
     }
   };
 

@@ -1,11 +1,41 @@
 import { Router } from 'express';
 import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary, getAssetsDir } from '../services/vault.js';
-import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
 import { isAbsolute, join, relative, resolve } from 'path';
 import config from '../config/index.js';
 import { parseDiary, appendToSection } from '../services/markdown.js';
 import { createObsidianDiaryContent } from '../services/template.js';
 import { parseShanghaiDate } from '../utils/date.js';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateOperationId(operationId: unknown): string | null {
+  if (typeof operationId !== 'string' || !operationId) return null;
+  if (!UUID_PATTERN.test(operationId)) return null;
+  return operationId;
+}
+
+function makeOpMarker(operationId: string): string {
+  return `<!-- diary-op:${operationId} -->`;
+}
+
+function hasOpMarker(content: string, operationId: string): boolean {
+  return content.includes(makeOpMarker(operationId));
+}
+
+function getRequestDate(date: unknown): Date {
+  return typeof date === 'string' ? parseShanghaiDate(date) : new Date();
+}
+
+function getRequestTime(time: unknown, date: Date): string {
+  if (typeof time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) return time;
+  return date.toLocaleTimeString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                     'July', 'August', 'September', 'October', 'November', 'December'];
@@ -17,7 +47,7 @@ router.get('/exists/:date', async (req, res) => {
   try {
     const dateStr = req.params.date;
     const date = parseShanghaiDate(dateStr);
-    
+
     const exists = existsDiary(date);
     res.json({ exists });
   } catch (error) {
@@ -25,27 +55,37 @@ router.get('/exists/:date', async (req, res) => {
   }
 });
 
-// 创建日记
+// 创建日记（幂等：已存在也返回成功）
 router.post('/create', async (req, res) => {
   try {
-    const { date } = req.body;
+    const { date, operationId } = req.body;
     let diaryDate: Date;
-    
+
     if (date) {
       diaryDate = parseShanghaiDate(date);
     } else {
       diaryDate = new Date();
     }
-    
-    // 如果已存在，返回错误
+
     if (existsDiary(diaryDate)) {
-      return res.status(400).json({ error: '日记已存在' });
+      if (operationId && validateOperationId(operationId)) {
+        try {
+          const content = readDiary(diaryDate);
+          if (hasOpMarker(content, operationId)) {
+            return res.json({ success: true, exists: true, date: getDateString(diaryDate) });
+          }
+        } catch {}
+      }
+      return res.json({ success: true, exists: true, date: getDateString(diaryDate) });
     }
-    
-    const content = createObsidianDiaryContent(diaryDate);
+
+    let content = createObsidianDiaryContent(diaryDate);
+    if (operationId && validateOperationId(operationId)) {
+      content += `\n${makeOpMarker(operationId)}`;
+    }
     writeDiary(diaryDate, content);
-    
-    res.json({ success: true, date: getDateString(diaryDate) });
+
+    res.json({ success: true, exists: false, date: getDateString(diaryDate) });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -55,7 +95,7 @@ router.get('/:date', async (req, res) => {
   try {
     const dateStr = req.params.date;
     const date = parseShanghaiDate(dateStr);
-    
+
     const content = readDiary(date);
     const entry = parseDiary(content);
     entry.date = dateStr;
@@ -68,14 +108,9 @@ router.get('/:date', async (req, res) => {
 
 router.post('/quick-note', async (req, res) => {
   try {
-    const { content, tags } = req.body;
-    const date = new Date();
-    const time = date.toLocaleTimeString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const { content, tags, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
+    const time = getRequestTime(req.body.time, date);
     
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formatted = `- **${time}** ${content}${tagStr}`;
@@ -86,8 +121,17 @@ router.post('/quick-note', async (req, res) => {
     } catch {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
+
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, content: formatted, dedup: true });
+      }
+    }
     
-    const updated = appendToSection(originalContent, 'quick_notes', formatted);
+    let updated = appendToSection(originalContent, 'quick_notes', formatted);
+    if (operationId && validateOperationId(operationId)) {
+      updated = updated.replace(formatted, `${makeOpMarker(operationId)}\n${formatted}`);
+    }
     writeDiary(date, updated);
     
     res.json({ success: true, content: formatted });
@@ -98,8 +142,8 @@ router.post('/quick-note', async (req, res) => {
 
 router.post('/habit', async (req, res) => {
   try {
-    const { water, steps, reading, language, supplements } = req.body;
-    const date = new Date();
+    const { water, steps, reading, language, supplements, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
     
     let originalContent: string;
     try {
@@ -108,6 +152,12 @@ router.post('/habit', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
     const waterEmoji = '🥤';
     const waterCount = Math.floor(water / 250);
     const waterStr = waterCount > 0 
@@ -122,7 +172,10 @@ router.post('/habit', async (req, res) => {
       `- [${supplements ? 'x' : ' '}] 💊 鱼油/植物甾醇`
     ];
     
-    const updated = updateHabitsSection(originalContent, habits);
+    let updated = updateHabitsSection(originalContent, habits);
+    if (operationId && validateOperationId(operationId)) {
+      updated += `\n${makeOpMarker(operationId)}`;
+    }
     writeDiary(date, updated);
     
     res.json({ success: true });
@@ -133,14 +186,9 @@ router.post('/habit', async (req, res) => {
 
 router.post('/happiness', async (req, res) => {
   try {
-    const { content, tags } = req.body;
-    const date = new Date();
-    const time = date.toLocaleTimeString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const { content, tags, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
+    const time = getRequestTime(req.body.time, date);
     
     let originalContent: string;
     try {
@@ -149,8 +197,18 @@ router.post('/happiness', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
-    const updated = appendToSection(originalContent, 'happiness', `> **${time}** ${content}${tagStr}`);
+    const formattedContent = `> **${time}** ${content}${tagStr}`;
+    let updated = appendToSection(originalContent, 'happiness', formattedContent);
+    if (operationId && validateOperationId(operationId)) {
+      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
+    }
     writeDiary(date, updated);
     
     res.json({ success: true });
@@ -161,14 +219,9 @@ router.post('/happiness', async (req, res) => {
 
 router.post('/reflection', async (req, res) => {
   try {
-    const { content, tags } = req.body;
-    const date = new Date();
-    const time = date.toLocaleTimeString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const { content, tags, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
+    const time = getRequestTime(req.body.time, date);
     
     let originalContent: string;
     try {
@@ -177,8 +230,18 @@ router.post('/reflection', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
     
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
-    const updated = appendToSection(originalContent, 'reflection', `- **${time}** ${content}${tagStr}`);
+    const formattedContent = `- **${time}** ${content}${tagStr}`;
+    let updated = appendToSection(originalContent, 'reflection', formattedContent);
+    if (operationId && validateOperationId(operationId)) {
+      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
+    }
     writeDiary(date, updated);
     
     res.json({ success: true });
@@ -189,14 +252,9 @@ router.post('/reflection', async (req, res) => {
 
 router.post('/anxiety', async (req, res) => {
   try {
-    const { content, tags } = req.body;
-    const date = new Date();
-    const time = date.toLocaleTimeString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const { content, tags, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
+    const time = getRequestTime(req.body.time, date);
 
     let originalContent: string;
     try {
@@ -205,8 +263,18 @@ router.post('/anxiety', async (req, res) => {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
     }
 
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
-    const updated = appendToSection(originalContent, 'anxiety', `- **${time}** ${content}${tagStr}`);
+    const formattedContent = `- **${time}** ${content}${tagStr}`;
+    let updated = appendToSection(originalContent, 'anxiety', formattedContent);
+    if (operationId && validateOperationId(operationId)) {
+      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
+    }
     writeDiary(date, updated);
 
     res.json({ success: true });
@@ -290,7 +358,7 @@ router.post('/tomorrow/action', async (req, res) => {
 // 上传图片（远程模式）：接收 base64 压缩图片，保存到 assets 并追加 WikiLink
 router.post('/image/upload', async (req, res) => {
   try {
-    const { date: dateStr, imageData } = req.body;
+    const { date: dateStr, imageData, operationId } = req.body;
     const uploadDate = parseShanghaiDate(dateStr);
     const [year, monthNum, day] = dateStr.split('-').map(Number);
 
@@ -299,6 +367,12 @@ router.post('/image/upload', async (req, res) => {
       originalContent = readDiary(uploadDate);
     } catch {
       return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpMarker(originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
     }
 
     const assetsDir = getAssetsDir(uploadDate);
@@ -330,11 +404,21 @@ router.post('/image/upload', async (req, res) => {
     const buffer = Buffer.from(base64Data, 'base64');
 
     // 写入图片文件
-    writeFileSync(join(assetsDir, filename), buffer);
+    const imagePath = join(assetsDir, filename);
+    writeFileSync(imagePath, buffer);
 
-    // 追加 WikiLink 到日记
-    const updated = appendToSection(originalContent, 'images', `![[${filename}]]`);
-    writeDiary(uploadDate, updated);
+    // 追加 WikiLink + operationId 标记到日记
+    const wikiLink = `![[${filename}]]`;
+    let updated = appendToSection(originalContent, 'images', wikiLink);
+    if (operationId && validateOperationId(operationId)) {
+      updated = updated.replace(wikiLink, `${makeOpMarker(operationId)}\n${wikiLink}`);
+    }
+    try {
+      writeDiary(uploadDate, updated);
+    } catch (error) {
+      unlinkSync(imagePath);
+      throw error;
+    }
 
     res.json({ success: true, filename });
   } catch (error) {

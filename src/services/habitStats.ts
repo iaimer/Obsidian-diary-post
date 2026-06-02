@@ -4,7 +4,7 @@ import { HabitData, DiaryEntry, HabitConfig, DEFAULT_HABIT_CONFIGS } from '../ty
 import { getAllCachedDiaries, cacheDiary } from '../db';
 import { getFileSyncService } from './fileSync';
 import { parseDiary } from '../utils/markdown';
-import { getDateString } from '../utils/date';
+import { getDateString, getShanghaiCalendarDate } from '../utils/date';
 import { useDiaryStore } from '../stores/diaryStore';
 
 // 日习惯统计
@@ -91,7 +91,7 @@ function getHabitGoals(configs: HabitConfig[]): Record<string, number> {
 // 获取最近N天的日期列表
 function getRecentDates(days: number): string[] {
   const dates: string[] = [];
-  const today = new Date();
+  const today = getShanghaiCalendarDate();
 
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);

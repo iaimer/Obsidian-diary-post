@@ -110,6 +110,27 @@ UI 标签和日记内容均为中文。代码注释用中文。
 - 历史数据从 Obsidian 文件读取（`src/services/habitStats.ts`）
 - 默认目标：饮水 ≥1500mL，步数 ≥6000
 
+### Capacitor Android（`android/`）
+
+- Android APK 通过 Capacitor v8 构建，`applicationId: org.femkits.lizhidiary`
+- 前端 `isNativeApp()` 检测原生平台，自动启用 `remoteMode = true`、隐藏本地 Vault 连接按钮
+- 首次 Token 为空时显示 `FirstTimeConfig` 配置导引页
+- 使用 `@capacitor/network` 监听网络恢复，`@capacitor/app` 监听 App 回到前台，自动触发同步
+- Android 禁止备份应用数据，避免本地 Token 和 AI Key 被系统备份
+- Android 测试命令：`npm run android:sync && npm run android:open`
+
+### 离线 Outbox 与幂等
+
+- **存储**：IndexedDB `outbox` 表（Dexie schema v2），字段 `id, type, date, status, createdAt`
+- **入队**：远程模式下的文字记录、习惯更新、图片上传通过 `enqueue()` 写入 outbox 后再尝试同步
+- **跨日同步**：操作必须保存记录时的上海日期；文字额外保存原始 `HH:MM`，禁止补同步时改写为当前日期或时间
+- **图片暂存**：压缩后的 Blob 存入 outbox，同步成功后才删除
+- **习惯合并**：同日期新 `update_habits` 入队时删除旧操作，包括失败状态，仅保留最后一次完整状态
+- **同步锁**：`syncLock` 防止并发同步，按创建时间顺序处理；启动同步时先将遗留 `syncing` 恢复为 `pending`
+- **服务端幂等**：写入 API 携带 `operationId`（UUID），写入前在日记文件中搜索 `<!-- diary-op:UUID -->` 标记；标记存在则跳过写入
+- **创建日记幂等**：`POST /create` 文件已存在时返回成功
+- AI 润色和人生教练不走离线队列，保持直接请求
+
 ## 标签系统
 
 三层结构，定义在 `src/config/tags.ts`：
@@ -137,3 +158,6 @@ UI 标签和日记内容均为中文。代码注释用中文。
 | 双模式（本地 + 远程） | 手机需要远程访问，Mac 用本地模式 | DataService, server/ |
 | 远程 API 凭据仅运行时配置 | 避免 Token 进入 Git 历史和前端产物 | server/config.json, 前端设置页 |
 | 服务端显式使用 Asia/Shanghai | 避免服务器本地时区导致跨日写错文件 | server/src/utils/date.ts |
+| Capacitor 原生容器 | 快速打包 Web App 为 Android APK，无需重写 UI | android/, platform.ts, capacitor.config.ts |
+| 离线 Outbox + 索引幂等 | 手机弱网环境下不丢数据、不重复写入 | outboxService.ts, diary.ts |
+| 写入先入队再同步 | 保证离线可用；AI 实时操作除外 | dataService.ts |

@@ -7,6 +7,7 @@ import { getFileSyncService } from '../services/fileSync';
 import { DiaryMeta } from '../types/history';
 import { PullToRefresh } from './PullToRefresh';
 import { HistoryIcon } from './Icons';
+import { getShanghaiCalendarDate } from '../utils/date';
 
 async function fetchRemoteMonthData(year: number, month: number): Promise<{ year: number; month: number; diaries: DiaryMeta[] }> {
   const { apiUrl, apiToken } = useDiaryStore.getState();
@@ -35,7 +36,7 @@ export function HistoryPage() {
   useEffect(() => {
     if (vaultConnected || remoteMode) {
       if (remoteMode) {
-        const now = new Date();
+        const now = getShanghaiCalendarDate();
         loadMonthData(now.getFullYear(), now.getMonth() + 1);
       } else {
         const fileSync = getFileSyncService();
@@ -45,7 +46,7 @@ export function HistoryPage() {
         if (vaultHandle) {
           historyService.setVaultHandle(vaultHandle);
           
-          const now = new Date();
+          const now = getShanghaiCalendarDate();
           loadMonthData(now.getFullYear(), now.getMonth() + 1);
         }
       }
@@ -78,7 +79,7 @@ export function HistoryPage() {
   const autoSelectYesterday = (data: { year: number; month: number; diaries: DiaryMeta[] } | null) => {
     if (!data || selectedDate) return; // 已有选择则不自动选择
 
-    const yesterday = new Date();
+    const yesterday = getShanghaiCalendarDate();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 

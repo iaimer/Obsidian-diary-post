@@ -1,6 +1,6 @@
 import { DiaryEntry, DiarySection, HabitData, DEFAULT_HABIT_CONFIGS } from '../types';
 import { parseDiary } from '../utils/markdown';
-import { getDateString, getTimestamp, getWeekdayName } from '../utils/date';
+import { getDateString, getShanghaiCalendarDate, getTimestamp, getWeekdayName } from '../utils/date';
 import { formatQuickNote, formatHappiness, formatReflection, formatAnxiety, formatHabitData } from '../utils/template';
 import { cacheDiary } from '../db';
 import { useDiaryStore } from '../stores/diaryStore';
@@ -277,33 +277,33 @@ export class FileSyncService {
   async appendQuickNote(content: string, tags: string[]): Promise<void> {
     const time = getTimestamp();
     const formatted = formatQuickNote(time, content, tags);
-    await this.appendToSection(new Date(), DiarySection.QUICK_NOTES, formatted);
+    await this.appendToSection(getShanghaiCalendarDate(), DiarySection.QUICK_NOTES, formatted);
   }
 
   // 追加觉察
   async appendReflection(content: string, tags: string[] = []): Promise<void> {
     const time = getTimestamp();
     const formatted = formatReflection(time, content, tags);
-    await this.appendToSection(new Date(), DiarySection.REFLECTION, formatted);
+    await this.appendToSection(getShanghaiCalendarDate(), DiarySection.REFLECTION, formatted);
   }
 
   // 追加小确幸
   async appendHappiness(content: string, tags: string[] = []): Promise<void> {
     const time = getTimestamp();
     const formatted = formatHappiness(time, content, tags);
-    await this.appendToSection(new Date(), DiarySection.HAPPINESS, formatted);
+    await this.appendToSection(getShanghaiCalendarDate(), DiarySection.HAPPINESS, formatted);
   }
 
   // 追加焦虑时刻
   async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
     const time = getTimestamp();
     const formatted = formatAnxiety(time, content, tags);
-    await this.appendToSection(new Date(), DiarySection.ANXIETY, formatted);
+    await this.appendToSection(getShanghaiCalendarDate(), DiarySection.ANXIETY, formatted);
   }
 
   // 追加明日寄语
   async appendTomorrow(content: string): Promise<void> {
-    await this.appendToSection(new Date(), DiarySection.TOMORROW, `- ${content}`);
+    await this.appendToSection(getShanghaiCalendarDate(), DiarySection.TOMORROW, `- ${content}`);
   }
 
   // 替换明日寄语区块（先删后写）
@@ -365,7 +365,7 @@ export class FileSyncService {
       throw new Error('Vault not connected');
     }
 
-    const date = new Date();
+    const date = getShanghaiCalendarDate();
     // 尝试读取原文件内容，不存在则抛出错误
     let originalContent: string;
     try {
