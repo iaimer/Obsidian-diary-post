@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getFileSyncService } from '../services/dataService';
-import { compressImage, blobToBase64, generateImageFilename } from '../services/imageService';
+import { compressImage, generateImageFilename } from '../services/imageService';
 import { UploadPhotoIcon } from './Icons';
+import { enqueue } from '../services/outboxService';
+import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
 
 interface ImageUploadButtonProps {
   onImageUploaded?: () => void;
@@ -45,28 +47,11 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
         const blob = await compressImage(files[i], config);
         if (cancelRef.current) return;
 
-        const date = new Date();
+        const date = getShanghaiCalendarDate();
 
         if (remoteMode) {
-          const base64 = await blobToBase64(blob);
+          await enqueue('upload_image', getShanghaiDateString(), {}, blob);
           if (cancelRef.current) return;
-
-          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          const { apiUrl, apiToken } = useDiaryStore.getState();
-          const response = await fetch(`${apiUrl}/api/v1/diary/image/upload`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Token ${apiToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ date: dateStr, imageData: base64 }),
-            signal: abortRef.current.signal
-          });
-          if (cancelRef.current) return;
-          if (!response.ok) {
-            const err = await response.json().catch(() => ({ error: '上传失败' }));
-            throw new Error(err.error || '上传失败');
-          }
         } else {
           const fileSync = getFileSyncService();
           const seq = await fileSync.getNextImageSequence(date, config.nameFormat);

@@ -14,10 +14,16 @@ import StatsPage from './components/StatsPage';
 import { HistoryPage } from './components/HistoryPage';
 import { PullToRefresh } from './components/PullToRefresh';
 import { TodayIcon, HistoryIcon, StatsIcon, SettingsIcon } from './components/Icons';
+import { isNativeApp } from './utils/platform';
+import { FirstTimeConfig } from './components/FirstTimeConfig';
+import { SyncStatusBar } from './components/SyncStatusBar';
+import { syncPending } from './services/outboxService';
+import { App as CapApp } from '@capacitor/app';
+import { Network } from '@capacitor/network';
+import { getShanghaiCalendarDate } from './utils/date';
 
 type PageView = 'home' | 'history' | 'stats' | 'settings';
 
-// API 默认配置
 const PRODUCTION_API_URL = 'https://obsidian.femkits.org';
 const DEV_API_URL = 'http://localhost:4001';
 
@@ -35,53 +41,126 @@ function App() {
   const [showWizard, setShowWizard] = useState(false);
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
+  const [showFirstTimeConfig, setShowFirstTimeConfig] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
 
-  // 初始化：远程环境自动启用远程模式 + 深色模式恢复
   useEffect(() => {
-    const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
-    const state = useDiaryStore.getState();
-    const { apiToken, apiUrl, themePreference } = state;
+    const init = () => {
+      const native = isNativeApp();
+      const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/) && !native;
+      const state = useDiaryStore.getState();
+      const { apiToken, apiUrl, themePreference } = state;
 
-    // 恢复主题（监听系统变化）
-    const applyTheme = () => {
-      const isDark = themePreference === 'dark' || (themePreference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-    applyTheme();
+      const applyTheme = () => {
+        const isDark = themePreference === 'dark' || (themePreference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      };
+      applyTheme();
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      const pref = useDiaryStore.getState().themePreference;
-      if (pref === 'system') {
-        applyTheme();
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => {
+        const pref = useDiaryStore.getState().themePreference;
+        if (pref === 'system') {
+          applyTheme();
+        }
+      };
+      mediaQuery.addEventListener('change', handleChange);
 
-    // 远程环境：强制启用远程模式并配置 API
-    if (isProduction) {
-      const cleanUrl = apiUrl?.replace(/\/api\/v1\/?$/, '') || PRODUCTION_API_URL;
-      setApiConfig(cleanUrl, apiToken);
-
-      if (!state.remoteMode) {
+      if (native) {
+        const cleanUrl = apiUrl && apiUrl !== DEV_API_URL
+          ? apiUrl.replace(/\/api\/v1\/?$/, '')
+          : PRODUCTION_API_URL;
+        setApiConfig(cleanUrl, apiToken || '');
         setRemoteMode(true);
         resetDataService();
-      }
-    } else {
-      // 本地环境：确保有默认配置
-      if (!apiToken || !apiUrl) {
-        setApiConfig(DEV_API_URL, '');
-      }
-    }
 
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
+        if (!apiToken) {
+          setShowFirstTimeConfig(true);
+        }
+      } else if (isProduction) {
+        const cleanUrl = apiUrl?.replace(/\/api\/v1\/?$/, '') || PRODUCTION_API_URL;
+        setApiConfig(cleanUrl, apiToken);
+        if (!state.remoteMode) {
+          setRemoteMode(true);
+          resetDataService();
+        }
+      } else {
+        if (!apiToken || !apiUrl) {
+          setApiConfig(DEV_API_URL, '');
+        }
+      }
+
+      return () => {
+        mediaQuery.removeEventListener('change', handleChange);
+      };
     };
+    return init();
+  }, []);
+
+  // 自动同步触发：App 启动（远程/原生模式）
+  useEffect(() => {
+    if (remoteMode) {
+      syncPending();
+    }
+  }, [remoteMode]);
+
+  // 自动同步触发：网络恢复 / App 回到前台
+  useEffect(() => {
+    if (!isNativeApp()) return;
+
+    let active = true;
+    const handles: { remove: () => Promise<void> }[] = [];
+    const setup = async () => {
+      const addHandle = async (handlePromise: Promise<{ remove: () => Promise<void> }>) => {
+        const handle = await handlePromise;
+        if (active) {
+          handles.push(handle);
+        } else {
+          await handle.remove();
+        }
+      };
+      const handleNetwork = async () => {
+        const status = await Network.getStatus();
+        if (status.connected) {
+          syncPending();
+        }
+      };
+      await addHandle(Network.addListener('networkStatusChange', status => {
+        if (status.connected) {
+          syncPending();
+        }
+      }));
+
+      await addHandle(CapApp.addListener('resume', () => {
+        syncPending();
+      }));
+
+      await addHandle(CapApp.addListener('backButton', () => {
+        if (showQuickInput) return setShowQuickInput(false);
+        if (showReflection) return setShowReflection(false);
+        if (showHappiness) return setShowHappiness(false);
+        if (showWizard) return setShowWizard(false);
+        if (currentView !== 'home') return setCurrentView('home');
+        CapApp.exitApp();
+      }));
+
+      if (active) handleNetwork();
+    };
+    setup();
+    return () => {
+      active = false;
+      handles.forEach(handle => handle.remove());
+    };
+  }, [currentView, showHappiness, showQuickInput, showReflection, showWizard]);
+
+  useEffect(() => {
+    const refreshDiary = () => useDiaryStore.getState().triggerRefresh();
+    window.addEventListener('diary-outbox-synced', refreshDiary);
+    return () => window.removeEventListener('diary-outbox-synced', refreshDiary);
   }, []);
 
   const navItems: { label: string; view: PageView; icon: React.ReactNode }[] = [
@@ -92,7 +171,7 @@ function App() {
   ];
 
   const renderBottomNav = () => (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-100/50 dark:border-gray-700/50 px-2 py-1 z-50">
+    <nav className="safe-bottom fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-100/50 dark:border-gray-700/50 px-2 py-1 z-50">
       <div className="flex justify-around max-w-md mx-auto items-center">
         {navItems.slice(0, 2).map(item => (
           <button
@@ -157,6 +236,13 @@ function App() {
     setVaultConnected(false);
   };
 
+  // 首次配置（仅原生 App 且无 Token 时显示）
+  if (showFirstTimeConfig) {
+    return (
+      <FirstTimeConfig onConfigured={() => setShowFirstTimeConfig(false)} />
+    );
+  }
+
   // 设置页面
   if (currentView === 'settings') {
     return (
@@ -195,13 +281,14 @@ function App() {
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
             <span className="inline-flex items-center gap-2">
               <TodayIcon />
-              {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
+              {getShanghaiCalendarDate().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
             </span>
           </h1>
           {/* 本地环境显示连接状态，生产环境隐藏远程模式提示 */}
           {(() => {
+            const native = isNativeApp();
             const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/);
-            if (isProduction) return null;
+            if (isProduction || native) return null;
             if (remoteMode) {
               return (
                 <span className="px-3 py-1 rounded-full text-sm bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
@@ -229,6 +316,8 @@ function App() {
           })()}
         </div>
       </header>
+
+      {remoteMode && <SyncStatusBar />}
 
       {/* 重新连接提示 */}
       {!remoteMode && wasConnected && !vaultConnected && (

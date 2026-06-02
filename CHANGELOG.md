@@ -2,6 +2,35 @@
 
 所有重要的更改都将记录在此文件中。
 
+## [0.12.0] - 2026-06-03
+
+### Android 自用 APK 与离线同步
+- **Capacitor Android 容器**：将 Web App 打包为「荔枝日记」Android APK（`org.femkits.lizhidiary`）
+- **首次配置引导**：原生环境无 Token 时显示 API 地址（预填）和 Token 填写页，测试连接通过后进入主页
+- **平台自动识别**：`isNativeApp()` 检测 Capacitor 原生平台，自动启用远程模式、隐藏本地 Vault 连接按钮
+- **离线 Outbox**：IndexedDB 新增 `outbox` 表，远程模式下文字记录、习惯更新、图片上传先入队再同步
+- **习惯合并**：同一日期新 `update_habits` 入队时自动删除旧操作，仅保留最新状态
+- **自动同步触发器**：App 启动/回到前台/网络恢复时自动调用 `syncPending()`，内部锁防止并发
+- **同步状态条**：顶部显示离线/同步中/失败+重试/完成 4 种状态，仅远程模式展示
+- **服务端幂等**：写入 API 新增 `operationId` 校验，写入前检查 `<!-- diary-op:UUID -->` 标记防止重复
+- **创建日记幂等**：`POST /create` 文件已存在时返回成功而非 400 错误
+- **上海时区工具**：前端新增 `getShanghaiDateString()` 和 `getShanghaiYearMonth()`，确保日期不受设备时区影响
+- **离线跨日修复**：文字和习惯队列保存记录时的上海日期，文字额外保存原始时间戳，次日补同步仍写入原日记
+- **中断恢复**：App 重启时将遗留 `syncing` 操作恢复为 `pending`，避免进程终止造成待同步记录永久卡住
+- **图片离线队列**：相册图片压缩后以 Blob 写入 outbox，同步成功后删除；写日记失败时服务端清理孤立图片
+- **Android 安全与交互**：关闭应用数据备份，补充系统返回键、安全区和 Capacitor listener 清理
+
+### 依赖新增
+- `@capacitor/core@8.3.4`、`@capacitor/android@8.3.4`、`@capacitor/cli@8.3.4`、`@capacitor/app@8.1.0`、`@capacitor/network@8.0.1`
+
+### 新增文件
+- `src/utils/platform.ts` — 原生平台检测
+- `src/components/FirstTimeConfig.tsx` — 首次 Token 配置页
+- `src/services/outboxService.ts` — 离线队列服务
+- `src/components/SyncStatusBar.tsx` — 同步状态条
+- `capacitor.config.ts` — Capacitor 容器配置
+- `android/` — Android 原生工程目录
+
 ## [0.11.1] - 2026-05-31
 
 ### 安全修复

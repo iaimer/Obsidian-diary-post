@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getShanghaiCalendarDate } from '../utils/date';
 import { DiaryMeta } from '../types/history';
 import { CalendarDayCell } from './CalendarDayCell';
 
@@ -11,7 +12,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loading, selectedDate }: CalendarViewProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getShanghaiCalendarDate());
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -52,7 +53,7 @@ export function CalendarView({ onDateSelect, onMonthChange, diaryMetas = [], loa
   };
 
   const isToday = (date: Date) => {
-    const today = new Date();
+    const today = getShanghaiCalendarDate();
     return date.getFullYear() === today.getFullYear() &&
            date.getMonth() === today.getMonth() &&
            date.getDate() === today.getDate();

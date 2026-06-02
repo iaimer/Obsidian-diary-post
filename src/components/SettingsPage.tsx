@@ -5,6 +5,7 @@ import { CollapsibleSection } from './CollapsibleSection';
 import { DarkIcon, LightIcon, SettingsIcon } from './Icons';
 import { HabitConfigEditModal } from './HabitConfigEditModal';
 import { HabitConfig } from '../types';
+import { getShanghaiDateString } from '../utils/date';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -172,8 +173,7 @@ export function SettingsPage() {
 
     try {
       // 使用实际的 API 端点测试连接（获取今天的日记）
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const dateStr = getShanghaiDateString();
 
       // 确保 apiUrl 不包含 /api/v1
       const cleanUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
@@ -791,4 +791,3 @@ export function SettingsPage() {
     </div>
   );
 }
-

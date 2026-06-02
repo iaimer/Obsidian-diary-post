@@ -1,7 +1,9 @@
 import { DiaryEntry, DiarySection, HabitData } from '../types';
 import { getFileSyncService } from './fileSync';
 import { useDiaryStore } from '../stores/diaryStore';
-import { compressImage, blobToBase64, generateImageFilename } from './imageService';
+import { compressImage, generateImageFilename } from './imageService';
+import { enqueue } from './outboxService';
+import { getShanghaiDateString, getTimestamp } from '../utils/date';
 
 export { getFileSyncService };
 
@@ -123,7 +125,7 @@ export class LocalDataService implements DataService {
   }
 }
 
-// 远程数据服务（HTTP API）
+// 远程数据服务（HTTP API）- 写入操作通过 outbox 离线化
 export class RemoteDataService implements DataService {
   private apiUrl: string;
   private apiToken: string;
@@ -134,7 +136,6 @@ export class RemoteDataService implements DataService {
   }
   
   async connectVault(): Promise<boolean> {
-    // 远程模式不需要连接 Vault
     return true;
   }
   
@@ -155,6 +156,10 @@ export class RemoteDataService implements DataService {
     
     return await response.json();
   }
+
+  private getTodayStr(): string {
+    return getShanghaiDateString();
+  }
   
   async checkDiaryExists(date: Date): Promise<boolean> {
     const dateStr = this.formatDate(date);
@@ -168,10 +173,7 @@ export class RemoteDataService implements DataService {
   
   async createDiary(date: Date): Promise<void> {
     const dateStr = this.formatDate(date);
-    await this.fetchAPI('/api/v1/diary/create', {
-      method: 'POST',
-      body: JSON.stringify({ date: dateStr })
-    });
+    await enqueue('create_diary', dateStr, { date: dateStr });
   }
   
   async getDiary(date: Date): Promise<DiaryEntry> {
@@ -180,38 +182,23 @@ export class RemoteDataService implements DataService {
   }
   
   async appendQuickNote(content: string, tags: string[]): Promise<void> {
-    await this.fetchAPI('/api/v1/diary/quick-note', {
-      method: 'POST',
-      body: JSON.stringify({ content, tags })
-    });
+    await enqueue('append_quick_note', this.getTodayStr(), { content, tags, time: getTimestamp() });
   }
   
   async appendHappiness(content: string, tags: string[] = []): Promise<void> {
-    await this.fetchAPI('/api/v1/diary/happiness', {
-      method: 'POST',
-      body: JSON.stringify({ content, tags })
-    });
+    await enqueue('append_happiness', this.getTodayStr(), { content, tags, time: getTimestamp() });
   }
   
   async appendReflection(content: string, tags: string[] = []): Promise<void> {
-    await this.fetchAPI('/api/v1/diary/reflection', {
-      method: 'POST',
-      body: JSON.stringify({ content, tags })
-    });
+    await enqueue('append_reflection', this.getTodayStr(), { content, tags, time: getTimestamp() });
   }
 
   async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
-    await this.fetchAPI('/api/v1/diary/anxiety', {
-      method: 'POST',
-      body: JSON.stringify({ content, tags })
-    });
+    await enqueue('append_anxiety', this.getTodayStr(), { content, tags, time: getTimestamp() });
   }
 
   async updateHabits(habitData: HabitData): Promise<void> {
-    await this.fetchAPI('/api/v1/diary/habit', {
-      method: 'POST',
-      body: JSON.stringify(habitData)
-    });
+    await enqueue('update_habits', this.getTodayStr(), { ...habitData });
   }
 
   async replaceLizhiSays(date: Date, content: string): Promise<void> {
@@ -246,19 +233,13 @@ export class RemoteDataService implements DataService {
     });
   }
 
-  async uploadImage(file: File, date: Date): Promise<void> {
-    const blob = await compressImage(file);
-    const base64 = await blobToBase64(blob);
-    
-    const dateStr = this.formatDate(date);
-    await this.fetchAPI('/api/v1/diary/image/upload', {
-      method: 'POST',
-      body: JSON.stringify({ date: dateStr, imageData: base64 })
-    });
+  async uploadImage(file: File, _date: Date): Promise<void> {
+    const config = useDiaryStore.getState().imageConfig;
+    const blob = await compressImage(file, config);
+    await enqueue('upload_image', this.getTodayStr(), {}, blob);
   }
   
   isConnected(): boolean {
-    // 远程模式总是返回 true（依赖 API 可用性）
     return true;
   }
   

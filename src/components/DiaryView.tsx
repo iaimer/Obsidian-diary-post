@@ -5,7 +5,7 @@ import { getDataService, getFileSyncService } from '../services/dataService';
 import { getHistoryService } from '../services/historyService';
 import { CheckmarkIcon } from './Icons';
 import { getCachedDiary } from '../db';
-import { getDateString } from '../utils/date';
+import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
 import ImageUploadButton from './ImageUploadButton';
 import { ImageModal } from './ImageModal';
 import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
@@ -273,7 +273,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       const dataService = getDataService();
       
       // 先检查文件是否存在
-      const exists = await dataService.checkDiaryExists(new Date());
+      const today = getShanghaiCalendarDate();
+      const exists = await dataService.checkDiaryExists(today);
       setDiaryExists(exists);
       
       if (!exists) {
@@ -285,15 +286,15 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       
       const remoteMode = useDiaryStore.getState().remoteMode;
       
-      const entry = await dataService.getDiary(new Date());
+      const entry = await dataService.getDiary(today);
       setDiary(entry);
       setCurrentDiary(entry);
       if (entry.sections.habits) parseHabitData(entry.sections.habits);
       
       // 加载图片
       if (entry.sections.images && entry.sections.images.length > 0) {
-        const year = new Date().getFullYear();
-        const month = new Date().getMonth() + 1;
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
         const urls: string[] = [];
 
         if (remoteMode) {
@@ -340,7 +341,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       }
     } catch (err) {
       setError((err as Error).message);
-      const today = getDateString(new Date());
+      const today = getShanghaiDateString();
       const cached = await getCachedDiary(today);
       if (cached) setDiary(cached);
     } finally {
@@ -360,7 +361,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     console.log('开始创建日记...');
     try {
       const dataService = getDataService();
-      await dataService.createDiary(new Date());
+      await dataService.createDiary(getShanghaiCalendarDate());
       console.log('日记创建成功');
       setDiaryExists(true);
       // 创建后重新加载
@@ -408,14 +409,14 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         const actionContent = actionMatch[1].trim();
         if (actionContent) {
           // 直接用AI行动建议完整替换明日寄语
-          await getDataService().replaceTomorrowSection(new Date(), actionContent);
+          await getDataService().replaceTomorrowSection(getShanghaiCalendarDate(), actionContent);
         }
       }
       const lizhiSaysContent = actionMatch
         ? result.replace(actionMatch[0], '').replace(/\n{3,}/g, '\n\n').trim()
         : result;
 
-      await getDataService().replaceLizhiSays(new Date(), lizhiSaysContent);
+      await getDataService().replaceLizhiSays(getShanghaiCalendarDate(), lizhiSaysContent);
       useDiaryStore.getState().triggerRefresh();
     } catch (err) {
       alert('生成失败: ' + (err as Error).message);

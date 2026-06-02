@@ -74,20 +74,17 @@ interface DiaryState {
 
 // API 默认配置
 const DEFAULT_API_TOKEN = '';
+const PRODUCTION_API_URL = 'https://obsidian.femkits.org';
+const DEV_API_URL = 'http://localhost:4001';
 
-// 根据环境获取默认 API 地址
 function getDefaultApiUrl(): string {
-  // 生产环境（非 localhost）使用远程 API（不包含 /api/v1）
   if (typeof window !== 'undefined' && !window.location.hostname.match(/localhost|127\.0\.0\.1/)) {
-    return 'https://obsidian.femkits.org';
+    return PRODUCTION_API_URL;
   }
-  // 开发环境使用本地 API
-  return 'http://localhost:4001';
+  return DEV_API_URL;
 }
 
-// 根据环境获取默认远程模式
 function getDefaultRemoteMode(): boolean {
-  // 生产环境默认启用远程模式
   if (typeof window !== 'undefined' && !window.location.hostname.match(/localhost|127\.0\.0\.1/)) {
     return true;
   }
