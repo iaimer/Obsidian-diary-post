@@ -320,31 +320,30 @@ this.version(2).stores({
 - 建议只允许 UUID 格式。
 - 不将 Token 或其他敏感值写入日志。
 
-#### D2. Markdown 隐藏标记
+#### D2. 旁路幂等索引
 
-追加文字时，在对应内容附近写入不可见 HTML 注释：
+服务端不得将 `operationId` 写入 Markdown 正文。幂等状态写入同日期 assets 目录下的旁路索引文件：
 
-```md
-<!-- diary-op:UUID -->
-- **12:30** 内容 #标签
+```text
+01.日记/YYYY/MM.EnglishMonth/assets/.diary-ops.json
 ```
 
 处理逻辑：
 
 1. 写入前读取原文件。
-2. 搜索 `<!-- diary-op:${operationId} -->`。
+2. 读取 `.diary-ops.json` 中的已完成 operationId。
 3. 已存在则直接返回成功，不再次追加。
-4. 不存在则将标记与内容一起写入对应区块。
+4. 不存在则写入对应区块；写入成功后把 operationId 追加到旁路索引。
+5. 兼容旧版 `<!-- diary-op:UUID -->`，写入时自动清理旧注释行。
 
 图片上传：
 
 1. 图片文件名应由服务端按现有规则生成。
-2. 写入图片前检查日记中是否已有同一 `operationId` 标记。
+2. 写入图片前检查旁路索引中是否已有同一 `operationId`。
 3. 已存在则直接返回成功。
 4. 不存在才保存图片并追加：
 
 ```md
-<!-- diary-op:UUID -->
 ![[Image-YYYYMMDD-NNN.jpg]]
 ```
 

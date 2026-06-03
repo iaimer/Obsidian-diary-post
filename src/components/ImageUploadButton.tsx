@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getFileSyncService } from '../services/dataService';
 import { compressImage, generateImageFilename } from '../services/imageService';
@@ -8,9 +8,17 @@ import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
 
 interface ImageUploadButtonProps {
   onImageUploaded?: () => void;
+  hidden?: boolean;
 }
 
-export default function ImageUploadButton({ onImageUploaded }: ImageUploadButtonProps) {
+export interface ImageUploadButtonRef {
+  open: () => void;
+}
+
+const ImageUploadButton = forwardRef<ImageUploadButtonRef, ImageUploadButtonProps>(function ImageUploadButton(
+  { onImageUploaded, hidden = false },
+  ref
+) {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle');
@@ -28,6 +36,10 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
     }
     fileInputRef.current?.click();
   };
+
+  useImperativeHandle(ref, () => ({
+    open: handleClick
+  }));
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -77,12 +89,28 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
       if (cancelRef.current || err.name === 'AbortError') return;
       setStatus('error');
       setErrorMsg(err.message || '上传失败');
+      if (hidden) {
+        alert('上传失败: ' + (err.message || '未知错误'));
+      }
     } finally {
       abortRef.current = null;
     }
   };
 
   if (!vaultConnected && !remoteMode) return null;
+
+  const input = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      multiple
+      className="hidden"
+      onChange={handleFileChange}
+    />
+  );
+
+  if (hidden) return input;
 
   return (
     <span className="ml-auto inline-flex items-center gap-2">
@@ -111,14 +139,9 @@ export default function ImageUploadButton({ onImageUploaded }: ImageUploadButton
         <span className="text-xs text-red-500 dark:text-red-400">{errorMsg}</span>
       )}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      {input}
     </span>
   );
-}
+});
+
+export default ImageUploadButton;

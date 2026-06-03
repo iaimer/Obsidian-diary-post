@@ -6,7 +6,6 @@ import { getHistoryService } from '../services/historyService';
 import { CheckmarkIcon } from './Icons';
 import { getCachedDiary } from '../db';
 import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
-import ImageUploadButton from './ImageUploadButton';
 import { ImageModal } from './ImageModal';
 import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
 
@@ -621,7 +620,6 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       <div className="py-3 border-l-2 border-violet-300 dark:border-violet-700 pl-3">
         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center">
           <span>📸 影像记录 ({images.length}张)</span>
-          <ImageUploadButton onImageUploaded={loadDiary} />
         </h3>
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">

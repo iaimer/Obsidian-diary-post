@@ -8,6 +8,8 @@ import { createObsidianDiaryContent } from '../services/template.js';
 import { parseShanghaiDate } from '../utils/date.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const OLD_OP_MARKER_PATTERN = /^<!-- diary-op:[0-9a-f-]+ -->$/i;
+const OP_INDEX_FILE = '.diary-ops.json';
 
 function validateOperationId(operationId: unknown): string | null {
   if (typeof operationId !== 'string' || !operationId) return null;
@@ -15,12 +17,46 @@ function validateOperationId(operationId: unknown): string | null {
   return operationId;
 }
 
-function makeOpMarker(operationId: string): string {
-  return `<!-- diary-op:${operationId} -->`;
+function stripOldOpMarkers(content: string): string {
+  return content
+    .split('\n')
+    .filter(line => !OLD_OP_MARKER_PATTERN.test(line.trim()))
+    .join('\n');
 }
 
-function hasOpMarker(content: string, operationId: string): boolean {
-  return content.includes(makeOpMarker(operationId));
+function getOpIndexPath(date: Date): string {
+  const assetsDir = getAssetsDir(date);
+  if (!existsSync(assetsDir)) {
+    mkdirSync(assetsDir, { recursive: true });
+  }
+  return join(assetsDir, OP_INDEX_FILE);
+}
+
+function readOpIndex(date: Date): Set<string> {
+  const indexPath = getOpIndexPath(date);
+  if (!existsSync(indexPath)) return new Set();
+
+  try {
+    const raw = readFileSync(indexPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.operations)) return new Set();
+    return new Set(parsed.operations.filter((id: unknown) => validateOperationId(id)));
+  } catch {
+    return new Set();
+  }
+}
+
+function hasOpRecord(date: Date, content: string, operationId: string): boolean {
+  return readOpIndex(date).has(operationId) || content.includes(`<!-- diary-op:${operationId} -->`);
+}
+
+function recordOperation(date: Date, operationId: string): void {
+  const operations = readOpIndex(date);
+  operations.add(operationId);
+  writeFileSync(
+    getOpIndexPath(date),
+    JSON.stringify({ operations: [...operations].sort() }, null, 2)
+  );
 }
 
 function getRequestDate(date: unknown): Date {
@@ -71,7 +107,7 @@ router.post('/create', async (req, res) => {
       if (operationId && validateOperationId(operationId)) {
         try {
           const content = readDiary(diaryDate);
-          if (hasOpMarker(content, operationId)) {
+          if (hasOpRecord(diaryDate, content, operationId)) {
             return res.json({ success: true, exists: true, date: getDateString(diaryDate) });
           }
         } catch {}
@@ -79,11 +115,11 @@ router.post('/create', async (req, res) => {
       return res.json({ success: true, exists: true, date: getDateString(diaryDate) });
     }
 
-    let content = createObsidianDiaryContent(diaryDate);
-    if (operationId && validateOperationId(operationId)) {
-      content += `\n${makeOpMarker(operationId)}`;
-    }
+    const content = createObsidianDiaryContent(diaryDate);
     writeDiary(diaryDate, content);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(diaryDate, operationId);
+    }
 
     res.json({ success: true, exists: false, date: getDateString(diaryDate) });
   } catch (error) {
@@ -123,16 +159,16 @@ router.post('/quick-note', async (req, res) => {
     }
 
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
         return res.json({ success: true, content: formatted, dedup: true });
       }
     }
     
-    let updated = appendToSection(originalContent, 'quick_notes', formatted);
-    if (operationId && validateOperationId(operationId)) {
-      updated = updated.replace(formatted, `${makeOpMarker(operationId)}\n${formatted}`);
-    }
+    const updated = stripOldOpMarkers(appendToSection(originalContent, 'quick_notes', formatted));
     writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
     
     res.json({ success: true, content: formatted });
   } catch (error) {
@@ -153,7 +189,7 @@ router.post('/habit', async (req, res) => {
     }
     
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
         return res.json({ success: true, dedup: true });
       }
     }
@@ -172,11 +208,11 @@ router.post('/habit', async (req, res) => {
       `- [${supplements ? 'x' : ' '}] 💊 鱼油/植物甾醇`
     ];
     
-    let updated = updateHabitsSection(originalContent, habits);
-    if (operationId && validateOperationId(operationId)) {
-      updated += `\n${makeOpMarker(operationId)}`;
-    }
+    const updated = stripOldOpMarkers(updateHabitsSection(originalContent, habits));
     writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
     
     res.json({ success: true });
   } catch (error) {
@@ -198,18 +234,18 @@ router.post('/happiness', async (req, res) => {
     }
     
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
         return res.json({ success: true, dedup: true });
       }
     }
 
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formattedContent = `> **${time}** ${content}${tagStr}`;
-    let updated = appendToSection(originalContent, 'happiness', formattedContent);
-    if (operationId && validateOperationId(operationId)) {
-      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
-    }
+    const updated = stripOldOpMarkers(appendToSection(originalContent, 'happiness', formattedContent));
     writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
     
     res.json({ success: true });
   } catch (error) {
@@ -231,18 +267,18 @@ router.post('/reflection', async (req, res) => {
     }
     
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
         return res.json({ success: true, dedup: true });
       }
     }
 
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formattedContent = `- **${time}** ${content}${tagStr}`;
-    let updated = appendToSection(originalContent, 'reflection', formattedContent);
-    if (operationId && validateOperationId(operationId)) {
-      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
-    }
+    const updated = stripOldOpMarkers(appendToSection(originalContent, 'reflection', formattedContent));
     writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
     
     res.json({ success: true });
   } catch (error) {
@@ -264,18 +300,18 @@ router.post('/anxiety', async (req, res) => {
     }
 
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
         return res.json({ success: true, dedup: true });
       }
     }
 
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formattedContent = `- **${time}** ${content}${tagStr}`;
-    let updated = appendToSection(originalContent, 'anxiety', formattedContent);
-    if (operationId && validateOperationId(operationId)) {
-      updated = updated.replace(formattedContent, `${makeOpMarker(operationId)}\n${formattedContent}`);
-    }
+    const updated = stripOldOpMarkers(appendToSection(originalContent, 'anxiety', formattedContent));
     writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -370,7 +406,7 @@ router.post('/image/upload', async (req, res) => {
     }
 
     if (operationId && validateOperationId(operationId)) {
-      if (hasOpMarker(originalContent, operationId)) {
+      if (hasOpRecord(uploadDate, originalContent, operationId)) {
         return res.json({ success: true, dedup: true });
       }
     }
@@ -407,14 +443,14 @@ router.post('/image/upload', async (req, res) => {
     const imagePath = join(assetsDir, filename);
     writeFileSync(imagePath, buffer);
 
-    // 追加 WikiLink + operationId 标记到日记
+    // 追加 WikiLink；幂等索引写入旁路文件，避免污染日记正文
     const wikiLink = `![[${filename}]]`;
-    let updated = appendToSection(originalContent, 'images', wikiLink);
-    if (operationId && validateOperationId(operationId)) {
-      updated = updated.replace(wikiLink, `${makeOpMarker(operationId)}\n${wikiLink}`);
-    }
+    const updated = stripOldOpMarkers(appendToSection(originalContent, 'images', wikiLink));
     try {
       writeDiary(uploadDate, updated);
+      if (operationId && validateOperationId(operationId)) {
+        recordOperation(uploadDate, operationId);
+      }
     } catch (error) {
       unlinkSync(imagePath);
       throw error;

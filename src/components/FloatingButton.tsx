@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { AddIcon, CloseIcon } from './Icons';
 
 interface FloatingButtonProps {
@@ -6,24 +7,26 @@ interface FloatingButtonProps {
   onHappiness: () => void;
   onReflection: () => void;
   onAnxiety: () => void;
+  onImage: () => void;
 }
 
 interface SubButtonConfig {
   id: string;
-  icon: string;
+  icon: ReactNode;
   label: string;
   angle: number;
   onClick: () => void;
 }
 
-export default function FloatingButton({ onQuickNote, onHappiness, onReflection, onAnxiety }: FloatingButtonProps) {
+export default function FloatingButton({ onQuickNote, onHappiness, onReflection, onAnxiety, onImage }: FloatingButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const buttons: SubButtonConfig[] = [
-    { id: 'happiness', icon: '/icons/heart.svg?v=2', label: '小确幸', angle: 225, onClick: onHappiness },
-    { id: 'quickNote', icon: '/icons/memo.svg?v=2', label: '随手记', angle: 195, onClick: onQuickNote },
-    { id: 'reflection', icon: '/icons/thinking.svg?v=2', label: '觉察', angle: 165, onClick: onReflection },
-    { id: 'anxiety', icon: '/icons/anxiety.svg?v=2', label: '焦虑时刻', angle: 135, onClick: onAnxiety },
+    { id: 'anxiety', icon: <img src="/icons/anxiety.svg?v=2" alt="" className="w-7 h-7" />, label: '焦虑时刻', angle: 240, onClick: onAnxiety },
+    { id: 'reflection', icon: <img src="/icons/thinking.svg?v=2" alt="" className="w-7 h-7" />, label: '觉察', angle: 210, onClick: onReflection },
+    { id: 'quickNote', icon: <img src="/icons/memo.svg?v=2" alt="" className="w-7 h-7" />, label: '随手记', angle: 180, onClick: onQuickNote },
+    { id: 'happiness', icon: <img src="/icons/heart.svg?v=2" alt="" className="w-7 h-7" />, label: '小确幸', angle: 150, onClick: onHappiness },
+    { id: 'image', icon: <img src="/icons/photo-camera.svg?v=1" alt="" className="w-7 h-7" />, label: '照片', angle: 120, onClick: onImage },
   ];
 
   const radius = 115;
@@ -72,7 +75,9 @@ export default function FloatingButton({ onQuickNote, onHappiness, onReflection,
               }}
               title={btn.label}
             >
-              <img src={btn.icon} alt={btn.label} className="w-7 h-7" />
+              <span className="text-2xl text-violet-600 dark:text-violet-300" aria-hidden="true">
+                {btn.icon}
+              </span>
             </button>
           );
         })}
