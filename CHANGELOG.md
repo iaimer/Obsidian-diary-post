@@ -19,6 +19,7 @@
 - **中断恢复**：App 重启时将遗留 `syncing` 操作恢复为 `pending`，避免进程终止造成待同步记录永久卡住
 - **图片离线队列**：相册图片压缩后以 Blob 写入 outbox，同步成功后删除；写日记失败时服务端清理孤立图片
 - **Android 安全与交互**：关闭应用数据备份，补充系统返回键、安全区和 Capacitor listener 清理
+- **应用图标**：替换 Android launcher 图标为荔枝日记专属图标
 
 ### 依赖新增
 - `@capacitor/core@8.3.4`、`@capacitor/android@8.3.4`、`@capacitor/cli@8.3.4`、`@capacitor/app@8.1.0`、`@capacitor/network@8.0.1`
@@ -29,6 +30,7 @@
 - `src/services/outboxService.ts` — 离线队列服务
 - `src/components/SyncStatusBar.tsx` — 同步状态条
 - `capacitor.config.ts` — Capacitor 容器配置
+- `public/icons/lychee_diary_icon_flat.svg` — Android launcher 图标源文件
 - `android/` — Android 原生工程目录
 
 ## [0.11.1] - 2026-05-31

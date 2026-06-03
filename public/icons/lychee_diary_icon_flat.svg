@@ -1,0 +1,68 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="120" x2="870" y2="920" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF9F0"/>
+      <stop offset="0.55" stop-color="#F8E8D0"/>
+      <stop offset="1" stop-color="#F1D4B2"/>
+    </linearGradient>
+    <linearGradient id="book" x1="270" y1="170" x2="760" y2="840" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF0D7"/>
+      <stop offset="1" stop-color="#F3D0A1"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="245" y1="190" x2="375" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E9C797" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#D9B078" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="lychee" x1="420" y1="410" x2="570" y2="585" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F58C86"/>
+      <stop offset="1" stop-color="#E85F61"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="330" y1="730" x2="430" y2="905" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F28B7D"/>
+      <stop offset="1" stop-color="#E75D5E"/>
+    </linearGradient>
+    <filter id="softShadow" x="150" y="145" width="760" height="760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="26" stdDeviation="36" flood-color="#B98E5B" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Android launcher icon canvas -->
+  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+
+  <!-- soft ambient glow -->
+  <circle cx="512" cy="430" r="330" fill="#FFFFFF" opacity="0.22"/>
+
+  <!-- book body -->
+  <g filter="url(#softShadow)">
+    <path d="M294 178H704C749.287 178 786 214.713 786 260V724C786 769.287 749.287 806 704 806H294C248.713 806 212 769.287 212 724V260C212 214.713 248.713 178 294 178Z" fill="url(#book)"/>
+    <path d="M212 260C212 214.713 248.713 178 294 178H345V806H294C248.713 806 212 769.287 212 724V260Z" fill="url(#spine)"/>
+    <path d="M345 178V806" stroke="#E2BD86" stroke-width="4" opacity="0.35"/>
+
+    <!-- page edge -->
+    <path d="M257 742H762C775.255 742 786 752.745 786 766C786 779.255 775.255 790 762 790H257C243.745 790 233 779.255 233 766C233 752.745 243.745 742 257 742Z" fill="#FFF8EB"/>
+    <path d="M278 762H748" stroke="#EBD7B8" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- closure tab -->
+    <path d="M716 442H811C839.167 442 862 464.833 862 493V555C862 583.167 839.167 606 811 606H716C687.833 606 665 583.167 665 555V493C665 464.833 687.833 442 716 442Z" fill="#F0D2AA" opacity="0.8"/>
+    <circle cx="764" cy="524" r="30" fill="#B99A78" opacity="0.52"/>
+
+    <!-- bookmark ribbon -->
+    <path d="M324 762H405V892L364.5 858L324 892V762Z" fill="url(#ribbon)"/>
+  </g>
+
+  <!-- lychee emblem -->
+  <g>
+    <path d="M516 408C534 381 565 371 604 379C588 415 558 429 521 421C519 417 517 413 516 408Z" fill="#9FA47F"/>
+    <path d="M514 414C512 384 499 365 477 352" stroke="#75634B" stroke-width="13" stroke-linecap="round"/>
+
+    <!-- scalloped lychee silhouette using circle-like path -->
+    <path d="M471 438C482 423 505 423 516 438C530 428 551 436 555 453C572 455 586 472 581 489C596 499 598 522 585 534C592 551 580 570 562 574C559 592 540 604 523 597C511 611 488 611 476 597C459 604 440 592 437 574C419 570 407 551 414 534C401 522 403 499 418 489C413 472 427 455 444 453C448 436 469 428 471 438Z" fill="url(#lychee)"/>
+
+    <!-- subtle flat bumps -->
+    <circle cx="476" cy="479" r="8" fill="#F8A29B" opacity="0.5"/>
+    <circle cx="507" cy="466" r="7" fill="#F8A29B" opacity="0.45"/>
+    <circle cx="537" cy="493" r="8" fill="#D94E57" opacity="0.25"/>
+    <circle cx="489" cy="522" r="7" fill="#D94E57" opacity="0.22"/>
+    <circle cx="527" cy="543" r="7" fill="#F8A29B" opacity="0.38"/>
+  </g>
+</svg>
