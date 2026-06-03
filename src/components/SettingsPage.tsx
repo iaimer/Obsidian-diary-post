@@ -6,6 +6,7 @@ import { DarkIcon, LightIcon, SettingsIcon } from './Icons';
 import { HabitConfigEditModal } from './HabitConfigEditModal';
 import { HabitConfig } from '../types';
 import { getShanghaiDateString } from '../utils/date';
+import packageInfo from '../../package.json';
 
 // AI配置存储键
 const AI_CONFIG_KEY = 'diary-ai-config';
@@ -771,7 +772,7 @@ export function SettingsPage() {
         <section className="bg-white dark:bg-gray-800 rounded-xl p-4">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">📋 关于</h2>
           <div className="text-xs text-gray-600 dark:text-gray-400">
-             <p>日记APP v0.11.0</p>
+            <p>Litchi Journal / 荔枝日记 v{packageInfo.version}</p>
             <p className="mt-2">与 Obsidian Vault 集成的日记记录工具</p>
           </div>
         </section>
