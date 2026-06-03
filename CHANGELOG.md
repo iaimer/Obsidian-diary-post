@@ -21,6 +21,7 @@
 - **图片离线队列**：相册图片压缩后以 Blob 写入 outbox，同步成功后删除；写日记失败时服务端清理孤立图片
 - **Android 安全与交互**：关闭应用数据备份，补充系统返回键、安全区和 Capacitor listener 清理
 - **应用图标**：替换 Android launcher 图标为荔枝日记专属图标
+- **润色解析修复**：AI 偶发返回不规范标签格式时，不再误判“润色结果为空”
 
 ### 依赖新增
 - `@capacitor/core@8.3.4`、`@capacitor/android@8.3.4`、`@capacitor/cli@8.3.4`、`@capacitor/app@8.1.0`、`@capacitor/network@8.0.1`
