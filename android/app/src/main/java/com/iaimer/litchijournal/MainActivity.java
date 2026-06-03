@@ -1,4 +1,4 @@
-package org.femkits.lizhidiary;
+package com.iaimer.litchijournal;
 
 import com.getcapacitor.BridgeActivity;
 

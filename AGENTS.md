@@ -112,7 +112,7 @@ UI 标签和日记内容均为中文。代码注释用中文。
 
 ### Capacitor Android（`android/`）
 
-- Android APK 通过 Capacitor v8 构建，`applicationId: org.femkits.lizhidiary`
+- Android APK 通过 Capacitor v8 构建，英文名为 **Litchi Journal**，包名为 `com.iaimer.litchijournal`，手机显示名仍为「荔枝日记」
 - 前端 `isNativeApp()` 检测原生平台，自动启用 `remoteMode = true`、隐藏本地 Vault 连接按钮
 - 首次 Token 为空时显示 `FirstTimeConfig` 配置导引页
 - 使用 `@capacitor/network` 监听网络恢复，`@capacitor/app` 监听 App 回到前台，自动触发同步
