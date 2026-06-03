@@ -17,6 +17,7 @@ import { TodayIcon, HistoryIcon, StatsIcon, SettingsIcon } from './components/Ic
 import { isNativeApp } from './utils/platform';
 import { FirstTimeConfig } from './components/FirstTimeConfig';
 import { SyncStatusBar } from './components/SyncStatusBar';
+import ImageUploadButton, { ImageUploadButtonRef } from './components/ImageUploadButton';
 import { syncPending } from './services/outboxService';
 import { App as CapApp } from '@capacitor/app';
 import { Network } from '@capacitor/network';
@@ -43,6 +44,7 @@ function App() {
   const [connecting, setConnecting] = useState(false);
   const [showFirstTimeConfig, setShowFirstTimeConfig] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
+  const imageUploadRef = useRef<ImageUploadButtonRef>(null);
 
   useEffect(() => {
     const init = () => {
@@ -192,6 +194,7 @@ function App() {
           onReflection={() => { if (currentView !== 'home') setCurrentView('home'); setShowReflection(true); }}
           onHappiness={() => { if (currentView !== 'home') setCurrentView('home'); setShowHappiness(true); }}
           onAnxiety={() => { if (currentView !== 'home') setCurrentView('home'); setShowWizard(true); }}
+          onImage={() => { if (currentView !== 'home') setCurrentView('home'); imageUploadRef.current?.open(); }}
         />
         {navItems.slice(2).map(item => (
           <button
@@ -341,6 +344,11 @@ function App() {
       {renderBottomNav()}
 
       {/* Modals */}
+      <ImageUploadButton
+        ref={imageUploadRef}
+        hidden
+        onImageUploaded={() => diaryViewRef.current?.reload()}
+      />
       {showQuickInput && <QuickInputModal onClose={() => setShowQuickInput(false)} />}
       {showReflection && <ReflectionModal onClose={() => setShowReflection(false)} />}
       {showHappiness && <HappinessModal onClose={() => setShowHappiness(false)} />}
