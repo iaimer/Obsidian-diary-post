@@ -5,7 +5,8 @@
 ## [0.12.0] - 2026-06-03
 
 ### Android 自用 APK 与离线同步
-- **Capacitor Android 容器**：将 Web App 打包为「荔枝日记」Android APK（`org.femkits.lizhidiary`）
+- **Capacitor Android 容器**：将 Web App 打包为「荔枝日记」Android APK，英文名 **Litchi Journal**，包名 `com.iaimer.litchijournal`
+- **项目英文标识**：package name 更新为 `litchi-journal`，GitHub 建议名为 `litchi-journal`
 - **首次配置引导**：原生环境无 Token 时显示 API 地址（预填）和 Token 填写页，测试连接通过后进入主页
 - **平台自动识别**：`isNativeApp()` 检测 Capacitor 原生平台，自动启用远程模式、隐藏本地 Vault 连接按钮
 - **离线 Outbox**：IndexedDB 新增 `outbox` 表，远程模式下文字记录、习惯更新、图片上传先入队再同步

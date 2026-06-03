@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">荔枝日记</string>
     <string name="title_activity_main">荔枝日记</string>
-    <string name="package_name">org.femkits.lizhidiary</string>
-    <string name="custom_url_scheme">org.femkits.lizhidiary</string>
+    <string name="package_name">com.iaimer.litchijournal</string>
+    <string name="custom_url_scheme">com.iaimer.litchijournal</string>
 </resources>

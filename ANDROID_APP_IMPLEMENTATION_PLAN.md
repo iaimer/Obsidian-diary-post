@@ -70,7 +70,9 @@ Android 改造必须显式识别 Capacitor 原生平台，并在原生环境默�
 |------|------|
 | Android 首版形态 | Capacitor 原生容器，不重写 React UI |
 | 应用名称 | 荔枝日记 |
-| Android applicationId | `org.femkits.lizhidiary` |
+| 英文名 | Litchi Journal |
+| GitHub 建议名 | `litchi-journal` |
+| Android applicationId | `com.iaimer.litchijournal` |
 | Vault 写入位置 | 远端 Mac mini Vault |
 | 分发方式 | 自用 APK，手动侧载 |
 | API 配置 | 地址预填，Token 首次启动手填 |
@@ -110,7 +112,7 @@ adb version
 ```bash
 npm install @capacitor/core@8.3.4 @capacitor/android@8.3.4 @capacitor/app@8.1.0 @capacitor/network@8.0.1
 npm install --save-dev @capacitor/cli@8.3.4
-npx cap init "荔枝日记" "org.femkits.lizhidiary" --web-dir dist
+npx cap init "荔枝日记" "com.iaimer.litchijournal" --web-dir dist
 npx cap add android
 ```
 
@@ -120,7 +122,7 @@ npx cap add android
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'org.femkits.lizhidiary',
+  appId: 'com.iaimer.litchijournal',
   appName: '荔枝日记',
   webDir: 'dist'
 };

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "org.femkits.lizhidiary"
+    namespace = "com.iaimer.litchijournal"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "org.femkits.lizhidiary"
+        applicationId "com.iaimer.litchijournal"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

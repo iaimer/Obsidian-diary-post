@@ -147,6 +147,7 @@
 - **Android 体验**：补充返回键、安全区、监听清理和备份关闭。
 - **日期工具**：统一使用 `Intl.DateTimeFormat(...).formatToParts()` 计算上海日期。
 - **应用图标**：替换 Android launcher 图标，并保留源 SVG。
+- **英文标识**：应用英文名确定为 Litchi Journal，package name 更新为 `litchi-journal`，Android 包名更新为 `com.iaimer.litchijournal`。
 
 ### 遇到的问题
 
