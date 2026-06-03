@@ -3,14 +3,7 @@ import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
 import { TAG_SYSTEM } from '../config/tags';
-
-// 从润色结果中解析标签
-function parseTagsFromPolished(text: string): { content: string; tags: string[] } {
-  const tagMatches = text.match(/#\S+/g) || [];
-  const tags = tagMatches.map(t => t.slice(1));
-  const content = text.replace(/#\S+/g, '').trim();
-  return { content, tags };
-}
+import { parseTagsFromPolished } from '../utils/polishResult';
 
 interface HappinessModalProps {
   onClose: () => void;
