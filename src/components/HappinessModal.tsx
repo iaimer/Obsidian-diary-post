@@ -19,7 +19,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
 
   // 选中的标签
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
-  const [selectedCapability, setSelectedCapability] = useState<string | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const isBatchSettingTags = useRef(false);
 
@@ -27,10 +27,10 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
 
-  // 当选择新领域时，清空能力标签
+  // 当选择新领域时，清空主题标签
   useEffect(() => {
     if (!isBatchSettingTags.current) {
-      setSelectedCapability(null);
+      setSelectedTopic(null);
     }
   }, [selectedDomain]);
 
@@ -38,7 +38,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
   const setParsedTags = (tags: string[]) => {
     isBatchSettingTags.current = true;
     setSelectedDomain(null);
-    setSelectedCapability(null);
+    setSelectedTopic(null);
     setSelectedMethod(null);
 
     for (const tag of tags) {
@@ -47,10 +47,10 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
       } else if (TAG_SYSTEM.method.includes(tag as any)) {
         setSelectedMethod(tag);
       } else {
-        for (const [domain, capabilities] of Object.entries(TAG_SYSTEM.capability)) {
-          if (capabilities.includes(tag)) {
+        for (const [domain, topics] of Object.entries(TAG_SYSTEM.topic)) {
+          if (topics.includes(tag)) {
             setSelectedDomain(domain);
-            setSelectedCapability(tag);
+            setSelectedTopic(tag);
             break;
           }
         }
@@ -62,12 +62,12 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
     }, 0);
   };
 
-  const availableCapabilities = selectedDomain ? TAG_SYSTEM.capability[selectedDomain] || [] : [];
+  const availableTopics = selectedDomain ? TAG_SYSTEM.topic[selectedDomain] || [] : [];
 
   const getSelectedTags = (): string[] => {
     const tags: string[] = [];
     if (selectedDomain) tags.push(selectedDomain);
-    if (selectedCapability) tags.push(selectedCapability);
+    if (selectedTopic) tags.push(selectedTopic);
     if (selectedMethod) tags.push(selectedMethod);
     return tags;
   };
@@ -112,7 +112,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
     setShowPolishedPreview(false);
     setPolishedContent('');
     setSelectedDomain(null);
-    setSelectedCapability(null);
+    setSelectedTopic(null);
     setSelectedMethod(null);
   };
 
@@ -132,7 +132,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
 
       setContent('');
       setSelectedDomain(null);
-      setSelectedCapability(null);
+      setSelectedTopic(null);
       setSelectedMethod(null);
       triggerRefresh();
       onClose();
@@ -176,9 +176,9 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
                   #{selectedDomain}
                 </span>
               )}
-              {selectedCapability && (
+              {selectedTopic && (
                 <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs">
-                  #{selectedCapability}
+                  #{selectedTopic}
                 </span>
               )}
               {selectedMethod && (
@@ -186,9 +186,9 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
                   #{selectedMethod}
                 </span>
               )}
-              {selectedDomain && !selectedCapability && (
+              {selectedDomain && !selectedTopic && (
                 <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs">
-                  ⚠️ 缺少能力标签，请手动选择
+                  ⚠️ 缺少主题标签，请手动选择
                 </span>
               )}
             </div>
@@ -196,7 +196,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
               <button
                 className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium disabled:bg-green-300 dark:disabled:bg-green-800"
                 onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
-                disabled={isSubmitting || !selectedDomain || !selectedCapability}
+                disabled={isSubmitting || !selectedDomain || !selectedTopic}
               >
                 {isSubmitting ? '保存中...' : '保存润色结果'}
               </button>
@@ -236,12 +236,12 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
                     #{selectedDomain} ×
                   </span>
                 )}
-                {selectedCapability && (
+                {selectedTopic && (
                   <span
                     className="px-2 py-1 bg-blue-600 text-white rounded-full text-xs cursor-pointer"
-                    onClick={() => setSelectedCapability(null)}
+                    onClick={() => setSelectedTopic(null)}
                   >
-                    #{selectedCapability} ×
+                    #{selectedTopic} ×
                   </span>
                 )}
                 {selectedMethod && (
@@ -314,20 +314,20 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
 
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    <span className="text-orange-500">*</span> 能力（必选1个）
+                    <span className="text-orange-500">*</span> 主题（必选1个）
                     {!selectedDomain && <span className="text-gray-400 dark:text-gray-500 ml-1">→ 先选择领域</span>}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {availableCapabilities.length > 0 ? (
-                      availableCapabilities.map(tag => (
+                    {availableTopics.length > 0 ? (
+                      availableTopics.map(tag => (
                         <button
                           key={tag}
                           className={`px-2 py-1 rounded-full text-xs ${
-                            selectedCapability === tag
+                            selectedTopic === tag
                               ? 'bg-blue-600 text-white'
                               : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500'
                           }`}
-                          onClick={() => setSelectedCapability(tag)}
+                          onClick={() => setSelectedTopic(tag)}
                         >
                           #{tag}
                         </button>

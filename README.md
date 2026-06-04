@@ -10,7 +10,7 @@
 - **多设备同步**：Web + Android APK + Mac 远程访问，Mac mini 作为本地服务器
 - **Android 自用 APK**：手机显示「荔枝日记」，英文名 Litchi Journal，包名 `com.iaimer.litchijournal`
 - **沉浸式系统栏**：Android 状态栏与 Header、底部手势区与 Dock 融合，自动跟随浅色/深色主题
-- **三层标签系统**：领域 → 能力 → 方法，自动生成结构化标签
+- **三层标签系统**：领域 → 主题 → 可选方法，按人生场景生成结构化标签
 - **AI 润色引擎**：支持 Claude、OpenAI、DeepSeek 等多种 API
 - **习惯追踪统计**：可自定义习惯配置，可视化趋势和热力图
 - **过往日记查看**：月视图日历，自动预览昨天，选中高亮
@@ -98,6 +98,8 @@ diary-post/
 支持多种 API：Claude、OpenAI、DeepSeek、Moonshot、本地 Ollama
 
 在设置页面选择预设模板或自定义配置。
+
+润色风格可自定义；标签分类规则由应用统一维护，详见 [标签规范.md](标签规范.md)。
 
 ### 远程模式配置
 

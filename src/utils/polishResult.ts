@@ -3,13 +3,15 @@ import { TAG_SYSTEM } from '../config/tags';
 const KNOWN_TAGS = new Set<string>([
   ...TAG_SYSTEM.domain,
   ...TAG_SYSTEM.method,
-  ...Object.values(TAG_SYSTEM.capability).flat()
+  ...Object.values(TAG_SYSTEM.topic).flat()
 ]);
+const LEGACY_IGNORED_TAGS = new Set(['记录']);
 
 export function parseTagsFromPolished(text: string): { content: string; tags: string[] } {
   const tags: string[] = [];
   const withoutTags = text.replace(/#([\p{L}\p{N}_-]+)/gu, (match, rawTag: string) => {
     const tag = rawTag.trim();
+    if (LEGACY_IGNORED_TAGS.has(tag)) return '';
     if (!KNOWN_TAGS.has(tag)) return match;
     if (!tags.includes(tag)) tags.push(tag);
     return '';
@@ -30,5 +32,5 @@ export function parseTagsFromPolished(text: string): { content: string; tags: st
 
 export function hasRequiredPolishTags(tags: string[]): boolean {
   const domain = TAG_SYSTEM.domain.find(tag => tags.includes(tag));
-  return Boolean(domain && TAG_SYSTEM.capability[domain].some(tag => tags.includes(tag)));
+  return Boolean(domain && TAG_SYSTEM.topic[domain].some(tag => tags.includes(tag)));
 }

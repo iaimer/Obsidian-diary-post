@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
+import { DEFAULT_COACH_PROMPT, DEFAULT_POLISH_PROMPT } from '../../config/prompts';
 import {
   AI_CONFIG_KEY,
   AIConfig,
-  DEFAULT_COACH_PROMPT,
-  DEFAULT_POLISH_PROMPT,
   loadAIConfig
 } from './SettingsAI';
 
@@ -40,12 +39,12 @@ export function SettingsPrompts({ onDirtyChange }: Props) {
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <PromptTab active={isPolish} onClick={() => setPromptTab('polish')}>润色规则</PromptTab>
+          <PromptTab active={isPolish} onClick={() => setPromptTab('polish')}>润色风格</PromptTab>
           <PromptTab active={!isPolish} onClick={() => setPromptTab('coach')}>教练提示词</PromptTab>
         </div>
         <div className="px-4 py-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-            修改后点击保存生效。
+            {isPolish ? '这里只调整润色风格，标签分类规则由应用统一维护。' : '修改后点击保存生效。'}
           </p>
           <textarea
             value={isPolish ? config.polishPrompt : config.coachPrompt}

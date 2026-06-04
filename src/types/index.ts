@@ -116,7 +116,7 @@ export const DEFAULT_HABIT_CONFIGS: HabitConfig[] = [
 // 标签体系
 export interface Tag {
   name: string;
-  type: 'domain' | 'capability' | 'method';
+  type: 'domain' | 'topic' | 'method';
 }
 
 // 设置页面导航

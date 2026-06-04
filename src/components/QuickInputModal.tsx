@@ -18,7 +18,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
   const [polishedContent, setPolishedContent] = useState('');
 
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
-  const [selectedCapability, setSelectedCapability] = useState<string | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   const isBatchSettingTags = useRef(false);
@@ -41,14 +41,14 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
 
   useEffect(() => {
     if (!isBatchSettingTags.current) {
-      setSelectedCapability(null);
+      setSelectedTopic(null);
     }
   }, [selectedDomain]);
 
   const setParsedTags = (tags: string[]) => {
     isBatchSettingTags.current = true;
     setSelectedDomain(null);
-    setSelectedCapability(null);
+    setSelectedTopic(null);
     setSelectedMethod(null);
 
     for (const tag of tags) {
@@ -57,10 +57,10 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
       } else if (TAG_SYSTEM.method.includes(tag as any)) {
         setSelectedMethod(tag);
       } else {
-        for (const [domain, capabilities] of Object.entries(TAG_SYSTEM.capability)) {
-          if (capabilities.includes(tag)) {
+        for (const [domain, topics] of Object.entries(TAG_SYSTEM.topic)) {
+          if (topics.includes(tag)) {
             setSelectedDomain(domain);
-            setSelectedCapability(tag);
+            setSelectedTopic(tag);
             break;
           }
         }
@@ -72,12 +72,12 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
     }, 0);
   };
 
-  const availableCapabilities = selectedDomain ? TAG_SYSTEM.capability[selectedDomain] || [] : [];
+  const availableTopics = selectedDomain ? TAG_SYSTEM.topic[selectedDomain] || [] : [];
 
   const getSelectedTags = (): string[] => {
     const tags: string[] = [];
     if (selectedDomain) tags.push(selectedDomain);
-    if (selectedCapability) tags.push(selectedCapability);
+    if (selectedTopic) tags.push(selectedTopic);
     if (selectedMethod) tags.push(selectedMethod);
     return tags;
   };
@@ -122,7 +122,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
     setShowPolishedPreview(false);
     setPolishedContent('');
     setSelectedDomain(null);
-    setSelectedCapability(null);
+    setSelectedTopic(null);
     setSelectedMethod(null);
   };
 
@@ -143,7 +143,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
       setShowPolishedPreview(false);
       setPolishedContent('');
       setSelectedDomain(null);
-      setSelectedCapability(null);
+      setSelectedTopic(null);
       setSelectedMethod(null);
       triggerRefresh();
       onClose();
@@ -187,9 +187,9 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                   #{selectedDomain}
                 </span>
               )}
-              {selectedCapability && (
+              {selectedTopic && (
                 <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs">
-                  #{selectedCapability}
+                  #{selectedTopic}
                 </span>
               )}
               {selectedMethod && (
@@ -197,9 +197,9 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                   #{selectedMethod}
                 </span>
               )}
-              {selectedDomain && !selectedCapability && (
+              {selectedDomain && !selectedTopic && (
                 <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs">
-                  ⚠️ 缺少能力标签
+                  ⚠️ 缺少主题标签
                 </span>
               )}
             </div>
@@ -207,7 +207,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
               <button
                 className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
                 onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
-                disabled={isSubmitting || !selectedDomain || !selectedCapability}
+                disabled={isSubmitting || !selectedDomain || !selectedTopic}
               >
                 {isSubmitting ? '发送中...' : '发送'}
               </button>
@@ -247,12 +247,12 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                     #{selectedDomain} ×
                   </span>
                 )}
-                {selectedCapability && (
+                {selectedTopic && (
                   <span
                     className="px-2 py-1 bg-blue-600 text-white rounded-full text-xs cursor-pointer"
-                    onClick={() => setSelectedCapability(null)}
+                    onClick={() => setSelectedTopic(null)}
                   >
-                    #{selectedCapability} ×
+                    #{selectedTopic} ×
                   </span>
                 )}
                 {selectedMethod && (
@@ -318,20 +318,20 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
 
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                    <span className="text-orange-500">*</span> 能力（必选）
+                    <span className="text-orange-500">*</span> 主题（必选）
                     {!selectedDomain && <span className="text-gray-400 ml-1">→ 先选领域</span>}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {availableCapabilities.length > 0 ? (
-                      availableCapabilities.map((tag: string) => (
+                    {availableTopics.length > 0 ? (
+                      availableTopics.map((tag: string) => (
                         <button
                           key={tag}
                           className={`px-2 py-1 rounded-full text-xs transition-colors ${
-                            selectedCapability === tag
+                            selectedTopic === tag
                               ? 'bg-blue-600 text-white'
                               : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-500 border border-gray-200 dark:border-gray-500'
                           }`}
-                          onClick={() => setSelectedCapability(tag)}
+                          onClick={() => setSelectedTopic(tag)}
                         >
                           #{tag}
                         </button>
@@ -362,7 +362,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                 </div>
 
                 <div className="text-xs text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
-                  规则：1领域 + 1能力 + 0-1方法
+                  规则：1领域 + 1主题 + 0-1方法
                 </div>
               </div>
             )}

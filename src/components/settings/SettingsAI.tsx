@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import {
+  DEFAULT_COACH_PROMPT,
+  DEFAULT_POLISH_PROMPT,
+  normalizePolishPrompt
+} from '../../config/prompts';
 import { SettingsToggle } from './SettingsToggle';
 
 export const AI_CONFIG_KEY = 'diary-ai-config';
@@ -12,70 +17,6 @@ export interface AIConfig {
   polishPrompt: string;
   coachPrompt: string;
 }
-
-export const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的内容进行润色，并自动添加合适的标签。
-
-【润色规则】
-1. 尊重事实零增补：严格遵守原文的每一个事实细节，绝不添加任何未提及的人物、事件、地点、时间或具体信息。
-2. 适度修辞：可以适当使用比喻、拟人等修辞手法让表达更生动，但只能基于原文已有的信息进行修辞化处理。
-3. 轻微扩写：可以做一点点扩写（1-2句），但只能是对原文氛围或情绪的自然延伸，不可编造新事实。
-4. 拒绝代写总结：禁止在末尾加任何AI风格感悟、建议或总结。
-5. 保持原意：保留原文的核心表达和语气风格。
-
-【扩写边界示例】
-原文：带娃去公园玩。
-✅ 合理扩写：带娃去公园撒了个欢，跑得满头大汗。（基于"玩"的氛围延伸）
-❌ 过度扩写：带娃去公园玩，阳光明媚，草地上蝴蝶飞舞...（添加了未提及的阳光、蝴蝶、草地细节）
-
-【标签规则】必须添加三层标签，格式为：内容 #领域 #能力 #方法
-
-⚠️ 重要：必须包含2个必选标签 + 0-1个可选标签，总共2-3个标签！
-
-第一层：领域层（必选1个）
-#亲子 #育儿 #工作 #学习 #阅读 #技术
-
-第二层：能力层（必选1个，必须根据领域严格选择对应的能力标签）
-- 亲子/育儿领域：#情绪管理 #表达能力 #语言发育 #成长观察 #自信心 #自主探索
-- 工作领域：#任务执行 #沟通协作 #问题解决 #决策能力 #效率管理
-- 学习领域：#理解能力 #记忆能力 #专注力 #学习迁移
-- 阅读领域：#信息提取 #理解深度 #批判思维
-- 技术领域：#系统理解 #调试能力 #架构理解 #实现能力
-
-第三层：方法层（可选0-1个）
-#反思 #方法论 #问题分析 #记录
-
-【领域判断优先级】
-1. 涉及孩子/亲子互动 → #亲子 或 #育儿
-2. 涉及工作/职业/实验/检测 → #工作
-3. 涉及学习/知识/技能 → #学习
-4. 涉及阅读/书籍 → #阅读
-5. 涉及工具/代码/AI/Obsidian → #技术
-
-请直接输出润色后的内容和标签，格式示例：
-带娃去公园撒了个欢，跑得满头大汗。 #亲子 #自主探索 #记录
-
-注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
-
-export const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。
-
-按以下结构输出，模块间空行分隔：
-
-📌 模式识别
-今天的行为模式或思维惯性
-
-⚠️ 矛盾指出
-温和指出言行不一致的地方
-
-🎯 行动建议
-明天可做的具体小改进
-
-💬 暖心鼓励
-注入一点情绪价值，给继续记录、持续改进的勇气
-
-铁律：
-- 总字数严格 250-300 字，不超出、不偷懒
-- 只基于原文，不编造
-- 教练口吻，客观直接，不说教`;
 
 const presets = [
   { name: 'Claude API', baseUrl: 'https://api.anthropic.com', model: 'claude-sonnet-4-6-20250514' },
@@ -96,7 +37,7 @@ export function loadAIConfig(): AIConfig {
       baseUrl: config.baseUrl ?? '',
       apiKey: config.apiKey ?? '',
       model: config.model ?? '',
-      polishPrompt: config.polishPrompt || DEFAULT_POLISH_PROMPT,
+      polishPrompt: normalizePolishPrompt(config.polishPrompt),
       coachPrompt: (config.coachPrompt && !config.coachPrompt.includes('第一人称'))
         ? config.coachPrompt
         : DEFAULT_COACH_PROMPT,
