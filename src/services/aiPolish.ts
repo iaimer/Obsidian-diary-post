@@ -1,5 +1,7 @@
 // AI润色服务
 
+import { hasRequiredPolishTags, parseTagsFromPolished } from '../utils/polishResult';
+
 interface AIConfig {
   enabled: boolean;
   name: string;
@@ -82,6 +84,19 @@ const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天�
 // 润色类型
 export type PolishType = 'quickNote' | 'reflection' | 'happiness';
 
+interface AITextResponse {
+  text: string;
+  truncated: boolean;
+}
+
+const POLISH_MAX_TOKENS = 2000;
+const POLISH_RETRY_INSTRUCTION = `
+
+【重新输出要求】
+上一次输出为空、被截断或缺少必选标签。请重新生成，保持简洁，不要输出解释。
+第一行只输出 2-3 个标签：#领域 #能力 [#方法]
+第二行输出完整润色正文。`;
+
 // 检测缓存提示词是否过期（缺 #生活 等新标签则回退到默认）
 function isPromptStale(prompt: string): boolean {
   return !prompt.includes('#生活') || !prompt.includes('#回忆');
@@ -121,9 +136,24 @@ function isClaudeAPI(baseUrl: string): boolean {
   return baseUrl.includes('anthropic.com');
 }
 
+function extractText(content: unknown): string {
+  if (typeof content === 'string') return content.trim();
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .map(block => {
+      if (!block || typeof block !== 'object') return '';
+      const text = (block as { text?: unknown }).text;
+      return typeof text === 'string' ? text : '';
+    })
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
 // 调用Claude API格式
-async function callClaudeAPI(content: string, config: AIConfig, type: PolishType): Promise<string> {
-  const prompt = getPromptByType(type);
+async function callClaudeAPI(content: string, config: AIConfig, type: PolishType, retry = false): Promise<AITextResponse> {
+  const prompt = getPromptByType(type) + (retry ? POLISH_RETRY_INSTRUCTION : '');
   const response = await fetch(`${config.baseUrl}/v1/messages`, {
     method: 'POST',
     headers: {
@@ -133,7 +163,7 @@ async function callClaudeAPI(content: string, config: AIConfig, type: PolishType
     },
     body: JSON.stringify({
       model: config.model,
-      max_tokens: 500,
+      max_tokens: POLISH_MAX_TOKENS,
       messages: [
         {
           role: 'user',
@@ -151,12 +181,15 @@ async function callClaudeAPI(content: string, config: AIConfig, type: PolishType
   const data = await response.json().catch(() => {
     throw new Error('API返回了非JSON内容，请检查API地址配置');
   });
-  return data.content[0].text.trim();
+  return {
+    text: extractText(data.content),
+    truncated: data.stop_reason === 'max_tokens'
+  };
 }
 
 // 调用OpenAI兼容API格式
-async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: PolishType): Promise<string> {
-  const prompt = getPromptByType(type);
+async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: PolishType, retry = false): Promise<AITextResponse> {
+  const prompt = getPromptByType(type) + (retry ? POLISH_RETRY_INSTRUCTION : '');
   let apiUrl = config.baseUrl;
 
   if (!apiUrl.includes('/v1') && !apiUrl.endsWith('/chat/completions')) {
@@ -173,7 +206,7 @@ async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: 
     },
     body: JSON.stringify({
       model: config.model,
-      max_tokens: 500,
+      max_tokens: POLISH_MAX_TOKENS,
       messages: [
         {
           role: 'system',
@@ -195,7 +228,11 @@ async function callOpenAICompatibleAPI(content: string, config: AIConfig, type: 
   const data = await response.json().catch(() => {
     throw new Error('API返回了非JSON内容，请检查API地址配置');
   });
-  return data.choices[0].message.content.trim();
+  const choice = data.choices?.[0];
+  return {
+    text: extractText(choice?.message?.content),
+    truncated: choice?.finish_reason === 'length'
+  };
 }
 
 // 润色内容
@@ -207,11 +244,23 @@ export async function polishContent(content: string, config: AIConfig, type: Pol
   console.log('Polishing with:', config.name, config.model, 'type:', type);
 
   try {
-    if (isClaudeAPI(config.baseUrl)) {
-      return await callClaudeAPI(content, config, type);
-    } else {
-      return await callOpenAICompatibleAPI(content, config, type);
+    const callAPI = (retry = false) => isClaudeAPI(config.baseUrl)
+      ? callClaudeAPI(content, config, type, retry)
+      : callOpenAICompatibleAPI(content, config, type, retry);
+
+    let result = await callAPI();
+    let parsed = parseTagsFromPolished(result.text);
+
+    if (result.truncated || !parsed.content || !hasRequiredPolishTags(parsed.tags)) {
+      result = await callAPI(true);
+      parsed = parseTagsFromPolished(result.text);
     }
+
+    if (result.truncated) throw new Error('AI润色结果被截断，请重试');
+    if (!parsed.content) throw new Error('AI未返回润色正文，请重试');
+    if (!hasRequiredPolishTags(parsed.tags)) throw new Error('AI未返回完整标签，请重试');
+
+    return result.text;
   } catch (error) {
     console.error('Polish failed:', error);
     throw error;
