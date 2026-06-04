@@ -73,6 +73,84 @@ export function UploadPhotoIcon() {
   );
 }
 
+export function ArrowLeftIcon() {
+  return (
+    <Svg>
+      <path d="M15 18L9 12L15 6" />
+    </Svg>
+  );
+}
+
+export function ChevronRightIcon() {
+  return (
+    <Svg>
+      <path d="M9 6L15 12L9 18" />
+    </Svg>
+  );
+}
+
+export function PaletteIcon() {
+  return (
+    <Svg>
+      <path d="M12 2C12 2 12.53 3.1 13.67 4.13C14.82 5.16 16.28 6 18 6C19.1 6 19.94 6.34 20.55 7.03C21.16 7.72 21.5 8.68 21.5 9.84C21.5 12.54 19.82 14.89 17.57 16.22C15.32 17.55 12.55 17.75 10.09 16.76C7.63 15.77 5.66 13.63 4.55 10.73C3.44 7.83 3.52 4.56 4.98 2.09C5.5 3 6 4 7 5C7.83 4.17 9 3.5 10 3C10.67 2.67 11.33 2.33 12 2Z" />
+      <circle cx="17.5" cy="10.5" r="1" />
+      <circle cx="7" cy="9" r="1.5" />
+      <circle cx="12" cy="16" r="2" />
+    </Svg>
+  );
+}
+
+export function CheckListIcon() {
+  return (
+    <Svg>
+      <path d="M8 6L20 6" />
+      <path d="M4 6.01L4 6.02" />
+      <path d="M8 12L20 12" />
+      <path d="M4 12.01L4 12.02" />
+      <path d="M8 18L20 18" />
+      <path d="M4 18.01L4 18.02" />
+    </Svg>
+  );
+}
+
+export function CloudIcon() {
+  return (
+    <Svg>
+      <path d="M7 17C4.23858 17 2 14.7614 2 12C2 9.23858 4.23858 7 7 7C7.03355 7 7.06703 7.00033 7.10044 7.001C7.56733 4.19735 10.0138 2 13 2C15.7037 2 17.9666 3.99544 18.2942 6.59941C20.9103 7.07593 23 9.28032 23 12C23 14.7614 20.7614 17 18 17H13" />
+      <path d="M10 12L13 9L16 12" />
+      <path d="M13 9V21" />
+    </Svg>
+  );
+}
+
+export function SparklesIcon() {
+  return (
+    <Svg>
+      <path d="M12 2L13.09 5.26L16.09 3.91L15.5 7.18L18.82 6.5L17.09 9.09L20 10L17.09 10.91L18.5 14L15.5 12.74L14.09 16L12.91 12.74L10 14L11.5 10.91L8.5 10L11.41 9.09L10 6.5L13.32 7.18L12 2Z" />
+    </Svg>
+  );
+}
+
+export function ImageIcon() {
+  return (
+    <Svg>
+      <rect x="2" y="4" width="20" height="16" rx="3" />
+      <path d="M2 14L6 10L10 14L14 8L22 14" />
+      <circle cx="9" cy="9" r="2" />
+    </Svg>
+  );
+}
+
+export function InfoIcon() {
+  return (
+    <Svg>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16V11" />
+      <path d="M12 7V7.5" />
+    </Svg>
+  );
+}
+
 export function DarkIcon() {
   return (
     <Svg>

@@ -161,3 +161,22 @@ UI 标签和日记内容均为中文。代码注释用中文。
 | Capacitor 原生容器 | 快速打包 Web App 为 Android APK，无需重写 UI | android/, platform.ts, capacitor.config.ts |
 | 离线 Outbox + 索引幂等 | 手机弱网环境下不丢数据、不重复写入 | outboxService.ts, diary.ts |
 | 写入先入队再同步 | 保证离线可用；AI 实时操作除外 | dataService.ts |
+| 设置页现代化重构 | 概览→详情导航，手机单栏+桌面双栏，草稿模式远端API/AI/图片 | SettingsPage.tsx, settings/* |
+
+## 工作流
+
+场景 → skill 速查表见 `docs/workflow.md`。
+
+## Agent skills
+
+### Issue tracker
+
+Issues tracked as GitHub issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+All five canonical labels use their default names. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — root-level only. See `docs/agents/domain.md`.

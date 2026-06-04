@@ -30,6 +30,7 @@
 
 ### 🏗️ 技术架构
 
+- **设置页面**：概览→详情导航，手机单栏 + 桌面双栏，成组圆角容器风格
 - **前端**：React + TypeScript + Vite + Tailwind CSS
 - **后端**：Express + TypeScript（可选，用于远程模式）
 - **状态管理**：Zustand + localStorage 持久化
@@ -116,7 +117,7 @@ openssl rand -hex 32
 
 详见 [CHANGELOG.md](CHANGELOG.md)
 
-**当前版本：v0.12.1**
+**当前版本：v0.13.0**
 
 ## 开发计划
 

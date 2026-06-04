@@ -53,9 +53,6 @@ SESSION_LOG.md
 ANDROID_APP_IMPLEMENTATION_PLAN.md
 *.plan.md
 
-# Openspec (不要推送)
-openspec/
-
 # Misc
 *.bak
 *.orig

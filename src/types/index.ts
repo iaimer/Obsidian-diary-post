@@ -119,6 +119,16 @@ export interface Tag {
   type: 'domain' | 'capability' | 'method';
 }
 
+// 设置页面导航
+export type SettingsSection =
+  | 'overview'
+  | 'appearance'
+  | 'habits'
+  | 'remote'
+  | 'ai'
+  | 'images'
+  | 'about';
+
 // 随手记条目
 export interface QuickNote {
   time: string; // HH:MM

@@ -46,8 +46,15 @@ function App() {
   const [currentView, setCurrentView] = useState<PageView>('home');
   const [connecting, setConnecting] = useState(false);
   const [showFirstTimeConfig, setShowFirstTimeConfig] = useState(false);
+  const [hideBottomNav, setHideBottomNav] = useState(false);
   const diaryViewRef = useRef<DiaryViewRef>(null);
   const imageUploadRef = useRef<ImageUploadButtonRef>(null);
+  const settingsBackHandlerRef = useRef<(() => boolean) | null>(null);
+
+  const switchView = (view: PageView) => {
+    setCurrentView(view);
+    if (view !== 'settings') setHideBottomNav(false);
+  };
 
   useEffect(() => {
     const init = () => {
@@ -148,7 +155,8 @@ function App() {
         if (showReflection) return setShowReflection(false);
         if (showHappiness) return setShowHappiness(false);
         if (showWizard) return setShowWizard(false);
-        if (currentView !== 'home') return setCurrentView('home');
+        if (currentView === 'settings' && settingsBackHandlerRef.current?.()) return;
+        if (currentView !== 'home') return switchView('home');
         CapApp.exitApp();
       }));
 
@@ -185,18 +193,18 @@ function App() {
                 ? 'text-indigo-600'
                 : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
             }`}
-            onClick={() => setCurrentView(item.view)}
+            onClick={() => switchView(item.view)}
           >
             <span className="text-2xl">{item.icon}</span>
             <span>{item.label}</span>
           </button>
         ))}
         <FloatingButton
-          onQuickNote={() => { if (currentView !== 'home') setCurrentView('home'); setShowQuickInput(true); }}
-          onReflection={() => { if (currentView !== 'home') setCurrentView('home'); setShowReflection(true); }}
-          onHappiness={() => { if (currentView !== 'home') setCurrentView('home'); setShowHappiness(true); }}
-          onAnxiety={() => { if (currentView !== 'home') setCurrentView('home'); setShowWizard(true); }}
-          onImage={() => { if (currentView !== 'home') setCurrentView('home'); imageUploadRef.current?.open(); }}
+          onQuickNote={() => { if (currentView !== 'home') switchView('home'); setShowQuickInput(true); }}
+          onReflection={() => { if (currentView !== 'home') switchView('home'); setShowReflection(true); }}
+          onHappiness={() => { if (currentView !== 'home') switchView('home'); setShowHappiness(true); }}
+          onAnxiety={() => { if (currentView !== 'home') switchView('home'); setShowWizard(true); }}
+          onImage={() => { if (currentView !== 'home') switchView('home'); imageUploadRef.current?.open(); }}
         />
         {navItems.slice(2).map(item => (
           <button
@@ -206,7 +214,7 @@ function App() {
                 ? 'text-indigo-600'
                 : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
             }`}
-            onClick={() => setCurrentView(item.view)}
+            onClick={() => switchView(item.view)}
           >
             <span className="text-2xl">{item.icon}</span>
             <span>{item.label}</span>
@@ -252,8 +260,11 @@ function App() {
   if (currentView === 'settings') {
     return (
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-        <SettingsPage />
-        {renderBottomNav()}
+        <SettingsPage
+          onDetailNav={setHideBottomNav}
+          registerBackHandler={handler => { settingsBackHandlerRef.current = handler; }}
+        />
+        {!hideBottomNav && renderBottomNav()}
       </div>
     );
   }
@@ -263,7 +274,7 @@ function App() {
     return (
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <StatsPage />
-        {renderBottomNav()}
+        {!hideBottomNav && renderBottomNav()}
       </div>
     );
   }
@@ -273,7 +284,7 @@ function App() {
     return (
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <HistoryPage />
-        {renderBottomNav()}
+        {!hideBottomNav && renderBottomNav()}
       </div>
     );
   }
@@ -343,7 +354,7 @@ function App() {
       </PullToRefresh>
 
       {/* Bottom Navigation */}
-      {renderBottomNav()}
+      {!hideBottomNav && renderBottomNav()}
 
       {/* Modals */}
       <ImageUploadButton
