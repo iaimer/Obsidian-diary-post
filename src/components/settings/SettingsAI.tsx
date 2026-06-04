@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { SettingsToggle } from './SettingsToggle';
 
-const AI_CONFIG_KEY = 'diary-ai-config';
+export const AI_CONFIG_KEY = 'diary-ai-config';
 
-interface AIConfig {
+export interface AIConfig {
   enabled: boolean;
   name: string;
   baseUrl: string;
@@ -13,7 +13,7 @@ interface AIConfig {
   coachPrompt: string;
 }
 
-const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的内容进行润色，并自动添加合适的标签。
+export const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输入的内容进行润色，并自动添加合适的标签。
 
 【润色规则】
 1. 尊重事实零增补：严格遵守原文的每一个事实细节，绝不添加任何未提及的人物、事件、地点、时间或具体信息。
@@ -56,7 +56,7 @@ const DEFAULT_POLISH_PROMPT = `你是一个日记润色助手。请将用户输�
 
 注意：每个输出必须包含 #领域 和 #能力 两个标签，不可遗漏！`;
 
-const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。
+export const DEFAULT_COACH_PROMPT = `你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。
 
 按以下结构输出，模块间空行分隔：
 
@@ -85,10 +85,10 @@ const presets = [
   { name: '本地Ollama', baseUrl: 'http://localhost:11434', model: 'qwen2.5:7b' },
 ];
 
-function loadConfig(): AIConfig {
+export function loadAIConfig(): AIConfig {
   try {
     const raw = localStorage.getItem(AI_CONFIG_KEY);
-    if (!raw) return getDefaults();
+    if (!raw) return getAIDefaults();
     const config = JSON.parse(raw);
     return {
       enabled: config.enabled ?? false,
@@ -102,11 +102,11 @@ function loadConfig(): AIConfig {
         : DEFAULT_COACH_PROMPT,
     };
   } catch {
-    return getDefaults();
+    return getAIDefaults();
   }
 }
 
-function getDefaults(): AIConfig {
+export function getAIDefaults(): AIConfig {
   return { enabled: false, name: '', baseUrl: '', apiKey: '', model: '', polishPrompt: DEFAULT_POLISH_PROMPT, coachPrompt: DEFAULT_COACH_PROMPT };
 }
 
@@ -115,9 +115,8 @@ interface Props {
 }
 
 export function SettingsAI({ onDirtyChange }: Props) {
-  const [config, setConfig] = useState<AIConfig>(loadConfig);
-  const [saved, setSaved] = useState<AIConfig>(loadConfig);
-  const [promptTab, setPromptTab] = useState<'polish' | 'coach'>('polish');
+  const [config, setConfig] = useState<AIConfig>(loadAIConfig);
+  const [saved, setSaved] = useState<AIConfig>(loadAIConfig);
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -226,52 +225,6 @@ export function SettingsAI({ onDirtyChange }: Props) {
             )}
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="flex border-b border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setPromptTab('polish')}
-                className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
-                  promptTab === 'polish'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700'
-                }`}
-              >
-                润色规则
-              </button>
-              <button
-                onClick={() => setPromptTab('coach')}
-                className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
-                  promptTab === 'coach'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700'
-                }`}
-              >
-                教练提示词
-              </button>
-            </div>
-            <div className="px-4 py-3">
-              <textarea
-                value={promptTab === 'polish' ? config.polishPrompt : config.coachPrompt}
-                onChange={e => setConfig({
-                  ...config,
-                  ...(promptTab === 'polish' ? { polishPrompt: e.target.value } : { coachPrompt: e.target.value })
-                })}
-                rows={10}
-                className="w-full p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono resize-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <button
-                onClick={() => setConfig({
-                  ...config,
-                  ...(promptTab === 'polish'
-                    ? { polishPrompt: DEFAULT_POLISH_PROMPT }
-                    : { coachPrompt: DEFAULT_COACH_PROMPT })
-                })}
-                className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 mt-1.5"
-              >
-                重置为默认
-              </button>
-            </div>
-          </div>
         </>
       )}
 

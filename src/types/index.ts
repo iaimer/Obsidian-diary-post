@@ -126,6 +126,7 @@ export type SettingsSection =
   | 'habits'
   | 'remote'
   | 'ai'
+  | 'prompts'
   | 'images'
   | 'about';
 

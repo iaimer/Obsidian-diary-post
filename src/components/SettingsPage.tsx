@@ -6,6 +6,7 @@ import { SettingsAppearance } from './settings/SettingsAppearance';
 import { SettingsHabits } from './settings/SettingsHabits';
 import { SettingsRemote } from './settings/SettingsRemote';
 import { SettingsAI } from './settings/SettingsAI';
+import { SettingsPrompts } from './settings/SettingsPrompts';
 import { SettingsImages } from './settings/SettingsImages';
 import { SettingsAbout } from './settings/SettingsAbout';
 import { SettingsIcon, ArrowLeftIcon } from './Icons';
@@ -20,7 +21,8 @@ const SECTION_TITLES: Record<SettingsSection, string> = {
   appearance: '外观',
   habits: '习惯管理',
   remote: '远程 API',
-  ai: 'AI 润色引擎',
+  ai: 'AI 服务配置',
+  prompts: '润色提示词',
   images: '图片压缩',
   about: '关于'
 };
@@ -35,7 +37,7 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
   }, []);
 
   const checkDirty = useCallback((fromSection: SettingsSection): boolean => {
-    if (['remote', 'ai', 'images'].includes(fromSection) && dirtyRef.current[fromSection]) {
+    if (['remote', 'ai', 'prompts', 'images'].includes(fromSection) && dirtyRef.current[fromSection]) {
       return confirm(`有未保存的修改，确定要离开吗？`);
     }
     return true;
@@ -77,6 +79,7 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
       case 'habits': return <SettingsHabits />;
       case 'remote': return <SettingsRemote onDirtyChange={v => setDirty('remote', v)} />;
       case 'ai': return <SettingsAI onDirtyChange={v => setDirty('ai', v)} />;
+      case 'prompts': return <SettingsPrompts onDirtyChange={v => setDirty('prompts', v)} />;
       case 'images': return <SettingsImages onDirtyChange={v => setDirty('images', v)} />;
       case 'about': return <SettingsAbout />;
       default: return null;
@@ -84,8 +87,8 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
   };
 
   return (
-    <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <header className="safe-top bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 pb-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <header className="safe-top flex-shrink-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 pb-3 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex items-center min-h-[32px]">
           {isInDetail ? (
             <>
@@ -110,12 +113,12 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
         </div>
       </header>
 
-      <div className="lg:flex lg:h-[calc(100vh-120px)]">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         <aside className="hidden lg:block w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 py-4">
           <SettingsSidebar currentSection={currentSection} onNavigate={navigate} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto px-4 pt-4 pb-[80px] lg:pb-4 max-w-xl mx-auto lg:mx-0">
+        <main className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[80px] lg:pb-4 max-w-xl mx-auto lg:mx-0">
           {isInDetail ? renderDetail() : <SettingsOverview onNavigate={navigate} />}
         </main>
       </div>

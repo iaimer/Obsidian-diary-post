@@ -131,6 +131,16 @@ export function SparklesIcon() {
   );
 }
 
+export function PromptIcon() {
+  return (
+    <Svg>
+      <path d="M4 4H20V16H8L4 20V4Z" />
+      <path d="M8 8H16" />
+      <path d="M8 12H14" />
+    </Svg>
+  );
+}
+
 export function ImageIcon() {
   return (
     <Svg>

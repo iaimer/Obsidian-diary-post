@@ -5,6 +5,7 @@ import {
   CheckListIcon,
   CloudIcon,
   SparklesIcon,
+  PromptIcon,
   ImageIcon,
   InfoIcon
 } from '../Icons';
@@ -72,8 +73,14 @@ export function useSettingGroups(): SettingGroupDef[] {
         {
           section: 'ai',
           icon: <SparklesIcon />,
-          label: 'AI 润色引擎',
+          label: 'AI 服务配置',
           summary: () => aiConfig?.enabled ? (aiConfig.model || '已启用') : '未启用'
+        },
+        {
+          section: 'prompts',
+          icon: <PromptIcon />,
+          label: '润色提示词',
+          summary: () => '润色与教练'
         }
       ]
     },
