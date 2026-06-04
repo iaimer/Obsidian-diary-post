@@ -20,6 +20,7 @@ import { SyncStatusBar } from './components/SyncStatusBar';
 import ImageUploadButton, { ImageUploadButtonRef } from './components/ImageUploadButton';
 import { syncPending } from './services/outboxService';
 import { App as CapApp } from '@capacitor/app';
+import { SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import { getShanghaiCalendarDate } from './utils/date';
 
@@ -35,6 +36,8 @@ function App() {
   const setVaultConnected = useDiaryStore(state => state.setVaultConnected);
   const setRemoteMode = useDiaryStore(state => state.setRemoteMode);
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
+  const themePreference = useDiaryStore(state => state.themePreference);
+  const setDarkMode = useDiaryStore(state => state.setDarkMode);
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
@@ -51,26 +54,7 @@ function App() {
       const native = isNativeApp();
       const isProduction = !window.location.hostname.match(/localhost|127\.0\.0\.1/) && !native;
       const state = useDiaryStore.getState();
-      const { apiToken, apiUrl, themePreference } = state;
-
-      const applyTheme = () => {
-        const isDark = themePreference === 'dark' || (themePreference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      };
-      applyTheme();
-
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = () => {
-        const pref = useDiaryStore.getState().themePreference;
-        if (pref === 'system') {
-          applyTheme();
-        }
-      };
-      mediaQuery.addEventListener('change', handleChange);
+      const { apiToken, apiUrl } = state;
 
       if (native) {
         const cleanUrl = apiUrl && apiUrl !== DEV_API_URL
@@ -96,12 +80,30 @@ function App() {
         }
       }
 
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange);
-      };
     };
     return init();
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      const isDark = themePreference === 'dark' || (themePreference === 'system' && mediaQuery.matches);
+      setDarkMode(isDark);
+
+      if (isNativeApp()) {
+        void SystemBars.setStyle({
+          style: isDark ? SystemBarsStyle.Dark : SystemBarsStyle.Light
+        }).catch(error => console.error('Failed to update system bars:', error));
+      }
+    };
+
+    applyTheme();
+    if (themePreference === 'system') {
+      mediaQuery.addEventListener('change', applyTheme);
+    }
+
+    return () => mediaQuery.removeEventListener('change', applyTheme);
+  }, [setDarkMode, themePreference]);
 
   // 自动同步触发：App 启动（远程/原生模式）
   useEffect(() => {
@@ -279,7 +281,7 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 pb-[50px]">
       {/* Header - 固定在 PullToRefresh 外部，不受下拉影响 */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
+      <header className="safe-top bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 pb-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
             <span className="inline-flex items-center gap-2">

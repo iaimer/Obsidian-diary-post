@@ -104,7 +104,7 @@ export function HistoryPage() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50 px-4 py-3">
+      <header className="safe-top bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50 px-4 pb-3">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><HistoryIcon /> 过往日记</h1>
           {(() => {

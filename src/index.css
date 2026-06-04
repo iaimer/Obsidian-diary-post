@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body,
+#root {
+  min-height: 100%;
+  background-color: #F9FAFB;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -10,12 +17,26 @@ body {
   font-family: 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', ui-sans-serif, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #FAF8F5;
-  padding-top: env(safe-area-inset-top);
+  margin: 0;
+}
+
+.dark,
+.dark body,
+.dark #root {
+  background-color: #111827;
+}
+
+.safe-top {
+  padding-top: calc(0.75rem + max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)));
 }
 
 .safe-bottom {
-  padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(0.25rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));
+}
+
+.safe-screen {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }
 
 ::selection {

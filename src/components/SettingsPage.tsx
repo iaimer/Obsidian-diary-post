@@ -292,7 +292,7 @@ export function SettingsPage() {
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-3 border-b border-gray-100/50 dark:border-gray-700/50">
+      <header className="safe-top bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 pb-3 sticky top-0 z-10 border-b border-gray-100/50 dark:border-gray-700/50">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-flex items-center gap-2"><SettingsIcon /> 设置</h1>
           <button
