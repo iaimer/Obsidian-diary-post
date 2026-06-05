@@ -41,9 +41,13 @@ function extractEditableContent(line: string): string {
   return content.trim();
 }
 
-function rebuildLine(original: string, newContent: string): string {
-  const tags = original.match(/(\s*#\S+(?:\s+#\S+)*)\s*$/);
-  const tagStr = tags ? ' ' + tags[1].trim() : '';
+function extractTags(line: string): string {
+  const tags = line.match(/(\s*#\S+(?:\s+#\S+)*)\s*$/);
+  return tags ? tags[1].trim() : '';
+}
+
+function rebuildLine(original: string, newContent: string, newTags?: string): string {
+  const tagStr = newTags ? ' ' + newTags.trim() : '';
   let prefix = '';
   if (original.startsWith('> **') || original.startsWith('- **')) {
     prefix = original.substring(0, original.indexOf('**') + 9);
@@ -268,6 +272,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [generatingLizhi, setGeneratingLizhi] = useState(false);
   const [editEntry, setEditEntry] = useState<{ line: string; section: string } | null>(null);
   const [editText, setEditText] = useState('');
+  const [editTags, setEditTags] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string } | null>(null);
 
   // 解析习惯数据
@@ -553,7 +558,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1.5">
             {groupDiaryLines(quickNotes).map((line, i) => (
               <EntryRow key={i} line={line} section="notes"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '随手记' })}
               >
                 {renderMarkdown(line, 'notes')}
@@ -570,7 +575,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(happiness).map((line, i) => (
               <EntryRow key={i} line={line} section="happiness"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '小确幸' })}
               >
                 {renderMarkdown(line, 'happiness')}
@@ -587,7 +592,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(anxiety).map((line, i) => (
               <EntryRow key={i} line={line} section="anxiety"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '焦虑记录' })}
               >
                 {renderMarkdown(line, 'anxiety')}
@@ -604,7 +609,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(reflection).map((line, i) => (
               <EntryRow key={i} line={line} section="reflection"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '觉察' })}
               >
                 {renderMarkdown(line, 'reflection')}
@@ -661,7 +666,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(tomorrow).map((line, i) => (
               <EntryRow key={i} line={line} section="tomorrow"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '明日寄语' })}
               >
                 {renderMarkdown(line, 'tomorrow')}
@@ -724,6 +729,14 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
             onChange={e => setEditText(e.target.value)}
             rows={5}
             className="w-full p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 resize-none"
+            placeholder="正文内容..."
+          />
+          <input
+            type="text"
+            value={editTags}
+            onChange={e => setEditTags(e.target.value)}
+            placeholder="#标签1 #标签2（可选）"
+            className="w-full mt-2 p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
           />
           <div className="flex gap-2 mt-3">
             <button onClick={() => setEditEntry(null)} className="flex-1 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg min-h-[44px]">取消</button>
@@ -731,7 +744,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
               if (!editEntry || !editText.trim()) return;
               try {
                 const ds = getDataService();
-                const newLine = rebuildLine(editEntry.line, editText.trim());
+                const newLine = rebuildLine(editEntry.line, editText.trim(), editTags);
                 await ds.editEntry(getSectionForLine(editEntry.section), editEntry.line, newLine);
                 setEditEntry(null);
                 useDiaryStore.getState().triggerRefresh();
