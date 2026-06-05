@@ -350,7 +350,7 @@ export function SettingsTags({ onDirtyChange }: Props) {
                 </p>
                 <div className="text-xs text-gray-400 dark:text-gray-500 pl-3 space-y-0.5">
                   {domain.topics.map(t => (
-                    <div key={t.id}># {t.name}{t.description ? <span> — {t.description}</span> : null}</div>
+                    <div key={t.id}>#{t.name}{t.description ? <span> — {t.description}</span> : null}</div>
                   ))}
                 </div>
               </div>
@@ -359,7 +359,7 @@ export function SettingsTags({ onDirtyChange }: Props) {
               <p className="text-sm font-medium text-gray-700 dark:text-gray-200">方法</p>
                 <div className="text-xs text-gray-400 dark:text-gray-500 pl-3 space-y-0.5">
                   {draft.methods.map(m => (
-                    <div key={m.id}># {m.name}{m.description ? <span> — {m.description}</span> : null}</div>
+                    <div key={m.id}>#{m.name}{m.description ? <span> — {m.description}</span> : null}</div>
                   ))}
                 </div>
             </div>
