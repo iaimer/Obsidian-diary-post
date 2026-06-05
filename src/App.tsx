@@ -19,6 +19,7 @@ import { FirstTimeConfig } from './components/FirstTimeConfig';
 import { SyncStatusBar } from './components/SyncStatusBar';
 import ImageUploadButton, { ImageUploadButtonRef } from './components/ImageUploadButton';
 import { syncPending } from './services/outboxService';
+import { fetchTagConfig } from './services/tagSync';
 import { App as CapApp } from '@capacitor/app';
 import { SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { Network } from '@capacitor/network';
@@ -38,6 +39,7 @@ function App() {
   const setApiConfig = useDiaryStore(state => state.setApiConfig);
   const themePreference = useDiaryStore(state => state.themePreference);
   const setDarkMode = useDiaryStore(state => state.setDarkMode);
+  const setTagConfig = useDiaryStore(state => state.setTagConfig);
 
   const [showReflection, setShowReflection] = useState(false);
   const [showHappiness, setShowHappiness] = useState(false);
@@ -116,8 +118,11 @@ function App() {
   useEffect(() => {
     if (remoteMode) {
       syncPending();
+      fetchTagConfig().then(({ config }) => {
+        if (config) setTagConfig(config);
+      });
     }
-  }, [remoteMode]);
+  }, [remoteMode, setTagConfig]);
 
   // 自动同步触发：网络恢复 / App 回到前台
   useEffect(() => {
@@ -262,7 +267,7 @@ function App() {
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         <SettingsPage
           onDetailNav={setHideBottomNav}
-          registerBackHandler={handler => { settingsBackHandlerRef.current = handler; }}
+          registerBackHandler={(handler: (() => boolean) | null) => { settingsBackHandlerRef.current = handler; }}
         />
         {!hideBottomNav && renderBottomNav()}
       </div>

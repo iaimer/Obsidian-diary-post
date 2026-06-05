@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DiaryEntry, HabitData, HabitConfig, DEFAULT_HABIT_CONFIGS } from '../types';
+import { TagConfig, DEFAULT_TAG_CONFIG } from '../types/tagTypes';
 
 export interface ImageCompressConfig {
   maxLongSide: number;    // 最大长边像素
@@ -49,6 +50,9 @@ interface DiaryState {
   // 习惯配置
   habitConfigs: HabitConfig[];
 
+  // 标签系统配置
+  tagConfig: TagConfig;
+
   // 刷新触发器（每次写入后更新，触发DiaryView刷新）
   refreshKey: number;
 
@@ -70,6 +74,10 @@ interface DiaryState {
   updateHabitConfig: (id: string, updates: Partial<HabitConfig>) => void;
   removeHabitConfig: (id: string) => void;
   resetHabitConfigs: () => void;
+
+  // 标签系统操作
+  setTagConfig: (config: TagConfig) => void;
+  resetTagConfig: () => void;
 }
 
 // API 默认配置
@@ -113,6 +121,7 @@ export const useDiaryStore = create<DiaryState>()(
       currentDiary: null,
       habitData: defaultHabitData,
       habitConfigs: DEFAULT_HABIT_CONFIGS,
+      tagConfig: DEFAULT_TAG_CONFIG,
       refreshKey: 0,
 
       setVaultConnected: (connected: boolean) => {
@@ -204,6 +213,15 @@ export const useDiaryStore = create<DiaryState>()(
 
       resetHabitConfigs: () => {
         set({ habitConfigs: DEFAULT_HABIT_CONFIGS });
+      },
+
+      // 标签系统操作
+      setTagConfig: (config: TagConfig) => {
+        set({ tagConfig: config });
+      },
+
+      resetTagConfig: () => {
+        set({ tagConfig: DEFAULT_TAG_CONFIG });
       }
     }),
     {
@@ -212,6 +230,7 @@ export const useDiaryStore = create<DiaryState>()(
         wasConnected: state.wasConnected,
         habitData: state.habitData,
         habitConfigs: state.habitConfigs,
+        tagConfig: state.tagConfig,
         remoteMode: state.remoteMode,
         apiUrl: state.apiUrl,
         apiToken: state.apiToken,

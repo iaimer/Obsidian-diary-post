@@ -8,6 +8,7 @@ import { SettingsRemote } from './settings/SettingsRemote';
 import { SettingsAI } from './settings/SettingsAI';
 import { SettingsPrompts } from './settings/SettingsPrompts';
 import { SettingsImages } from './settings/SettingsImages';
+import { SettingsTags } from './settings/SettingsTags';
 import { SettingsAbout } from './settings/SettingsAbout';
 import { SettingsIcon, ArrowLeftIcon } from './Icons';
 
@@ -20,6 +21,7 @@ const SECTION_TITLES: Record<SettingsSection, string> = {
   overview: '设置',
   appearance: '外观',
   habits: '习惯管理',
+  tags: '标签管理',
   remote: '远程 API',
   ai: 'AI 服务配置',
   prompts: '润色提示词',
@@ -37,7 +39,7 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
   }, []);
 
   const checkDirty = useCallback((fromSection: SettingsSection): boolean => {
-    if (['remote', 'ai', 'prompts', 'images'].includes(fromSection) && dirtyRef.current[fromSection]) {
+    if (['tags', 'remote', 'ai', 'prompts', 'images'].includes(fromSection) && dirtyRef.current[fromSection]) {
       return confirm(`有未保存的修改，确定要离开吗？`);
     }
     return true;
@@ -77,6 +79,7 @@ export function SettingsPage({ onDetailNav, registerBackHandler }: Props) {
     switch (currentSection) {
       case 'appearance': return <SettingsAppearance />;
       case 'habits': return <SettingsHabits />;
+      case 'tags': return <SettingsTags onDirtyChange={v => setDirty('tags', v)} />;
       case 'remote': return <SettingsRemote onDirtyChange={v => setDirty('remote', v)} />;
       case 'ai': return <SettingsAI onDirtyChange={v => setDirty('ai', v)} />;
       case 'prompts': return <SettingsPrompts onDirtyChange={v => setDirty('prompts', v)} />;

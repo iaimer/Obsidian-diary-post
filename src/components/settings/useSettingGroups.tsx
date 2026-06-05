@@ -3,6 +3,7 @@ import { SettingsSection } from '../../types';
 import {
   PaletteIcon,
   CheckListIcon,
+  TagIcon,
   CloudIcon,
   SparklesIcon,
   PromptIcon,
@@ -28,6 +29,7 @@ export function useSettingGroups(): SettingGroupDef[] {
   const habitConfigs = useDiaryStore(state => state.habitConfigs);
   const imageConfig = useDiaryStore(state => state.imageConfig);
 
+  const tagConfig = useDiaryStore(state => state.tagConfig);
   const enabledHabitCount = habitConfigs.filter(c => c.enabled).length;
 
   const aiConfig = (() => {
@@ -58,6 +60,12 @@ export function useSettingGroups(): SettingGroupDef[] {
           icon: <CheckListIcon />,
           label: '习惯管理',
           summary: () => `已启用 ${enabledHabitCount} 项`
+        },
+        {
+          section: 'tags',
+          icon: <TagIcon />,
+          label: '标签管理',
+          summary: () => `${tagConfig.domains.length} 领域 / ${tagConfig.domains.reduce((s, d) => s + d.topics.length, 0)} 主题 / ${tagConfig.methods.length} 方法`
         }
       ]
     },

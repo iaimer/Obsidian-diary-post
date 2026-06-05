@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
-import { TAG_SYSTEM } from '../config/tags';
 import { parseTagsFromPolished } from '../utils/polishResult';
 
 interface QuickInputModalProps {
@@ -27,6 +26,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
+  const tagConfig = useDiaryStore(state => state.tagConfig);
 
   const autoResize = () => {
     const el = textareaRef.current;
@@ -51,13 +51,17 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
     setSelectedTopic(null);
     setSelectedMethod(null);
 
+    const domainNames = tagConfig.domains.filter(d => d.topics.length > 0).map(d => d.name);
+    const methodNames = tagConfig.methods.map(m => m.name);
+    const topicEntries = tagConfig.domains.map(d => [d.name, d.topics.map(t => t.name)] as [string, string[]]);
+
     for (const tag of tags) {
-      if (TAG_SYSTEM.domain.includes(tag as any)) {
+      if (domainNames.includes(tag)) {
         setSelectedDomain(tag);
-      } else if (TAG_SYSTEM.method.includes(tag as any)) {
+      } else if (methodNames.includes(tag)) {
         setSelectedMethod(tag);
       } else {
-        for (const [domain, topics] of Object.entries(TAG_SYSTEM.topic)) {
+        for (const [domain, topics] of topicEntries) {
           if (topics.includes(tag)) {
             setSelectedDomain(domain);
             setSelectedTopic(tag);
@@ -72,7 +76,9 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
     }, 0);
   };
 
-  const availableTopics = selectedDomain ? TAG_SYSTEM.topic[selectedDomain] || [] : [];
+  const availableTopics = selectedDomain
+    ? tagConfig.domains.find(d => d.name === selectedDomain)?.topics.map(t => t.name) || []
+    : [];
 
   const getSelectedTags = (): string[] => {
     const tags: string[] = [];
@@ -93,7 +99,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
     try {
       const config = getAIConfig();
       const result = await polishContent(content.trim(), config);
-      const { content: pureContent, tags } = parseTagsFromPolished(result);
+      const { content: pureContent, tags } = parseTagsFromPolished(result, tagConfig);
       if (!pureContent) {
         alert('润色结果为空，请重试');
         return;
@@ -110,7 +116,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
   };
 
   const handleUsePolished = () => {
-    const { content: pureContent } = parseTagsFromPolished(polishedContent);
+    const { content: pureContent } = parseTagsFromPolished(polishedContent, tagConfig);
     if (pureContent) {
       setContent(pureContent);
     }
@@ -178,7 +184,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
           <div className="mb-3">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">✨ AI润色结果：</div>
             <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-200 mb-2">
-              {parseTagsFromPolished(polishedContent).content}
+              {parseTagsFromPolished(polishedContent, tagConfig).content}
             </div>
             <div className="flex gap-1 mb-2 flex-wrap items-center">
               <span className="text-xs text-gray-500 dark:text-gray-400">AI标签：</span>
@@ -206,7 +212,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
             <div className="flex gap-2">
               <button
                 className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium disabled:bg-indigo-300 dark:disabled:bg-indigo-800"
-                onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
+                onClick={() => handleSubmit(parseTagsFromPolished(polishedContent, tagConfig).content)}
                 disabled={isSubmitting || !selectedDomain || !selectedTopic}
               >
                 {isSubmitting ? '发送中...' : '发送'}
@@ -300,7 +306,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                     <span className="text-red-500">*</span> 领域（必选）
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {TAG_SYSTEM.domain.map(tag => (
+                    {tagConfig.domains.filter(d => d.topics.length > 0).map(d => d.name).map(tag => (
                       <button
                         key={tag}
                         className={`px-2 py-1 rounded-full text-xs transition-colors ${
@@ -345,7 +351,7 @@ export default function QuickInputModal({ onClose }: QuickInputModalProps) {
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">方法（可选）</div>
                   <div className="flex flex-wrap gap-1">
-                    {TAG_SYSTEM.method.map(tag => (
+                    {tagConfig.methods.map(m => m.name).map(tag => (
                       <button
                         key={tag}
                         className={`px-2 py-1 rounded-full text-xs transition-colors ${

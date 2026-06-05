@@ -170,6 +170,7 @@ UI 标签和日记内容均为中文。代码注释用中文。
 | 离线 Outbox + 索引幂等 | 手机弱网环境下不丢数据、不重复写入 | outboxService.ts, diary.ts |
 | 写入先入队再同步 | 保证离线可用；AI 实时操作除外 | dataService.ts |
 | 设置页现代化重构 | 概览→详情导航，手机单栏+桌面双栏，草稿模式远端API/AI/图片 | SettingsPage.tsx, settings/* |
+| 运行时标签系统 | 自定义领域/主题/方法，远程同步，AI 和记录弹窗改为运行时读取 | TagConfig, SettingsTags, tagSync.ts |
 
 ## 工作流
 

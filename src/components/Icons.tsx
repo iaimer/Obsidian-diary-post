@@ -161,6 +161,16 @@ export function InfoIcon() {
   );
 }
 
+export function TagIcon() {
+  return (
+    <Svg>
+      <path d="M3 7V4C3 3.44772 3.44772 3 4 3H7L17 13L13 17L3 7Z" />
+      <path d="M21 15L15 21" />
+      <circle cx="7.5" cy="7.5" r="1" />
+    </Svg>
+  );
+}
+
 export function DarkIcon() {
   return (
     <Svg>

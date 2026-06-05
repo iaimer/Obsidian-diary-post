@@ -1,18 +1,15 @@
-import { TAG_SYSTEM } from '../config/tags';
+import { TagConfig } from '../types/tagTypes';
+import { getAllTagNames, getDomainTopics, getDomainNames } from '../config/tagSystem';
 
-const KNOWN_TAGS = new Set<string>([
-  ...TAG_SYSTEM.domain,
-  ...TAG_SYSTEM.method,
-  ...Object.values(TAG_SYSTEM.topic).flat()
-]);
 const LEGACY_IGNORED_TAGS = new Set(['记录']);
 
-export function parseTagsFromPolished(text: string): { content: string; tags: string[] } {
+export function parseTagsFromPolished(text: string, tagConfig: TagConfig): { content: string; tags: string[] } {
+  const known = new Set(getAllTagNames(tagConfig));
   const tags: string[] = [];
   const withoutTags = text.replace(/#([\p{L}\p{N}_-]+)/gu, (match, rawTag: string) => {
     const tag = rawTag.trim();
     if (LEGACY_IGNORED_TAGS.has(tag)) return '';
-    if (!KNOWN_TAGS.has(tag)) return match;
+    if (!known.has(tag)) return match;
     if (!tags.includes(tag)) tags.push(tag);
     return '';
   });
@@ -24,13 +21,13 @@ export function parseTagsFromPolished(text: string): { content: string; tags: st
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return {
-    content,
-    tags
-  };
+  return { content, tags };
 }
 
-export function hasRequiredPolishTags(tags: string[]): boolean {
-  const domain = TAG_SYSTEM.domain.find(tag => tags.includes(tag));
-  return Boolean(domain && TAG_SYSTEM.topic[domain].some(tag => tags.includes(tag)));
+export function hasRequiredPolishTags(tags: string[], tagConfig: TagConfig): boolean {
+  const domainNames = getDomainNames(tagConfig);
+  const domain = domainNames.find(tag => tags.includes(tag));
+  if (!domain) return false;
+  const topicNames = getDomainTopics(tagConfig, domain);
+  return topicNames.some(tag => tags.includes(tag));
 }

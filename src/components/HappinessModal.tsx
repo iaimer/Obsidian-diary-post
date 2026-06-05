@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService } from '../services/dataService';
 import { polishContent, getAIConfig, isAIConfigured } from '../services/aiPolish';
-import { TAG_SYSTEM } from '../config/tags';
 import { parseTagsFromPolished } from '../utils/polishResult';
 
 interface HappinessModalProps {
@@ -17,7 +16,6 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
   const [polishedContent, setPolishedContent] = useState('');
   const [showTagPicker, setShowTagPicker] = useState(false);
 
-  // 选中的标签
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
@@ -26,6 +24,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
   const vaultConnected = useDiaryStore(state => state.vaultConnected);
   const remoteMode = useDiaryStore(state => state.remoteMode);
   const triggerRefresh = useDiaryStore(state => state.triggerRefresh);
+  const tagConfig = useDiaryStore(state => state.tagConfig);
 
   // 当选择新领域时，清空主题标签
   useEffect(() => {
@@ -41,13 +40,17 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
     setSelectedTopic(null);
     setSelectedMethod(null);
 
+    const domainNames = tagConfig.domains.filter(d => d.topics.length > 0).map(d => d.name);
+    const methodNames = tagConfig.methods.map(m => m.name);
+    const topicEntries = tagConfig.domains.map(d => [d.name, d.topics.map(t => t.name)] as [string, string[]]);
+
     for (const tag of tags) {
-      if (TAG_SYSTEM.domain.includes(tag as any)) {
+      if (domainNames.includes(tag)) {
         setSelectedDomain(tag);
-      } else if (TAG_SYSTEM.method.includes(tag as any)) {
+      } else if (methodNames.includes(tag)) {
         setSelectedMethod(tag);
       } else {
-        for (const [domain, topics] of Object.entries(TAG_SYSTEM.topic)) {
+        for (const [domain, topics] of topicEntries) {
           if (topics.includes(tag)) {
             setSelectedDomain(domain);
             setSelectedTopic(tag);
@@ -62,7 +65,9 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
     }, 0);
   };
 
-  const availableTopics = selectedDomain ? TAG_SYSTEM.topic[selectedDomain] || [] : [];
+  const availableTopics = selectedDomain
+    ? tagConfig.domains.find(d => d.name === selectedDomain)?.topics.map(t => t.name) || []
+    : [];
 
   const getSelectedTags = (): string[] => {
     const tags: string[] = [];
@@ -83,7 +88,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
     try {
       const config = getAIConfig();
       const result = await polishContent(content.trim(), config, 'happiness');
-      const { content: pureContent, tags } = parseTagsFromPolished(result);
+      const { content: pureContent, tags } = parseTagsFromPolished(result, tagConfig);
       if (!pureContent) {
         alert('润色结果为空，请重试');
         return;
@@ -100,7 +105,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
   };
 
   const handleUsePolished = () => {
-    const { content: pureContent } = parseTagsFromPolished(polishedContent);
+    const { content: pureContent } = parseTagsFromPolished(polishedContent, tagConfig);
     if (pureContent) {
       setContent(pureContent);
     }
@@ -166,7 +171,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
           <div className="mb-3">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">✨ AI润色结果：</div>
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-sm text-gray-700 dark:text-gray-200 mb-2">
-              {parseTagsFromPolished(polishedContent).content}
+              {parseTagsFromPolished(polishedContent, tagConfig).content}
             </div>
             {/* AI生成的标签 */}
             <div className="flex gap-1 mb-2 flex-wrap items-center">
@@ -195,7 +200,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
             <div className="flex gap-2">
               <button
                 className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium disabled:bg-green-300 dark:disabled:bg-green-800"
-                onClick={() => handleSubmit(parseTagsFromPolished(polishedContent).content)}
+                onClick={() => handleSubmit(parseTagsFromPolished(polishedContent, tagConfig).content)}
                 disabled={isSubmitting || !selectedDomain || !selectedTopic}
               >
                 {isSubmitting ? '保存中...' : '保存润色结果'}
@@ -296,7 +301,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
                     <span className="text-red-500">*</span> 领域（必选1个）
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {TAG_SYSTEM.domain.map(tag => (
+                    {tagConfig.domains.filter(d => d.topics.length > 0).map(d => d.name).map(tag => (
                       <button
                         key={tag}
                         className={`px-2 py-1 rounded-full text-xs ${
@@ -341,7 +346,7 @@ export function HappinessModal({ onClose }: HappinessModalProps) {
                 <div>
                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">方法（可选0-1个）</div>
                   <div className="flex flex-wrap gap-1">
-                    {TAG_SYSTEM.method.map(tag => (
+                    {tagConfig.methods.map(m => m.name).map(tag => (
                       <button
                         key={tag}
                         className={`px-2 py-1 rounded-full text-xs ${

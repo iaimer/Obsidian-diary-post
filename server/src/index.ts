@@ -4,6 +4,7 @@ import { authMiddleware } from './middleware/auth.js';
 import diaryRoutes from './routes/diary.js';
 import habitRoutes from './routes/habit.js';
 import historyRoutes from './routes/history.js';
+import settingsRoutes from './routes/settings.js';
 import config from './config/index.js';
 
 const app = express();
@@ -20,6 +21,7 @@ app.use(authMiddleware);
 app.use('/api/v1/diary', diaryRoutes);
 app.use('/api/v1/stats', habitRoutes);
 app.use('/api/v1/history', historyRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 const PORT = config.port;
 app.listen(PORT, () => {
