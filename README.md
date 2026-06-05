@@ -119,7 +119,7 @@ openssl rand -hex 32
 
 详见 [CHANGELOG.md](CHANGELOG.md)
 
-**当前版本：v0.13.0**
+**当前版本：v0.14.0**
 
 ## 开发计划
 
