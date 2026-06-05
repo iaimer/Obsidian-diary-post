@@ -1,4 +1,4 @@
-const sectionHeaders: Record<string, string> = {
+export const sectionHeaders: Record<string, string> = {
   habits: '## 🏃 习惯打卡',
   quick_notes: '## ✍️ 随手记 & 灵感',
   happiness: '## ✨ 每日小确幸',

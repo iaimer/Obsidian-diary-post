@@ -1,5 +1,5 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import { DiaryEntry } from '../types';
+import { DiaryEntry, DiarySection } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService, getFileSyncService } from '../services/dataService';
 import { getHistoryService } from '../services/historyService';
@@ -8,6 +8,7 @@ import { getCachedDiary } from '../db';
 import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
 import { ImageModal } from './ImageModal';
 import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
+import { ConfirmDialog } from './ConfirmDialog';
 
 function renderInlineMarkdown(text: string): string {
   return text
@@ -33,7 +34,91 @@ function groupDiaryLines(lines: string[]): string[] {
   return groups;
 }
 
-// 简单的Markdown渲染（阅读模式）
+function extractEditableContent(line: string): string {
+  let content = line.replace(/^[-<>]\s+/, '');
+  content = content.replace(/\*\*\d{2}:\d{2}\*\*\s*/, '');
+  content = content.replace(/(\s*#\S+)+$/, '');
+  return content.trim();
+}
+
+function rebuildLine(original: string, newContent: string): string {
+  const tags = original.match(/(\s*#\S+(?:\s+#\S+)*)\s*$/);
+  const tagStr = tags ? ' ' + tags[1].trim() : '';
+  let prefix = '';
+  if (original.startsWith('> **') || original.startsWith('- **')) {
+    prefix = original.substring(0, original.indexOf('**') + 9);
+  } else if (original.startsWith('> ')) {
+    prefix = '> ';
+  } else if (original.startsWith('- ')) {
+    prefix = '- ';
+  }
+  return prefix + newContent + tagStr;
+}
+
+function getSectionForLine(section: string): DiarySection {
+  switch (section) {
+    case 'notes': return DiarySection.QUICK_NOTES;
+    case 'happiness': return DiarySection.HAPPINESS;
+    case 'reflection': return DiarySection.REFLECTION;
+    case 'anxiety': return DiarySection.ANXIETY;
+    case 'tomorrow': return DiarySection.TOMORROW;
+    case 'images': return DiarySection.IMAGES;
+    default: return DiarySection.QUICK_NOTES;
+  }
+}
+
+function EntryRow({ children, line, section, onEdit, onDelete }: {
+  children: React.ReactNode;
+  line: string;
+  section: string;
+  onEdit: (line: string, section: string) => void;
+  onDelete: (line: string, section: string) => void;
+}) {
+  // Skip action buttons for habits-related and empty lines
+  if (!line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘')) {
+    return <>{children}</>;
+  }
+  return (
+    <div className="group/entry relative">
+      {children}
+      <div className="flex gap-1 mt-0.5 opacity-0 group-hover/entry:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(line, section)}
+          className="text-[10px] text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-1"
+        >
+          ✎
+        </button>
+        <button
+          onClick={() => onDelete(line, section)}
+          className="text-[10px] text-gray-400 hover:text-red-600 dark:hover:text-red-400 px-1"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ImageEntryRow({ children, line, section, onDelete }: {
+  children: React.ReactNode;
+  line: string;
+  section: string;
+  onDelete: (line: string, section: string) => void;
+}) {
+  return (
+    <div className="relative">
+      {children}
+      <button
+        onClick={() => onDelete(line, section)}
+        className="absolute top-0 right-0 w-6 h-6 flex items-center justify-center text-xs bg-white/80 dark:bg-gray-800/80 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+// 简单清理内容——与 Markdown 渲染链一致
 function renderMarkdown(line: string, section?: string): React.ReactNode {
   const colors: Record<string, { time: string; tag: string }> = {
     notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-rose-400 dark:text-rose-400/70' },
@@ -181,6 +266,9 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [generatingLizhi, setGeneratingLizhi] = useState(false);
+  const [editEntry, setEditEntry] = useState<{ line: string; section: string } | null>(null);
+  const [editText, setEditText] = useState('');
+  const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string } | null>(null);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -464,7 +552,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✍️ 随手记</h3>
           <div className="space-y-1.5">
             {groupDiaryLines(quickNotes).map((line, i) => (
-              <div key={i}>{renderMarkdown(line, 'notes')}</div>
+              <EntryRow key={i} line={line} section="notes"
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '随手记' })}
+              >
+                {renderMarkdown(line, 'notes')}
+              </EntryRow>
             ))}
           </div>
         </div>
@@ -476,7 +569,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✨ 每日小确幸</h3>
           <div className="space-y-1">
             {groupDiaryLines(happiness).map((line, i) => (
-              <div key={i}>{renderMarkdown(line, 'happiness')}</div>
+              <EntryRow key={i} line={line} section="happiness"
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '小确幸' })}
+              >
+                {renderMarkdown(line, 'happiness')}
+              </EntryRow>
             ))}
           </div>
         </div>
@@ -488,7 +586,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h3>
           <div className="space-y-1">
             {groupDiaryLines(anxiety).map((line, i) => (
-              <div key={i}>{renderMarkdown(line, 'anxiety')}</div>
+              <EntryRow key={i} line={line} section="anxiety"
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '焦虑记录' })}
+              >
+                {renderMarkdown(line, 'anxiety')}
+              </EntryRow>
             ))}
           </div>
         </div>
@@ -500,7 +603,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">💡 觉察与迭代</h3>
           <div className="space-y-1">
             {groupDiaryLines(reflection).map((line, i) => (
-              <div key={i}>{renderMarkdown(line, 'reflection')}</div>
+              <EntryRow key={i} line={line} section="reflection"
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '觉察' })}
+              >
+                {renderMarkdown(line, 'reflection')}
+              </EntryRow>
             ))}
           </div>
         </div>
@@ -552,7 +660,12 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🌙 明日寄语</h3>
           <div className="space-y-1">
             {groupDiaryLines(tomorrow).map((line, i) => (
-              <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line, 'tomorrow')}</div>
+              <EntryRow key={i} line={line} section="tomorrow"
+                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); }}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '明日寄语' })}
+              >
+                {renderMarkdown(line, 'tomorrow')}
+              </EntryRow>
             ))}
           </div>
         </div>
@@ -565,26 +678,22 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         </h3>
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
-            {imageUrls.map((url, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setCurrentImageIndex(i);
-                  setShowImageModal(true);
-                }}
-                className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100 dark:bg-gray-700"
+            {images.map((line, i) => (
+              <ImageEntryRow key={i} line={line} section="images"
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '图片' })}
               >
-                <img
-                  src={url}
-                  alt={`Image ${i + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
-              </button>
+                {imageUrls[i] && (
+                  <button
+                    onClick={() => { setCurrentImageIndex(i); setShowImageModal(true); }}
+                    className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100 dark:bg-gray-700"
+                  >
+                    <img src={imageUrls[i]} alt={`Image ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200" />
+                  </button>
+                )}
+              </ImageEntryRow>
             ))}
           </div>
         )}
@@ -604,6 +713,49 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         images={imageUrls}
         currentIndex={currentImageIndex}
         onClose={() => setShowImageModal(false)}
+      />
+    )}
+    {editEntry && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in" onClick={() => setEditEntry(null)}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md shadow-xl animate-modal-in" onClick={e => e.stopPropagation()}>
+          <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">编辑</h3>
+          <textarea
+            value={editText}
+            onChange={e => setEditText(e.target.value)}
+            rows={5}
+            className="w-full p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 resize-none"
+          />
+          <div className="flex gap-2 mt-3">
+            <button onClick={() => setEditEntry(null)} className="flex-1 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg min-h-[44px]">取消</button>
+            <button onClick={async () => {
+              if (!editEntry || !editText.trim()) return;
+              try {
+                const ds = getDataService();
+                const newLine = rebuildLine(editEntry.line, editText.trim());
+                await ds.editEntry(getSectionForLine(editEntry.section), editEntry.line, newLine);
+                setEditEntry(null);
+                useDiaryStore.getState().triggerRefresh();
+              } catch (err) { alert('编辑失败: ' + (err as Error).message); }
+            }} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium min-h-[44px]">保存</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {deleteEntry && (
+      <ConfirmDialog
+        title={`确定要删除这条${deleteEntry.label}吗？`}
+        message="此操作不可恢复。"
+        destructive
+        confirmLabel="删除"
+        onConfirm={async () => {
+          try {
+            const ds = getDataService();
+            await ds.deleteEntry(getSectionForLine(deleteEntry.section), deleteEntry.line);
+            setDeleteEntry(null);
+            useDiaryStore.getState().triggerRefresh();
+          } catch (err) { alert('删除失败: ' + (err as Error).message); }
+        }}
+        onCancel={() => setDeleteEntry(null)}
       />
     )}
     </>

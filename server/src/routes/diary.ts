@@ -3,7 +3,7 @@ import { readDiary, writeDiary, getDateString, getDiaryPath, existsDiary, getAss
 import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
 import { isAbsolute, join, relative, resolve } from 'path';
 import config from '../config/index.js';
-import { parseDiary, appendToSection } from '../services/markdown.js';
+import { parseDiary, appendToSection, sectionHeaders } from '../services/markdown.js';
 import { createObsidianDiaryContent } from '../services/template.js';
 import { parseShanghaiDate } from '../utils/date.js';
 
@@ -682,6 +682,78 @@ router.get('/image/:year/:imageName', async (req, res) => {
       data: `data:${mimeType};base64,${base64}`,
       mimeType
     });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+router.post('/delete-entry', async (req, res) => {
+  try {
+    const { date: dateStr, section, line } = req.body;
+    if (!dateStr || !section || !line) return res.status(400).json({ error: '缺少 date, section 或 line' });
+    const date = getRequestDate(dateStr);
+    let content = readDiary(date);
+    const lines = content.split('\n');
+    const header = sectionHeaders[section];
+    if (!header) return res.status(400).json({ error: '未知区块' });
+
+    let sectionStart = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header)) { sectionStart = i; break; }
+    }
+    if (sectionStart === -1) return res.status(404).json({ error: '区块未找到' });
+
+    const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+    let sectionEnd = lines.length;
+    for (let i = sectionStart + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+    }
+
+    for (let i = sectionStart + 1; i < sectionEnd; i++) {
+      if (lines[i].trim() === line.trim()) {
+        lines.splice(i, 1);
+        writeDiary(date, lines.join('\n'));
+        return res.json({ success: true });
+      }
+    }
+    res.status(404).json({ error: '条目未找到' });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+router.post('/edit-entry', async (req, res) => {
+  try {
+    const { date: dateStr, section, target, replacement } = req.body;
+    if (!dateStr || !section || !target || !replacement) return res.status(400).json({ error: '缺少参数' });
+    const date = getRequestDate(dateStr);
+    let content = readDiary(date);
+    const lines = content.split('\n');
+    const header = sectionHeaders[section];
+    if (!header) return res.status(400).json({ error: '未知区块' });
+
+    let sectionStart = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header)) { sectionStart = i; break; }
+    }
+    if (sectionStart === -1) return res.status(404).json({ error: '区块未找到' });
+
+    const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+    let sectionEnd = lines.length;
+    for (let i = sectionStart + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+    }
+
+    for (let i = sectionStart + 1; i < sectionEnd; i++) {
+      if (lines[i].trim() === target.trim()) {
+        lines[i] = replacement;
+        writeDiary(date, lines.join('\n'));
+        return res.json({ success: true });
+      }
+    }
+    res.status(404).json({ error: '条目未找到' });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

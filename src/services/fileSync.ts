@@ -273,6 +273,73 @@ export class FileSyncService {
     await cacheDiary(entry);
   }
 
+  // 从区块删除指定行（内容匹配）
+  async deleteFromSection(date: Date, section: DiarySection, targetLine: string): Promise<void> {
+    if (!this.vaultHandle) throw new Error('Vault not connected');
+
+    const originalContent = await this.readFile(date);
+    const lines = originalContent.split('\n');
+    const header = sectionHeaders[section];
+    let sectionStart = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header)) { sectionStart = i; break; }
+    }
+    if (sectionStart === -1) throw new Error('Section not found');
+
+    // 在区块内查找匹配行
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+    let sectionEnd = lines.length;
+    for (let i = sectionStart + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+    }
+
+    for (let i = sectionStart + 1; i < sectionEnd; i++) {
+      if (lines[i].trim() === targetLine.trim()) {
+        lines.splice(i, 1);
+        await this.writeFile(date, lines.join('\n'));
+        const entry = parseDiary(lines.join('\n'));
+        entry.date = getDateString(date);
+        await cacheDiary(entry);
+        return;
+      }
+    }
+    throw new Error('Entry not found in section');
+  }
+
+  // 编辑区块中指定行（替换为新的）
+  async editInSection(date: Date, section: DiarySection, targetLine: string, newLine: string): Promise<void> {
+    if (!this.vaultHandle) throw new Error('Vault not connected');
+
+    const originalContent = await this.readFile(date);
+    const lines = originalContent.split('\n');
+    const header = sectionHeaders[section];
+    let sectionStart = -1;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(header)) { sectionStart = i; break; }
+    }
+    if (sectionStart === -1) throw new Error('Section not found');
+
+    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+    let sectionEnd = lines.length;
+    for (let i = sectionStart + 1; i < lines.length; i++) {
+      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+    }
+
+    for (let i = sectionStart + 1; i < sectionEnd; i++) {
+      if (lines[i].trim() === targetLine.trim()) {
+        lines[i] = newLine;
+        await this.writeFile(date, lines.join('\n'));
+        const entry = parseDiary(lines.join('\n'));
+        entry.date = getDateString(date);
+        await cacheDiary(entry);
+        return;
+      }
+    }
+    throw new Error('Entry not found in section');
+  }
+
   // 追加随手记
   async appendQuickNote(content: string, tags: string[]): Promise<void> {
     const time = getTimestamp();
@@ -304,6 +371,40 @@ export class FileSyncService {
   // 追加明日寄语
   async appendTomorrow(content: string): Promise<void> {
     await this.appendToSection(getShanghaiCalendarDate(), DiarySection.TOMORROW, `- ${content}`);
+  }
+
+  // 删除条目（内容匹配）
+  async deleteQuickNote(line: string): Promise<void> {
+    await this.deleteFromSection(getShanghaiCalendarDate(), DiarySection.QUICK_NOTES, line);
+  }
+  async deleteReflection(line: string): Promise<void> {
+    await this.deleteFromSection(getShanghaiCalendarDate(), DiarySection.REFLECTION, line);
+  }
+  async deleteHappiness(line: string): Promise<void> {
+    await this.deleteFromSection(getShanghaiCalendarDate(), DiarySection.HAPPINESS, line);
+  }
+  async deleteAnxiety(line: string): Promise<void> {
+    await this.deleteFromSection(getShanghaiCalendarDate(), DiarySection.ANXIETY, line);
+  }
+  async deleteTomorrow(line: string): Promise<void> {
+    await this.deleteFromSection(getShanghaiCalendarDate(), DiarySection.TOMORROW, line);
+  }
+
+  // 编辑条目（内容匹配 → 替换）
+  async editQuickNote(target: string, replacement: string): Promise<void> {
+    await this.editInSection(getShanghaiCalendarDate(), DiarySection.QUICK_NOTES, target, replacement);
+  }
+  async editReflection(target: string, replacement: string): Promise<void> {
+    await this.editInSection(getShanghaiCalendarDate(), DiarySection.REFLECTION, target, replacement);
+  }
+  async editHappiness(target: string, replacement: string): Promise<void> {
+    await this.editInSection(getShanghaiCalendarDate(), DiarySection.HAPPINESS, target, replacement);
+  }
+  async editAnxiety(target: string, replacement: string): Promise<void> {
+    await this.editInSection(getShanghaiCalendarDate(), DiarySection.ANXIETY, target, replacement);
+  }
+  async editTomorrow(target: string, replacement: string): Promise<void> {
+    await this.editInSection(getShanghaiCalendarDate(), DiarySection.TOMORROW, target, replacement);
   }
 
   // 替换明日寄语区块（先删后写）

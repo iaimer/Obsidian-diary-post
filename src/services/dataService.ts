@@ -3,7 +3,7 @@ import { getFileSyncService } from './fileSync';
 import { useDiaryStore } from '../stores/diaryStore';
 import { compressImage, generateImageFilename } from './imageService';
 import { enqueue } from './outboxService';
-import { getShanghaiDateString, getTimestamp } from '../utils/date';
+import { getShanghaiDateString, getTimestamp, getShanghaiCalendarDate } from '../utils/date';
 
 export { getFileSyncService };
 
@@ -53,6 +53,12 @@ export interface DataService {
 
   // 上传图片（压缩后保存到 vault assets 并追加引用）
   uploadImage(file: File, date: Date): Promise<void>;
+
+  // 删除日记条目
+  deleteEntry(section: DiarySection, line: string): Promise<void>;
+
+  // 编辑日记条目
+  editEntry(section: DiarySection, target: string, replacement: string): Promise<void>;
 }
 
 // 本地数据服务（File System Access API）
@@ -118,6 +124,14 @@ export class LocalDataService implements DataService {
     const filename = generateImageFilename(date, seq, config.nameFormat);
     await this.fileSync.saveImageToAssets(date, blob, filename);
     await this.fileSync.appendImageReference(date, filename);
+  }
+
+  async deleteEntry(section: DiarySection, line: string): Promise<void> {
+    await this.fileSync.deleteFromSection(getShanghaiCalendarDate(), section, line);
+  }
+
+  async editEntry(section: DiarySection, target: string, replacement: string): Promise<void> {
+    await this.fileSync.editInSection(getShanghaiCalendarDate(), section, target, replacement);
   }
   
   isConnected(): boolean {
@@ -237,6 +251,22 @@ export class RemoteDataService implements DataService {
     const config = useDiaryStore.getState().imageConfig;
     const blob = await compressImage(file, config);
     await enqueue('upload_image', this.getTodayStr(), {}, blob);
+  }
+
+  async deleteEntry(section: DiarySection, line: string): Promise<void> {
+    const dateStr = this.getTodayStr();
+    await this.fetchAPI('/api/v1/diary/delete-entry', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, section, line })
+    });
+  }
+
+  async editEntry(section: DiarySection, target: string, replacement: string): Promise<void> {
+    const dateStr = this.getTodayStr();
+    await this.fetchAPI('/api/v1/diary/edit-entry', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr, section, target, replacement })
+    });
   }
   
   isConnected(): boolean {
