@@ -19,6 +19,20 @@ function renderInlineMarkdown(text: string): string {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
 
+function groupDiaryLines(lines: string[]): string[] {
+  const groups: string[] = [];
+  for (const line of lines) {
+    if (line.startsWith('- ') || line.startsWith('> ')) {
+      groups.push(line);
+    } else if (groups.length > 0) {
+      groups[groups.length - 1] += `\n\n${line}`;
+    } else {
+      groups.push(line);
+    }
+  }
+  return groups;
+}
+
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string, section?: string): React.ReactNode {
   const colors: Record<string, { time: string; tag: string }> = {
@@ -52,8 +66,8 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           {time && (
             <span className={`${bc.time} font-medium shrink-0`}>{time}</span>
           )}
-          <div className="flex-1 min-w-0 text-justify">
-            <div dangerouslySetInnerHTML={{ __html: textContent }} />
+          <div className="flex-1 min-w-0 break-words">
+            <div className="whitespace-pre-line" dangerouslySetInnerHTML={{ __html: textContent }} />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(tag => (
@@ -84,12 +98,12 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
     return (
       <div className={`text-sm ${isAnxiety ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
-        <div className="flex items-start gap-2">
+        <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-start gap-2">
           {time && (
-            <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
+            <span className={`font-medium ${sc.time}`}>{time}</span>
           )}
-          <div className="flex-1 min-w-0 text-justify">
-            <div dangerouslySetInnerHTML={{ __html: textContent }} />
+          <div className={`${time ? '' : 'col-span-2'} min-w-0 break-words`}>
+            <div className="whitespace-pre-line" dangerouslySetInnerHTML={{ __html: textContent }} />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(tag => (
@@ -204,7 +218,7 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     return (
       <div className="flex items-center gap-2 text-sm">
         <span className="text-lg">{emoji}</span>
-        <span className="text-gray-700">{text}</span>
+        <span className="text-gray-700 dark:text-gray-200">{text}</span>
       </div>
     );
   }
@@ -212,9 +226,9 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
   // 普通文本
   const plainText = renderInlineMarkdown(line);
   if (line.includes('**')) {
-    return <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: plainText }} />;
+    return <span className="text-sm text-gray-700 dark:text-gray-200 break-words whitespace-pre-line" dangerouslySetInnerHTML={{ __html: plainText }} />;
   }
-  return <span className="text-sm text-gray-700">{line}</span>;
+  return <span className="text-sm text-gray-700 dark:text-gray-200 break-words whitespace-pre-line">{line}</span>;
 }
 
 interface DiaryViewProps {}
@@ -521,7 +535,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         <div className="py-3 border-l-2 border-rose-200 dark:border-rose-700 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✍️ 随手记</h3>
           <div className="space-y-1.5">
-            {quickNotes.map((line, i) => (
+            {groupDiaryLines(quickNotes).map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'notes')}</div>
             ))}
           </div>
@@ -533,7 +547,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         <div className="py-3 border-l-2 border-amber-200 dark:border-amber-700 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✨ 每日小确幸</h3>
           <div className="space-y-1">
-            {happiness.map((line, i) => (
+            {groupDiaryLines(happiness).map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'happiness')}</div>
             ))}
           </div>
@@ -545,7 +559,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         <div className="py-3 border-l-2 border-orange-200 dark:border-orange-700 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h3>
           <div className="space-y-1">
-            {anxiety.map((line, i) => (
+            {groupDiaryLines(anxiety).map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'anxiety')}</div>
             ))}
           </div>
@@ -557,7 +571,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         <div className="py-3 border-l-2 border-emerald-300 dark:border-emerald-600 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">💡 觉察与迭代</h3>
           <div className="space-y-1">
-            {reflection.map((line, i) => (
+            {groupDiaryLines(reflection).map((line, i) => (
               <div key={i}>{renderMarkdown(line, 'reflection')}</div>
             ))}
           </div>
@@ -587,7 +601,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           </div>
         ) : lizhiSays.length > 0 ? (
           <div className="space-y-1">
-            {lizhiSays.map((line, i) => (
+            {groupDiaryLines(lizhiSays).map((line, i) => (
               <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line)}</div>
             ))}
           </div>
@@ -609,7 +623,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         <div className="py-3 border-l-2 border-sky-200 dark:border-sky-700 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🌙 明日寄语</h3>
           <div className="space-y-1">
-            {tomorrow.map((line, i) => (
+            {groupDiaryLines(tomorrow).map((line, i) => (
               <div key={i} className="text-sm text-gray-700 dark:text-gray-200">{renderMarkdown(line, 'tomorrow')}</div>
             ))}
           </div>
