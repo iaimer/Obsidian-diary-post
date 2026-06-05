@@ -22,7 +22,8 @@ npm run preview  # 预览生产构建
 3. **SESSION_LOG.md** — 追加本次开发会话记录
 4. **CHANGELOG.md** — 按版本记录功能变更
 5. **README.md** — 功能说明/配置/结构/版本号有变更时更新
-6. **src/config/releaseNotes.ts** — 关于页当前版本更新摘要，必须与当前 `package.json version` 对应
+
+关于页会自动读取 `CHANGELOG.md` 中与当前 `package.json version` 对应的版本段落，发版时只需保证 CHANGELOG 当前版本内容完整。
 
 ## 关键约束
 
