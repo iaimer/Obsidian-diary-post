@@ -7,7 +7,8 @@ import { CheckmarkIcon } from './Icons';
 import { getCachedDiary } from '../db';
 import { getShanghaiCalendarDate, getShanghaiDateString } from '../utils/date';
 import { ImageModal } from './ImageModal';
-import { generateLizhiSays, getAIConfig, isAIConfigured } from '../services/aiPolish';
+import { generateLizhiSays, getAIConfig, isAIConfigured, polishContent } from '../services/aiPolish';
+import { parseTagsFromPolished } from '../utils/polishResult';
 import { ConfirmDialog } from './ConfirmDialog';
 
 function renderInlineMarkdown(text: string): string {
@@ -97,7 +98,7 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
   const handleMore = (e: React.MouseEvent) => {
     e.stopPropagation();
     const rect = btnRef.current?.getBoundingClientRect();
-    setMenuPos({ x: rect ? rect.right - 140 : e.clientX, y: rect ? rect.bottom + 4 : e.clientY });
+    setMenuPos({ x: rect ? rect.right + 4 : e.clientX, y: rect ? rect.bottom + 4 : e.clientY });
     onToggle(isOpen ? null : menuId);
   };
 
@@ -138,22 +139,52 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
   );
 }
 
-function ImageEntryRow({ children, line, section, onDelete }: {
+function ImageEntryRow({ children, line, section, onDelete, menuId, isOpen, onToggle }: {
   children: React.ReactNode;
   line: string;
   section: string;
   onDelete: (line: string, section: string) => void;
+  menuId: string;
+  isOpen: boolean;
+  onToggle: (id: string | null) => void;
 }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  const handleMore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const rect = btnRef.current?.getBoundingClientRect();
+    setMenuPos({ x: rect ? rect.right + 4 : e.clientX, y: rect ? rect.bottom + 4 : e.clientY });
+    onToggle(isOpen ? null : menuId);
+  };
+
   return (
     <div className="relative">
       {children}
       <button
-        onClick={() => onDelete(line, section)}
-        aria-label="删除图片"
+        ref={btnRef}
+        onClick={handleMore}
+        aria-label="更多操作"
         className="absolute top-0 right-0 w-6 h-6 flex items-center justify-center text-xs bg-white/80 dark:bg-gray-800/80 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400"
       >
-        ✕
+        ⋯
       </button>
+      {isOpen && menuPos && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
+          <div
+            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
+          >
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+              onClick={() => { onToggle(null); onDelete(line, section); }}
+            >
+              <span className="w-5 text-center">✕</span> 删除
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -296,6 +327,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const refreshKey = useDiaryStore(state => state.refreshKey);
   const setCurrentDiary = useDiaryStore(state => state.setCurrentDiary);
   const updateHabitData = useDiaryStore(state => state.updateHabitData);
+  const tagConfig = useDiaryStore(state => state.tagConfig);
 
   const [diary, setDiary] = useState<DiaryEntry | null>(null);
   const [loading, setLoading] = useState(false);
@@ -311,6 +343,21 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [editTags, setEditTags] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string; target: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editPolishing, setEditPolishing] = useState(false);
+  const [editPolishResult, setEditPolishResult] = useState('');
+  const [editTagPickerOpen, setEditTagPickerOpen] = useState(false);
+  const [editTagDomain, setEditTagDomain] = useState<string | null>(null);
+  const [editTagTopic, setEditTagTopic] = useState<string | null>(null);
+  const [editTagMethod, setEditTagMethod] = useState<string | null>(null);
+
+  const closeEdit = () => {
+    setEditEntry(null);
+    setEditPolishResult('');
+    setEditTagPickerOpen(false);
+    setEditTagDomain(null);
+    setEditTagTopic(null);
+    setEditTagMethod(null);
+  };
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -721,7 +768,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             {images.map((line, i) => (
-              <ImageEntryRow key={i} line={line} section="images"
+              <ImageEntryRow key={i} line={line} section="images" menuId={`images-${i}`} isOpen={openMenuId === `images-${i}`} onToggle={setOpenMenuId}
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '图片', target: l })}
               >
                 {imageUrls[i] && (
@@ -759,24 +806,128 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     )}
     {editEntry && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in" onClick={() => setEditEntry(null)}>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md shadow-xl animate-modal-in" onClick={e => e.stopPropagation()}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md shadow-xl animate-modal-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
           <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">编辑</h3>
+
+          {/* Polish result preview */}
+          {editPolishResult && (
+            <div className="mb-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">✨ 润色结果：</p>
+              <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">
+                {parseTagsFromPolished(editPolishResult, tagConfig).content}
+              </p>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => {
+                    const { content, tags } = parseTagsFromPolished(editPolishResult, tagConfig);
+                    setEditText(content || editText);
+                    if (tags.length > 0) setEditTags(tags.map(t => `#${t}`).join(' '));
+                    setEditPolishResult('');
+                  }}
+                  className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg"
+                >采用润色</button>
+                <button
+                  onClick={() => setEditPolishResult('')}
+                  className="text-xs px-3 py-1.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg"
+                >继续编辑</button>
+              </div>
+            </div>
+          )}
+
+          {/* Content */}
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">正文</label>
           <textarea
             value={editText}
             onChange={e => setEditText(e.target.value)}
             rows={5}
             className="w-full p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 resize-none"
-            placeholder="正文内容..."
+            placeholder="输入修改后的正文..."
           />
+
+          {/* Tags */}
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1 mt-2">标签</label>
           <input
             type="text"
             value={editTags}
             onChange={e => setEditTags(e.target.value)}
             placeholder="#标签1 #标签2（可选）"
-            className="w-full mt-2 p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+            className="w-full p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
           />
+
+          {/* Action buttons row */}
+          <div className="flex gap-2 mt-2">
+            {isAIConfigured() && (
+              <button
+                onClick={async () => {
+                  if (!editText.trim()) return;
+                  setEditPolishing(true);
+                  try {
+                    const config = getAIConfig();
+                    const result = await polishContent(editText.trim(), config);
+                    setEditPolishResult(result);
+                    const { tags } = parseTagsFromPolished(result, tagConfig);
+                    if (tags.length > 0) setEditTags(tags.map(t => `#${t}`).join(' '));
+                  } catch (err) { alert('润色失败: ' + (err as Error).message); }
+                  finally { setEditPolishing(false); }
+                }}
+                disabled={editPolishing || !editText.trim()}
+                className="text-xs px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 disabled:opacity-50"
+              >
+                {editPolishing ? '润色中...' : '✨ 润色'}
+              </button>
+            )}
+            <button
+              onClick={() => setEditTagPickerOpen(!editTagPickerOpen)}
+              className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+            >
+              🏷️ 标签
+            </button>
+          </div>
+
+          {/* Tag picker */}
+          {editTagPickerOpen && (
+            <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
+              <div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">领域</div>
+                <div className="flex flex-wrap gap-1">
+                  {tagConfig.domains.filter(d => d.topics.length > 0).map(d => (
+                    <button key={d.id}
+                      onClick={() => { setEditTagDomain(d.name); setEditTagTopic(null); }}
+                      className={`px-2 py-0.5 rounded-full text-xs ${editTagDomain === d.name ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-500'}`}
+                    >#{d.name}</button>
+                  ))}
+                </div>
+              </div>
+              {editTagDomain && (
+                <div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">主题</div>
+                  <div className="flex flex-wrap gap-1">
+                    {(tagConfig.domains.find(d => d.name === editTagDomain)?.topics || []).map(t => (
+                      <button key={t.id}
+                        onClick={() => { setEditTagTopic(t.name); setEditTags(prev => { const base = prev.replace(/(\s*#\S+)+$/, ''); return `${base} #${editTagDomain} #${t.name}`.trim(); }); }}
+                        className={`px-2 py-0.5 rounded-full text-xs ${editTagTopic === t.name ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-500'}`}
+                      >#{t.name}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">方法</div>
+                <div className="flex flex-wrap gap-1">
+                  {tagConfig.methods.map(m => (
+                    <button key={m.id}
+                      onClick={() => { setEditTagMethod(m.name); setEditTags(prev => `${prev} #${m.name}`.replace(/(#\S+)\s+\1/, '$1').trim()); }}
+                      className={`px-2 py-0.5 rounded-full text-xs ${editTagMethod === m.name ? 'bg-gray-600 text-white' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-500'}`}
+                    >#{m.name}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save / Cancel */}
           <div className="flex gap-2 mt-3">
-            <button onClick={() => setEditEntry(null)} className="flex-1 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg min-h-[44px]">取消</button>
+            <button onClick={closeEdit} className="flex-1 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg min-h-[44px]">取消</button>
             <button onClick={async () => {
               if (!editEntry || !editText.trim()) return;
               try {
