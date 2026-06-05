@@ -691,6 +691,11 @@ function getFirstLine(grouped: string): string {
   return grouped.split('\n\n')[0];
 }
 
+function extractImageName(line: string): string | null {
+  const match = line.match(/!\[\[([^/\\\]]+\.(?:jpg|jpeg|png|gif|webp|heic|heif))\]\]/i);
+  return match ? match[1] : null;
+}
+
 function findAllMatches(lines: string[], startIdx: number, endIdx: number, target: string): number[] {
   const matches: number[] = [];
   for (let i = startIdx; i < endIdx; i++) {
@@ -760,8 +765,14 @@ router.post('/delete-entry', async (req, res) => {
     const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
     if (!range) return res.status(404).json({ error: '条目未找到' });
 
+    const imageName = section === 'images' ? extractImageName(firstLine) : null;
     lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex);
-    writeDiary(date, lines.join('\n'));
+    const updatedContent = lines.join('\n');
+    writeDiary(date, updatedContent);
+    if (imageName && isSafeImageName(imageName) && !updatedContent.includes(`![[${imageName}]]`)) {
+      const imagePath = getSafeAssetPath(getAssetsDir(date), imageName);
+      if (existsSync(imagePath)) unlinkSync(imagePath);
+    }
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

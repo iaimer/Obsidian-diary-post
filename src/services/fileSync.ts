@@ -103,6 +103,11 @@ function getFirstLine(grouped: string): string {
   return grouped.split('\n\n')[0];
 }
 
+function extractImageName(line: string): string | null {
+  const match = line.match(/!\[\[([^/\\\]]+\.(?:jpg|jpeg|png|gif|webp|heic|heif))\]\]/i);
+  return match ? match[1] : null;
+}
+
 function findAllMatches(lines: string[], startIdx: number, endIdx: number, target: string): number[] {
   const matches: number[] = [];
   for (let i = startIdx; i < endIdx; i++) {
@@ -341,9 +346,14 @@ export class FileSyncService {
     const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
     if (!range) throw new Error('Entry not found in section');
 
+    const imageName = section === DiarySection.IMAGES ? extractImageName(firstLine) : null;
     lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex);
-    await this.writeFile(date, lines.join('\n'));
-    const entry = parseDiary(lines.join('\n'));
+    const updatedContent = lines.join('\n');
+    await this.writeFile(date, updatedContent);
+    if (imageName && !updatedContent.includes(`![[${imageName}]]`)) {
+      await this.deleteImageAsset(date, imageName);
+    }
+    const entry = parseDiary(updatedContent);
     entry.date = getDateString(date);
     await cacheDiary(entry);
   }
@@ -747,6 +757,15 @@ export class FileSyncService {
   // 追加图片引用到日记影像记录区块
   async appendImageReference(date: Date, filename: string): Promise<void> {
     await this.appendToSection(date, DiarySection.IMAGES, `![[${filename}]]`);
+  }
+
+  async deleteImageAsset(date: Date, filename: string): Promise<void> {
+    const assetsHandle = await this.getAssetsDirectoryHandle(date);
+    try {
+      await assetsHandle.removeEntry(filename);
+    } catch (error) {
+      if ((error as DOMException).name !== 'NotFoundError') throw error;
+    }
   }
 
   // 读取文件（公开方法，用于统计页面读取历史数据）
