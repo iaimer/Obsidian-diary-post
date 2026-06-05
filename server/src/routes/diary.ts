@@ -687,45 +687,82 @@ router.get('/image/:year/:imageName', async (req, res) => {
   }
 });
 
+function getFirstLine(grouped: string): string {
+  return grouped.split('\n\n')[0];
+}
+
+function findAllMatches(lines: string[], startIdx: number, endIdx: number, target: string): number[] {
+  const matches: number[] = [];
+  for (let i = startIdx; i < endIdx; i++) {
+    if (lines[i].trim() === target.trim()) matches.push(i);
+  }
+  return matches;
+}
+
+function isEntryOrBoundary(line: string): boolean {
+  const t = line.trim();
+  if (t.startsWith('- ') || t.startsWith('> ')) return true;
+  if (t.startsWith('##') || t.startsWith('###')) return true;
+  if (t.startsWith('---')) return true;
+  if (/^- \[[ x]\]/.test(t)) return true;
+  return false;
+}
+
+function findSectionBounds(lines: string[], header: string): { start: number; end: number } | null {
+  const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
+  const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(header)) { start = i; break; }
+  }
+  if (start === -1) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) { end = i; break; }
+  }
+  return { start, end };
+}
+
+function findEntryRangeInSection(
+  lines: string[], startIdx: number, endIdx: number,
+  _firstLine: string, matches: number[]
+): { startIndex: number; endIndexExclusive: number } | null {
+  if (matches.length === 0) return null;
+  if (matches.length > 1) {
+    console.warn(`Duplicate entry first line at indices ${matches.join(', ')}; using first`);
+  }
+  const i = matches[0];
+  let end = i + 1;
+  while (end < endIdx) {
+    if (isEntryOrBoundary(lines[end].trim())) break;
+    end++;
+  }
+  while (end > i + 1 && lines[end - 1].trim() === '') end--;
+  return { startIndex: i, endIndexExclusive: end };
+}
+
 router.post('/delete-entry', async (req, res) => {
   try {
     const { date: dateStr, section, line } = req.body;
     if (!dateStr || !section || !line) return res.status(400).json({ error: '缺少 date, section 或 line' });
     const date = getRequestDate(dateStr);
-    let content = readDiary(date);
+    const content = readDiary(date);
     const lines = content.split('\n');
     const header = sectionHeaders[section];
     if (!header) return res.status(400).json({ error: '未知区块' });
+    const bounds = findSectionBounds(lines, header);
+    if (!bounds) return res.status(404).json({ error: '区块未找到' });
 
-    let sectionStart = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(header)) { sectionStart = i; break; }
-    }
-    if (sectionStart === -1) return res.status(404).json({ error: '区块未找到' });
+    const firstLine = getFirstLine(line);
+    const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
+    if (matches.length === 0) return res.status(404).json({ error: '条目未找到' });
 
-    const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
-    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
-    let sectionEnd = lines.length;
-    for (let i = sectionStart + 1; i < lines.length; i++) {
-      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
-    }
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    if (!range) return res.status(404).json({ error: '条目未找到' });
 
-    for (let i = sectionStart + 1; i < sectionEnd; i++) {
-      if (lines[i].trim() === line.trim()) {
-        lines.splice(i, 1);
-        sectionEnd--;
-        // 删除后续续行
-        while (i < sectionEnd) {
-          const l = lines[i].trim();
-          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
-          lines.splice(i, 1);
-          sectionEnd--;
-        }
-        writeDiary(date, lines.join('\n'));
-        return res.json({ success: true });
-      }
-    }
-    res.status(404).json({ error: '条目未找到' });
+    lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex);
+    writeDiary(date, lines.join('\n'));
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -736,43 +773,24 @@ router.post('/edit-entry', async (req, res) => {
     const { date: dateStr, section, target, replacement } = req.body;
     if (!dateStr || !section || !target || !replacement) return res.status(400).json({ error: '缺少参数' });
     const date = getRequestDate(dateStr);
-    let content = readDiary(date);
+    const content = readDiary(date);
     const lines = content.split('\n');
     const header = sectionHeaders[section];
     if (!header) return res.status(400).json({ error: '未知区块' });
+    const bounds = findSectionBounds(lines, header);
+    if (!bounds) return res.status(404).json({ error: '区块未找到' });
 
-    let sectionStart = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(header)) { sectionStart = i; break; }
-    }
-    if (sectionStart === -1) return res.status(404).json({ error: '区块未找到' });
+    const firstLine = getFirstLine(target);
+    const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
+    if (matches.length === 0) return res.status(404).json({ error: '条目未找到' });
 
-    const LEGACY_LIZHI_SAYS = '### 🧠 荔枝喵说';
-    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
-    let sectionEnd = lines.length;
-    for (let i = sectionStart + 1; i < lines.length; i++) {
-      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
-    }
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    if (!range) return res.status(404).json({ error: '条目未找到' });
 
-    for (let i = sectionStart + 1; i < sectionEnd; i++) {
-      if (lines[i].trim() === target.trim()) {
-        // 删除旧续行
-        let delCount = 0;
-        let j = i + 1;
-        while (j < sectionEnd) {
-          const l = lines[j].trim();
-          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
-          delCount++;
-          j++;
-        }
-        if (delCount > 0) lines.splice(i + 1, delCount);
-        const newLines = replacement.split('\n');
-        lines.splice(i, 1, ...newLines);
-        writeDiary(date, lines.join('\n'));
-        return res.json({ success: true });
-      }
-    }
-    res.status(404).json({ error: '条目未找到' });
+    const newLines = replacement.split('\n');
+    lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex, ...newLines);
+    writeDiary(date, lines.join('\n'));
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

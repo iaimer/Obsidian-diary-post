@@ -99,6 +99,59 @@ function createObsidianDiaryContent(date: Date): string {
   return lines.join('\n');
 }
 
+function getFirstLine(grouped: string): string {
+  return grouped.split('\n\n')[0];
+}
+
+function findAllMatches(lines: string[], startIdx: number, endIdx: number, target: string): number[] {
+  const matches: number[] = [];
+  for (let i = startIdx; i < endIdx; i++) {
+    if (lines[i].trim() === target.trim()) matches.push(i);
+  }
+  return matches;
+}
+
+function isEntryOrBoundary(line: string): boolean {
+  const t = line.trim();
+  if (t.startsWith('- ') || t.startsWith('> ')) return true;
+  if (t.startsWith('##') || t.startsWith('###')) return true;
+  if (t.startsWith('---')) return true;
+  if (/^- \[[ x]\]/.test(t)) return true;
+  return false;
+}
+
+function findEntryRangeInSection(
+  lines: string[], _startIdx: number, endIdx: number,
+  _firstLine: string, firstLineMatches: number[]
+): { startIndex: number; endIndexExclusive: number } | null {
+  if (firstLineMatches.length === 0) return null;
+  if (firstLineMatches.length > 1) {
+    console.warn(`Duplicate entry first line at indices ${firstLineMatches.join(', ')}; using first`);
+  }
+  const i = firstLineMatches[0];
+  let end = i + 1;
+  while (end < endIdx) {
+    if (isEntryOrBoundary(lines[end].trim())) break;
+    end++;
+  }
+  while (end > i + 1 && lines[end - 1].trim() === '') end--;
+  return { startIndex: i, endIndexExclusive: end };
+}
+
+function findSectionBounds(lines: string[], header: string): { start: number; end: number } | null {
+  const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(header)) { start = i; break; }
+  }
+  if (start === -1) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) { end = i; break; }
+  }
+  return { start, end };
+}
+
 // 文件同步服务
 export class FileSyncService {
   private vaultHandle: FileSystemDirectoryHandle | null = null;
@@ -191,7 +244,6 @@ export class FileSyncService {
     return await this.getDiary(date);
   }
 
-  // 直接追加内容到区块（不重新序列化整个文件）
   async appendToSection(
     date: Date,
     section: DiarySection,
@@ -276,94 +328,48 @@ export class FileSyncService {
   // 从区块删除指定行（内容匹配）
   async deleteFromSection(date: Date, section: DiarySection, targetLine: string): Promise<void> {
     if (!this.vaultHandle) throw new Error('Vault not connected');
-
     const originalContent = await this.readFile(date);
     const lines = originalContent.split('\n');
     const header = sectionHeaders[section];
-    let sectionStart = -1;
+    const bounds = findSectionBounds(lines, header);
+    if (!bounds) throw new Error('Section not found');
 
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(header)) { sectionStart = i; break; }
-    }
-    if (sectionStart === -1) throw new Error('Section not found');
+    const firstLine = getFirstLine(targetLine);
+    const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
+    if (matches.length === 0) throw new Error('Entry not found in section');
 
-    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
-    let sectionEnd = lines.length;
-    for (let i = sectionStart + 1; i < lines.length; i++) {
-      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
-    }
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    if (!range) throw new Error('Entry not found in section');
 
-    for (let i = sectionStart + 1; i < sectionEnd; i++) {
-      if (lines[i].trim() === targetLine.trim()) {
-        // 删除目标行
-        lines.splice(i, 1);
-        // 删除后续续行（直到遇到新条目或区块边界）
-        sectionEnd = sectionEnd - 1; // adjust for the removed line
-        while (i < sectionEnd) {
-          const line = lines[i].trim();
-          if (!line || line.startsWith('- ') || line.startsWith('> ') || line.startsWith('##') || line.startsWith('###') || line.startsWith('---') || line.match(/^- \[[ x]\]/)) break;
-          lines.splice(i, 1);
-          sectionEnd--;
-        }
-        // 删除尾部空行
-        while (i < sectionEnd && i > sectionStart + 1 && lines[i - 1].trim() === '') {
-          lines.splice(i - 1, 1);
-          sectionEnd--;
-          i--;
-        }
-        await this.writeFile(date, lines.join('\n'));
-        const entry = parseDiary(lines.join('\n'));
-        entry.date = getDateString(date);
-        await cacheDiary(entry);
-        return;
-      }
-    }
-    throw new Error('Entry not found in section');
+    lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex);
+    await this.writeFile(date, lines.join('\n'));
+    const entry = parseDiary(lines.join('\n'));
+    entry.date = getDateString(date);
+    await cacheDiary(entry);
   }
 
   // 编辑区块中指定行（替换为新内容，支持多段落）
   async editInSection(date: Date, section: DiarySection, targetLine: string, newContent: string): Promise<void> {
     if (!this.vaultHandle) throw new Error('Vault not connected');
-
     const originalContent = await this.readFile(date);
     const lines = originalContent.split('\n');
     const header = sectionHeaders[section];
-    let sectionStart = -1;
+    const bounds = findSectionBounds(lines, header);
+    if (!bounds) throw new Error('Section not found');
 
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(header)) { sectionStart = i; break; }
-    }
-    if (sectionStart === -1) throw new Error('Section not found');
+    const firstLine = getFirstLine(targetLine);
+    const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
+    if (matches.length === 0) throw new Error('Entry not found in section');
 
-    const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
-    let sectionEnd = lines.length;
-    for (let i = sectionStart + 1; i < lines.length; i++) {
-      if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
-    }
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    if (!range) throw new Error('Entry not found in section');
 
-    for (let i = sectionStart + 1; i < sectionEnd; i++) {
-      if (lines[i].trim() === targetLine.trim()) {
-        // 删除旧续行（targetLine 后的非条目、非标题行）
-        let delCount = 0;
-        let j = i + 1;
-        while (j < sectionEnd) {
-          const l = lines[j].trim();
-          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
-          delCount++;
-          j++;
-        }
-        if (delCount > 0) lines.splice(i + 1, delCount);
-        // 替换目标行；若新内容含换行则拆分为多行
-        const newLines = newContent.split('\n');
-        lines.splice(i, 1, ...newLines);
-        await this.writeFile(date, lines.join('\n'));
-        const entry = parseDiary(lines.join('\n'));
-        entry.date = getDateString(date);
-        await cacheDiary(entry);
-        return;
-        return;
-      }
-    }
+    const newLines = newContent.split('\n');
+    lines.splice(range.startIndex, range.endIndexExclusive - range.startIndex, ...newLines);
+    await this.writeFile(date, lines.join('\n'));
+    const entry = parseDiary(lines.join('\n'));
+    entry.date = getDateString(date);
+    await cacheDiary(entry);
     throw new Error('Entry not found in section');
   }
 
