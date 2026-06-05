@@ -36,11 +36,11 @@ interface DiaryDetailProps {
 
 function renderMarkdown(line: string, section?: string): React.ReactNode {
   const colors: Record<string, { time: string; tag: string }> = {
-    notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-gray-300 dark:text-gray-500' },
-    happiness:  { time: 'text-amber-600 dark:text-amber-400',    tag: 'text-gray-300 dark:text-gray-500' },
-    anxiety:    { time: 'text-orange-600 dark:text-orange-400',   tag: 'text-gray-300 dark:text-gray-500' },
-    reflection: { time: 'text-emerald-600 dark:text-emerald-400', tag: 'text-gray-300 dark:text-gray-500' },
-    tomorrow:   { time: 'text-sky-600 dark:text-sky-400',         tag: 'text-gray-300 dark:text-gray-500' },
+    notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-rose-400 dark:text-rose-400/70' },
+    happiness:  { time: 'text-amber-600 dark:text-amber-400',    tag: 'text-amber-400 dark:text-amber-400/70' },
+    anxiety:    { time: 'text-orange-600 dark:text-orange-400',   tag: 'text-orange-400 dark:text-orange-400/70' },
+    reflection: { time: 'text-emerald-600 dark:text-emerald-400', tag: 'text-emerald-400 dark:text-emerald-400/70' },
+    tomorrow:   { time: 'text-sky-600 dark:text-sky-400',         tag: 'text-sky-400 dark:text-sky-400/70' },
   };
   const sc = colors[section || ''] || colors.notes;
 

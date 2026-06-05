@@ -36,11 +36,11 @@ function groupDiaryLines(lines: string[]): string[] {
 // 简单的Markdown渲染（阅读模式）
 function renderMarkdown(line: string, section?: string): React.ReactNode {
   const colors: Record<string, { time: string; tag: string }> = {
-    notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-gray-300 dark:text-gray-500' },
-    happiness:  { time: 'text-amber-600 dark:text-amber-400',    tag: 'text-gray-300 dark:text-gray-500' },
-    anxiety:    { time: 'text-orange-600 dark:text-orange-400',   tag: 'text-gray-300 dark:text-gray-500' },
-    reflection: { time: 'text-emerald-600 dark:text-emerald-400', tag: 'text-gray-300 dark:text-gray-500' },
-    tomorrow:   { time: 'text-sky-600 dark:text-sky-400',         tag: 'text-gray-300 dark:text-gray-500' },
+    notes:      { time: 'text-rose-600 dark:text-rose-400',      tag: 'text-rose-400 dark:text-rose-400/70' },
+    happiness:  { time: 'text-amber-600 dark:text-amber-400',    tag: 'text-amber-400 dark:text-amber-400/70' },
+    anxiety:    { time: 'text-orange-600 dark:text-orange-400',   tag: 'text-orange-400 dark:text-orange-400/70' },
+    reflection: { time: 'text-emerald-600 dark:text-emerald-400', tag: 'text-emerald-400 dark:text-emerald-400/70' },
+    tomorrow:   { time: 'text-sky-600 dark:text-sky-400',         tag: 'text-sky-400 dark:text-sky-400/70' },
   };
   const sc = colors[section || ''] || colors.notes;
   // 移除HTML注释
@@ -104,78 +104,6 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
           )}
           <div className={`${time ? '' : 'col-span-2'} min-w-0 break-words`}>
             <div className="whitespace-pre-line" dangerouslySetInnerHTML={{ __html: textContent }} />
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {tags.map(tag => (
-                  <span key={tag} className={`text-xs ${sc.tag}`}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 处理列表项 `- **HH:MM** 内容 #标签`
-  if (line.startsWith('- ')) {
-    const content = line.slice(2);
-    const timeMatch = content.match(/\*\*(\d{2}:\d{2})\*\*/);
-    const time = timeMatch ? timeMatch[1] : null;
-    let textContent = timeMatch ? content.replace(/\*\*\d{2}:\d{2}\*\*/, '').trim() : content;
-
-    const tags = textContent.match(/#\S+/g) || [];
-    textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = renderInlineMarkdown(textContent);
-
-    const isAnxiety = section === 'anxiety';
-
-    return (
-      <div className={`text-sm ${isAnxiety ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
-        <div className="flex items-start gap-2">
-          {time && (
-            <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
-          )}
-          <div className="flex-1 min-w-0 break-words">
-            <span dangerouslySetInnerHTML={{ __html: textContent }} />
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {tags.map(tag => (
-                  <span key={tag} className={`text-xs ${sc.tag}`}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 处理列表项 `- **HH:MM** 内容 #标签`
-  if (line.startsWith('- ')) {
-    const content = line.slice(2);
-    const timeMatch = content.match(/\*\*(\d{2}:\d{2})\*\*/);
-    const time = timeMatch ? timeMatch[1] : null;
-    let textContent = timeMatch ? content.replace(/\*\*\d{2}:\d{2}\*\*/, '').trim() : content;
-
-    const tags = textContent.match(/#\S+/g) || [];
-    textContent = textContent.replace(/#\S+/g, '').trim();
-    textContent = renderInlineMarkdown(textContent);
-
-    const isAnxiety = section === 'anxiety';
-
-    return (
-      <div className={`text-sm ${isAnxiety ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-200'}`}>
-        <div className="flex items-start gap-2">
-          {time && (
-            <span className={`font-medium shrink-0 ${sc.time}`}>{time}</span>
-          )}
-          <div className="flex-1 min-w-0 break-words">
-            <div dangerouslySetInnerHTML={{ __html: textContent }} />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {tags.map(tag => (
