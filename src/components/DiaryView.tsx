@@ -102,6 +102,23 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
     onToggle(isOpen ? null : menuId);
   };
 
+  const menuContent = (
+    <>
+      <button
+        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+        onClick={() => { onToggle(null); onEdit(line, section, target); }}
+      >
+        <span className="w-5 text-center">✎</span> 编辑
+      </button>
+      <button
+        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+        onClick={() => { onToggle(null); onDelete(line, section, target); }}
+      >
+        <span className="w-5 text-center">✕</span> 删除
+      </button>
+    </>
+  );
+
   return (
     <div className="relative flex items-start gap-1">
       <div className="flex-1 min-w-0">{children}</div>
@@ -117,21 +134,18 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
         <>
           <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
           <div
-            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4 animate-overlay-in"
+            onClick={() => onToggle(null)}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-full max-w-xs animate-modal-in" onClick={e => e.stopPropagation()}>
+              {menuContent}
+            </div>
+          </div>
+          <div
+            className="hidden sm:block fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
             style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
           >
-            <button
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { onToggle(null); onEdit(line, section, target); }}
-            >
-              <span className="w-5 text-center">✎</span> 编辑
-            </button>
-            <button
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { onToggle(null); onDelete(line, section, target); }}
-            >
-              <span className="w-5 text-center">✕</span> 删除
-            </button>
+            {menuContent}
           </div>
         </>
       )}
@@ -172,8 +186,18 @@ function ImageEntryRow({ children, line, section, onDelete, menuId, isOpen, onTo
       {isOpen && menuPos && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
+          <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4 animate-overlay-in" onClick={() => onToggle(null)}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-full max-w-xs animate-modal-in" onClick={e => e.stopPropagation()}>
+              <button
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+                onClick={() => { onToggle(null); onDelete(line, section); }}
+              >
+                <span className="w-5 text-center">✕</span> 删除
+              </button>
+            </div>
+          </div>
           <div
-            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            className="hidden sm:block fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
             style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
           >
             <button
