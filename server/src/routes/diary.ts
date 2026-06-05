@@ -713,6 +713,14 @@ router.post('/delete-entry', async (req, res) => {
     for (let i = sectionStart + 1; i < sectionEnd; i++) {
       if (lines[i].trim() === line.trim()) {
         lines.splice(i, 1);
+        sectionEnd--;
+        // 删除后续续行
+        while (i < sectionEnd) {
+          const l = lines[i].trim();
+          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
+          lines.splice(i, 1);
+          sectionEnd--;
+        }
         writeDiary(date, lines.join('\n'));
         return res.json({ success: true });
       }
@@ -748,7 +756,18 @@ router.post('/edit-entry', async (req, res) => {
 
     for (let i = sectionStart + 1; i < sectionEnd; i++) {
       if (lines[i].trim() === target.trim()) {
-        lines[i] = replacement;
+        // 删除旧续行
+        let delCount = 0;
+        let j = i + 1;
+        while (j < sectionEnd) {
+          const l = lines[j].trim();
+          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
+          delCount++;
+          j++;
+        }
+        if (delCount > 0) lines.splice(i + 1, delCount);
+        const newLines = replacement.split('\n');
+        lines.splice(i, 1, ...newLines);
         writeDiary(date, lines.join('\n'));
         return res.json({ success: true });
       }

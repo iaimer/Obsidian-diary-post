@@ -71,32 +71,41 @@ function getSectionForLine(section: string): DiarySection {
   }
 }
 
+function getFirstLine(grouped: string): string {
+  return grouped.split('\n\n')[0];
+}
+
 function EntryRow({ children, line, section, onEdit, onDelete }: {
   children: React.ReactNode;
   line: string;
   section: string;
-  onEdit: (line: string, section: string) => void;
-  onDelete: (line: string, section: string) => void;
+  onEdit: (line: string, section: string, firstLine: string) => void;
+  onDelete: (line: string, section: string, firstLine: string) => void;
 }) {
-  if (!line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘')) {
-    return <>{children}</>;
-  }
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const isSkippable = !line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘');
+
   const startPress = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (isSkippable) return;
     const pos = 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     timerRef.current = setTimeout(() => setMenu(pos), 500);
-  }, []);
+  }, [isSkippable]);
 
   const cancelPress = useCallback(() => {
     if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
   }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    if (isSkippable) return;
     e.preventDefault();
     setMenu({ x: e.clientX, y: e.clientY });
-  }, []);
+  }, [isSkippable]);
+
+  if (isSkippable) return <>{children}</>;
+
+  const target = getFirstLine(line);
 
   return (
     <div
@@ -119,13 +128,13 @@ function EntryRow({ children, line, section, onEdit, onDelete }: {
           >
             <button
               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { setMenu(null); onEdit(line, section); }}
+              onClick={() => { setMenu(null); onEdit(line, section, target); }}
             >
               <span className="w-5 text-center">✎</span> 编辑
             </button>
             <button
               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { setMenu(null); onDelete(line, section); }}
+              onClick={() => { setMenu(null); onDelete(line, section, target); }}
             >
               <span className="w-5 text-center">✕</span> 删除
             </button>
@@ -155,7 +164,7 @@ function ImageEntryRow({ children, line, section, onDelete }: {
   }, []);
 
   return (
-    <div onTouchStart={startPress} onTouchEnd={cancelPress} onTouchMove={cancelPress} onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}>
+    <div className="relative" onTouchStart={startPress} onTouchEnd={cancelPress} onTouchMove={cancelPress} onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}>
       {children}
       <button
         onClick={() => onDelete(line, section)}
@@ -331,10 +340,10 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [generatingLizhi, setGeneratingLizhi] = useState(false);
-  const [editEntry, setEditEntry] = useState<{ line: string; section: string } | null>(null);
+  const [editEntry, setEditEntry] = useState<{ line: string; section: string; target: string } | null>(null);
   const [editText, setEditText] = useState('');
   const [editTags, setEditTags] = useState('');
-  const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string } | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string; target: string } | null>(null);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -619,8 +628,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1.5">
             {groupDiaryLines(quickNotes).map((line, i) => (
               <EntryRow key={i} line={line} section="notes"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '随手记' })}
+                onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
+                onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '随手记', target: firstLine })}
               >
                 {renderMarkdown(line, 'notes')}
               </EntryRow>
@@ -636,8 +645,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(happiness).map((line, i) => (
               <EntryRow key={i} line={line} section="happiness"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '小确幸' })}
+              onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
+              onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '小确幸', target: firstLine })}
               >
                 {renderMarkdown(line, 'happiness')}
               </EntryRow>
@@ -653,8 +662,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(anxiety).map((line, i) => (
               <EntryRow key={i} line={line} section="anxiety"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '焦虑记录' })}
+              onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
+              onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '焦虑记录', target: firstLine })}
               >
                 {renderMarkdown(line, 'anxiety')}
               </EntryRow>
@@ -670,8 +679,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(reflection).map((line, i) => (
               <EntryRow key={i} line={line} section="reflection"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '觉察' })}
+              onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
+              onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '觉察', target: firstLine })}
               >
                 {renderMarkdown(line, 'reflection')}
               </EntryRow>
@@ -727,8 +736,8 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="space-y-1">
             {groupDiaryLines(tomorrow).map((line, i) => (
               <EntryRow key={i} line={line} section="tomorrow"
-                onEdit={(l,s) => { setEditEntry({ line: l, section: s }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '明日寄语' })}
+              onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
+              onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '明日寄语', target: firstLine })}
               >
                 {renderMarkdown(line, 'tomorrow')}
               </EntryRow>
@@ -746,7 +755,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <div className="grid grid-cols-3 gap-2">
             {images.map((line, i) => (
               <ImageEntryRow key={i} line={line} section="images"
-                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '图片' })}
+                onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '图片', target: l })}
               >
                 {imageUrls[i] && (
                   <button
@@ -806,7 +815,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
               try {
                 const ds = getDataService();
                 const newLine = rebuildLine(editEntry.line, editText.trim(), editTags);
-                await ds.editEntry(getSectionForLine(editEntry.section), editEntry.line, newLine);
+                await ds.editEntry(getSectionForLine(editEntry.section), editEntry.target, newLine);
                 setEditEntry(null);
                 useDiaryStore.getState().triggerRefresh();
               } catch (err) { alert('编辑失败: ' + (err as Error).message); }
@@ -824,7 +833,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         onConfirm={async () => {
           try {
             const ds = getDataService();
-            await ds.deleteEntry(getSectionForLine(deleteEntry.section), deleteEntry.line);
+            await ds.deleteEntry(getSectionForLine(deleteEntry.section), deleteEntry.target);
             setDeleteEntry(null);
             useDiaryStore.getState().triggerRefresh();
           } catch (err) { alert('删除失败: ' + (err as Error).message); }

@@ -287,7 +287,6 @@ export class FileSyncService {
     }
     if (sectionStart === -1) throw new Error('Section not found');
 
-    // 在区块内查找匹配行
     const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
     let sectionEnd = lines.length;
     for (let i = sectionStart + 1; i < lines.length; i++) {
@@ -296,7 +295,22 @@ export class FileSyncService {
 
     for (let i = sectionStart + 1; i < sectionEnd; i++) {
       if (lines[i].trim() === targetLine.trim()) {
+        // 删除目标行
         lines.splice(i, 1);
+        // 删除后续续行（直到遇到新条目或区块边界）
+        sectionEnd = sectionEnd - 1; // adjust for the removed line
+        while (i < sectionEnd) {
+          const line = lines[i].trim();
+          if (!line || line.startsWith('- ') || line.startsWith('> ') || line.startsWith('##') || line.startsWith('###') || line.startsWith('---') || line.match(/^- \[[ x]\]/)) break;
+          lines.splice(i, 1);
+          sectionEnd--;
+        }
+        // 删除尾部空行
+        while (i < sectionEnd && i > sectionStart + 1 && lines[i - 1].trim() === '') {
+          lines.splice(i - 1, 1);
+          sectionEnd--;
+          i--;
+        }
         await this.writeFile(date, lines.join('\n'));
         const entry = parseDiary(lines.join('\n'));
         entry.date = getDateString(date);
@@ -307,8 +321,8 @@ export class FileSyncService {
     throw new Error('Entry not found in section');
   }
 
-  // 编辑区块中指定行（替换为新的）
-  async editInSection(date: Date, section: DiarySection, targetLine: string, newLine: string): Promise<void> {
+  // 编辑区块中指定行（替换为新内容，支持多段落）
+  async editInSection(date: Date, section: DiarySection, targetLine: string, newContent: string): Promise<void> {
     if (!this.vaultHandle) throw new Error('Vault not connected');
 
     const originalContent = await this.readFile(date);
@@ -329,11 +343,24 @@ export class FileSyncService {
 
     for (let i = sectionStart + 1; i < sectionEnd; i++) {
       if (lines[i].trim() === targetLine.trim()) {
-        lines[i] = newLine;
+        // 删除旧续行（targetLine 后的非条目、非标题行）
+        let delCount = 0;
+        let j = i + 1;
+        while (j < sectionEnd) {
+          const l = lines[j].trim();
+          if (!l || l.startsWith('- ') || l.startsWith('> ') || l.startsWith('##') || l.startsWith('###') || l.startsWith('---') || l.match(/^- \[[ x]\]/)) break;
+          delCount++;
+          j++;
+        }
+        if (delCount > 0) lines.splice(i + 1, delCount);
+        // 替换目标行；若新内容含换行则拆分为多行
+        const newLines = newContent.split('\n');
+        lines.splice(i, 1, ...newLines);
         await this.writeFile(date, lines.join('\n'));
         const entry = parseDiary(lines.join('\n'));
         entry.date = getDateString(date);
         await cacheDiary(entry);
+        return;
         return;
       }
     }
