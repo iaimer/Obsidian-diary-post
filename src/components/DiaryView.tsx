@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { DiaryEntry, DiarySection } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService, getFileSyncService } from '../services/dataService';
@@ -75,66 +75,59 @@ function getFirstLine(grouped: string): string {
   return grouped.split('\n\n')[0];
 }
 
-function EntryRow({ children, line, section, onEdit, onDelete }: {
+function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, onToggle }: {
   children: React.ReactNode;
   line: string;
   section: string;
   onEdit: (line: string, section: string, firstLine: string) => void;
   onDelete: (line: string, section: string, firstLine: string) => void;
+  menuId: string;
+  isOpen: boolean;
+  onToggle: (id: string | null) => void;
 }) {
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const isSkippable = !line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘');
-
-  const startPress = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    if (isSkippable) return;
-    const pos = 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
-    timerRef.current = setTimeout(() => setMenu(pos), 500);
-  }, [isSkippable]);
-
-  const cancelPress = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-  }, []);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (isSkippable) return;
-    e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY });
-  }, [isSkippable]);
 
   if (isSkippable) return <>{children}</>;
 
   const target = getFirstLine(line);
 
+  const handleMore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const rect = btnRef.current?.getBoundingClientRect();
+    setMenuPos({ x: rect ? rect.right - 140 : e.clientX, y: rect ? rect.bottom + 4 : e.clientY });
+    onToggle(isOpen ? null : menuId);
+  };
+
   return (
-    <div
-      className="relative select-none"
-      onTouchStart={startPress}
-      onTouchEnd={cancelPress}
-      onTouchMove={cancelPress}
-      onMouseDown={startPress}
-      onMouseUp={cancelPress}
-      onMouseLeave={cancelPress}
-      onContextMenu={handleContextMenu}
-    >
-      {children}
-      {menu && (
+    <div className="relative flex items-start gap-1">
+      <div className="flex-1 min-w-0">{children}</div>
+      <button
+        ref={btnRef}
+        onClick={handleMore}
+        aria-label="更多操作"
+        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 mt-0.5"
+      >
+        ⋯
+      </button>
+      {isOpen && menuPos && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} onTouchStart={() => setMenu(null)} />
+          <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
           <div
             className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
-            style={{ left: Math.min(menu.x, window.innerWidth - 140), top: Math.min(menu.y, window.innerHeight - 100) }}
+            style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
           >
             <button
               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { setMenu(null); onEdit(line, section, target); }}
+              onClick={() => { onToggle(null); onEdit(line, section, target); }}
             >
               <span className="w-5 text-center">✎</span> 编辑
             </button>
             <button
               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { setMenu(null); onDelete(line, section, target); }}
+              onClick={() => { onToggle(null); onDelete(line, section, target); }}
             >
               <span className="w-5 text-center">✕</span> 删除
             </button>
@@ -151,43 +144,16 @@ function ImageEntryRow({ children, line, section, onDelete }: {
   section: string;
   onDelete: (line: string, section: string) => void;
 }) {
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const startPress = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    const pos = 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
-    timerRef.current = setTimeout(() => setMenu(pos), 500);
-  }, []);
-
-  const cancelPress = useCallback(() => {
-    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-  }, []);
-
   return (
-    <div className="relative" onTouchStart={startPress} onTouchEnd={cancelPress} onTouchMove={cancelPress} onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}>
+    <div className="relative">
       {children}
       <button
         onClick={() => onDelete(line, section)}
+        aria-label="删除图片"
         className="absolute top-0 right-0 w-6 h-6 flex items-center justify-center text-xs bg-white/80 dark:bg-gray-800/80 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400"
       >
         ✕
       </button>
-      {menu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} onTouchStart={() => setMenu(null)} />
-          <div
-            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
-            style={{ left: Math.min(menu.x, window.innerWidth - 140), top: Math.min(menu.y, window.innerHeight - 100) }}
-          >
-            <button
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { setMenu(null); onDelete(line, section); }}
-            >
-              <span className="w-5 text-center">✕</span> 删除
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -344,6 +310,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
   const [editText, setEditText] = useState('');
   const [editTags, setEditTags] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<{ line: string; section: string; label: string; target: string } | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // 解析习惯数据
   const parseHabitData = (habits: string[]) => {
@@ -627,7 +594,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✍️ 随手记</h3>
           <div className="space-y-1.5">
             {groupDiaryLines(quickNotes).map((line, i) => (
-              <EntryRow key={i} line={line} section="notes"
+              <EntryRow key={i} line={line} section="notes" menuId={`notes-${i}`} isOpen={openMenuId === `notes-${i}`} onToggle={setOpenMenuId}
                 onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
                 onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '随手记', target: firstLine })}
               >
@@ -644,7 +611,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">✨ 每日小确幸</h3>
           <div className="space-y-1">
             {groupDiaryLines(happiness).map((line, i) => (
-              <EntryRow key={i} line={line} section="happiness"
+              <EntryRow key={i} line={line} section="happiness" menuId={`happiness-${i}`} isOpen={openMenuId === `happiness-${i}`} onToggle={setOpenMenuId}
               onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
               onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '小确幸', target: firstLine })}
               >
@@ -661,7 +628,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h3>
           <div className="space-y-1">
             {groupDiaryLines(anxiety).map((line, i) => (
-              <EntryRow key={i} line={line} section="anxiety"
+              <EntryRow key={i} line={line} section="anxiety" menuId={`anxiety-${i}`} isOpen={openMenuId === `anxiety-${i}`} onToggle={setOpenMenuId}
               onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
               onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '焦虑记录', target: firstLine })}
               >
@@ -678,7 +645,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">💡 觉察与迭代</h3>
           <div className="space-y-1">
             {groupDiaryLines(reflection).map((line, i) => (
-              <EntryRow key={i} line={line} section="reflection"
+              <EntryRow key={i} line={line} section="reflection" menuId={`reflection-${i}`} isOpen={openMenuId === `reflection-${i}`} onToggle={setOpenMenuId}
               onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
               onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '觉察', target: firstLine })}
               >
@@ -735,7 +702,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">🌙 明日寄语</h3>
           <div className="space-y-1">
             {groupDiaryLines(tomorrow).map((line, i) => (
-              <EntryRow key={i} line={line} section="tomorrow"
+              <EntryRow key={i} line={line} section="tomorrow" menuId={`tomorrow-${i}`} isOpen={openMenuId === `tomorrow-${i}`} onToggle={setOpenMenuId}
               onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
               onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '明日寄语', target: firstLine })}
               >
