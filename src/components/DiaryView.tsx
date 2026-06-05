@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import { DiaryEntry, DiarySection } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService, getFileSyncService } from '../services/dataService';
@@ -78,27 +78,60 @@ function EntryRow({ children, line, section, onEdit, onDelete }: {
   onEdit: (line: string, section: string) => void;
   onDelete: (line: string, section: string) => void;
 }) {
-  // Skip action buttons for habits-related and empty lines
   if (!line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘')) {
     return <>{children}</>;
   }
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startPress = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const pos = 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
+    timerRef.current = setTimeout(() => setMenu(pos), 500);
+  }, []);
+
+  const cancelPress = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY });
+  }, []);
+
   return (
-    <div className="group/entry relative">
+    <div
+      className="relative select-none"
+      onTouchStart={startPress}
+      onTouchEnd={cancelPress}
+      onTouchMove={cancelPress}
+      onMouseDown={startPress}
+      onMouseUp={cancelPress}
+      onMouseLeave={cancelPress}
+      onContextMenu={handleContextMenu}
+    >
       {children}
-      <div className="flex gap-1 mt-0.5 opacity-0 group-hover/entry:opacity-100 transition-opacity">
-        <button
-          onClick={() => onEdit(line, section)}
-          className="text-[10px] text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-1"
-        >
-          ✎
-        </button>
-        <button
-          onClick={() => onDelete(line, section)}
-          className="text-[10px] text-gray-400 hover:text-red-600 dark:hover:text-red-400 px-1"
-        >
-          ✕
-        </button>
-      </div>
+      {menu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} onTouchStart={() => setMenu(null)} />
+          <div
+            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            style={{ left: Math.min(menu.x, window.innerWidth - 140), top: Math.min(menu.y, window.innerHeight - 100) }}
+          >
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+              onClick={() => { setMenu(null); onEdit(line, section); }}
+            >
+              <span className="w-5 text-center">✎</span> 编辑
+            </button>
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+              onClick={() => { setMenu(null); onDelete(line, section); }}
+            >
+              <span className="w-5 text-center">✕</span> 删除
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -109,8 +142,20 @@ function ImageEntryRow({ children, line, section, onDelete }: {
   section: string;
   onDelete: (line: string, section: string) => void;
 }) {
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startPress = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    const pos = 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
+    timerRef.current = setTimeout(() => setMenu(pos), 500);
+  }, []);
+
+  const cancelPress = useCallback(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+  }, []);
+
   return (
-    <div className="relative">
+    <div onTouchStart={startPress} onTouchEnd={cancelPress} onTouchMove={cancelPress} onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}>
       {children}
       <button
         onClick={() => onDelete(line, section)}
@@ -118,6 +163,22 @@ function ImageEntryRow({ children, line, section, onDelete }: {
       >
         ✕
       </button>
+      {menu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} onTouchStart={() => setMenu(null)} />
+          <div
+            className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            style={{ left: Math.min(menu.x, window.innerWidth - 140), top: Math.min(menu.y, window.innerHeight - 100) }}
+          >
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
+              onClick={() => { setMenu(null); onDelete(line, section); }}
+            >
+              <span className="w-5 text-center">✕</span> 删除
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
