@@ -39,6 +39,10 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }
 
+.entry-action-sheet {
+  bottom: calc(4.25rem + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)));
+}
+
 ::selection {
   background-color: #E3C9C0;
   color: #3D3731;

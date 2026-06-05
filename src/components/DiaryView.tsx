@@ -1,4 +1,5 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { DiaryEntry, DiarySection } from '../types';
 import { useDiaryStore } from '../stores/diaryStore';
 import { getDataService, getFileSyncService } from '../services/dataService';
@@ -76,6 +77,11 @@ function getFirstLine(grouped: string): string {
   return grouped.split('\n\n')[0];
 }
 
+function isNonEditableEntry(line: string): boolean {
+  const trimmed = line.trim();
+  return !trimmed || /^- \[[ x]\]/.test(trimmed) || trimmed.includes('🥤') || trimmed.includes('🥛') || trimmed.includes('🧘');
+}
+
 function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, onToggle }: {
   children: React.ReactNode;
   line: string;
@@ -89,7 +95,7 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  const isSkippable = !line.trim() || line.includes('[') || line.includes('🥤') || line.includes('🥛') || line.includes('🧘');
+  const isSkippable = isNonEditableEntry(line);
 
   if (isSkippable) return <>{children}</>;
 
@@ -120,95 +126,55 @@ function EntryRow({ children, line, section, onEdit, onDelete, menuId, isOpen, o
   );
 
   return (
-    <div className="relative flex items-start gap-1">
-      <div className="flex-1 min-w-0">{children}</div>
-      <button
-        ref={btnRef}
-        onClick={handleMore}
-        aria-label="更多操作"
-        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 mt-0.5"
-      >
-        ⋯
-      </button>
-      {isOpen && menuPos && (
+    <div className="relative">
+      <div className="min-w-0">{children}</div>
+      {!isOpen && (
+        <button
+          ref={btnRef}
+          onClick={handleMore}
+          aria-label="更多操作"
+          className="absolute right-0 bottom-[-0.5rem] w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          ⋯
+        </button>
+      )}
+      {isOpen && menuPos && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
-          <div
-            className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4 animate-overlay-in"
-            onClick={() => onToggle(null)}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-full max-w-xs animate-modal-in" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[90]" onClick={() => onToggle(null)} />
+          <div className="entry-action-sheet sm:hidden fixed left-0 right-0 z-[100] animate-modal-in">
+            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-t-2xl border-t border-gray-100/70 dark:border-gray-700/70 py-1 w-full overflow-hidden" onClick={e => e.stopPropagation()}>
               {menuContent}
             </div>
           </div>
           <div
-            className="hidden sm:block fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
+            className="hidden sm:block fixed z-[100] bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
             style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
           >
             {menuContent}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
 }
 
-function ImageEntryRow({ children, line, section, onDelete, menuId, isOpen, onToggle }: {
+function ImageEntryRow({ children, line, section, onDelete }: {
   children: React.ReactNode;
   line: string;
   section: string;
   onDelete: (line: string, section: string) => void;
-  menuId: string;
-  isOpen: boolean;
-  onToggle: (id: string | null) => void;
 }) {
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-
-  const handleMore = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const rect = btnRef.current?.getBoundingClientRect();
-    setMenuPos({ x: rect ? rect.right + 4 : e.clientX, y: rect ? rect.bottom + 4 : e.clientY });
-    onToggle(isOpen ? null : menuId);
-  };
-
   return (
     <div className="relative">
       {children}
       <button
-        ref={btnRef}
-        onClick={handleMore}
-        aria-label="更多操作"
-        className="absolute top-0 right-0 w-6 h-6 flex items-center justify-center text-xs bg-white/80 dark:bg-gray-800/80 rounded-full text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+        onClick={(e) => { e.stopPropagation(); onDelete(line, section); }}
+        aria-label="删除图片"
+        className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center text-xs bg-white/80 dark:bg-gray-800/80 rounded-full text-gray-500 shadow-sm hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400"
       >
-        ⋯
+        ✕
       </button>
-      {isOpen && menuPos && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => onToggle(null)} />
-          <div className="sm:hidden fixed inset-0 z-50 flex items-center justify-center p-4 animate-overlay-in" onClick={() => onToggle(null)}>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 w-full max-w-xs animate-modal-in" onClick={e => e.stopPropagation()}>
-              <button
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-                onClick={() => { onToggle(null); onDelete(line, section); }}
-              >
-                <span className="w-5 text-center">✕</span> 删除
-              </button>
-            </div>
-          </div>
-          <div
-            className="hidden sm:block fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 overflow-hidden animate-modal-in"
-            style={{ left: Math.min(menuPos.x, window.innerWidth - 140), top: Math.min(menuPos.y, window.innerHeight - 100) }}
-          >
-            <button
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 min-h-[44px]"
-              onClick={() => { onToggle(null); onDelete(line, section); }}
-            >
-              <span className="w-5 text-center">✕</span> 删除
-            </button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -792,7 +758,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             {images.map((line, i) => (
-              <ImageEntryRow key={i} line={line} section="images" menuId={`images-${i}`} isOpen={openMenuId === `images-${i}`} onToggle={setOpenMenuId}
+              <ImageEntryRow key={i} line={line} section="images"
                 onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '图片', target: l })}
               >
                 {imageUrls[i] && (
@@ -829,7 +795,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       />
     )}
     {editEntry && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in" onClick={() => setEditEntry(null)}>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-overlay-in" onClick={closeEdit}>
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 w-full max-w-md shadow-xl animate-modal-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
           <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">编辑</h3>
 
@@ -958,7 +924,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
                 const ds = getDataService();
                 const newLine = rebuildLine(editEntry.line, editText.trim(), editTags);
                 await ds.editEntry(getSectionForLine(editEntry.section), editEntry.target, newLine);
-                setEditEntry(null);
+                closeEdit();
                 useDiaryStore.getState().triggerRefresh();
               } catch (err) { alert('编辑失败: ' + (err as Error).message); }
             }} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium min-h-[44px]">保存</button>

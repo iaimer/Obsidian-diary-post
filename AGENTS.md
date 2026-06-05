@@ -171,7 +171,7 @@ UI 标签和日记内容均为中文。代码注释用中文。
 | 写入先入队再同步 | 保证离线可用；AI 实时操作除外 | dataService.ts |
 | 设置页现代化重构 | 概览→详情导航，手机单栏+桌面双栏，草稿模式远端API/AI/图片 | SettingsPage.tsx, settings/* |
 | 运行时标签系统 | 自定义领域/主题/方法，远程同步，AI 和记录弹窗改为运行时读取 | TagConfig, SettingsTags, tagSync.ts |
-| 日记条目编辑/删除 | 长按弹出菜单编辑/删除，内容匹配定位，多自然段续行处理 | DiaryView.tsx, fileSync.ts |
+| 日记条目编辑/删除 | 显式 `⋯` 入口，手机端底部操作面板，图片右上角直接删除；内容匹配定位，多自然段续行处理 | DiaryView.tsx, fileSync.ts |
 
 ## 工作流
 

@@ -370,7 +370,6 @@ export class FileSyncService {
     const entry = parseDiary(lines.join('\n'));
     entry.date = getDateString(date);
     await cacheDiary(entry);
-    throw new Error('Entry not found in section');
   }
 
   // 追加随手记
