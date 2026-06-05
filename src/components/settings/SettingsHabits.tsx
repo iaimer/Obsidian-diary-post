@@ -3,6 +3,7 @@ import { useDiaryStore } from '../../stores/diaryStore';
 import { HabitConfig } from '../../types';
 import { HabitConfigEditModal } from '../HabitConfigEditModal';
 import { SettingsToggle } from './SettingsToggle';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export function SettingsHabits() {
   const habitConfigs = useDiaryStore(state => state.habitConfigs);
@@ -13,6 +14,7 @@ export function SettingsHabits() {
 
   const [editingHabit, setEditingHabit] = useState<HabitConfig | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [confirmDlg, setConfirmDlg] = useState<{ title: string; confirmLabel?: string; destructive?: boolean; cb: () => void } | null>(null);
 
   const sorted = [...habitConfigs].sort((a, b) => a.order - b.order);
 
@@ -32,15 +34,21 @@ export function SettingsHabits() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('确定要删除这个习惯吗？')) {
-      removeHabitConfig(id);
-    }
+    setConfirmDlg({
+      title: '确定要删除这个习惯吗？',
+      destructive: true,
+      confirmLabel: '删除',
+      cb: () => removeHabitConfig(id)
+    });
   };
 
   const handleReset = () => {
-    if (confirm('确定要恢复默认习惯配置吗？')) {
-      resetHabitConfigs();
-    }
+    setConfirmDlg({
+      title: '确定要恢复默认习惯配置吗？',
+      destructive: true,
+      confirmLabel: '恢复默认',
+      cb: () => resetHabitConfigs()
+    });
   };
 
   return (
@@ -110,6 +118,15 @@ export function SettingsHabits() {
           config={editingHabit}
           onSave={handleSave}
           onClose={() => { setShowModal(false); setEditingHabit(null); }}
+        />
+      )}
+      {confirmDlg && (
+        <ConfirmDialog
+          title={confirmDlg.title}
+          confirmLabel={confirmDlg.confirmLabel}
+          destructive={confirmDlg.destructive}
+          onConfirm={() => { confirmDlg.cb(); setConfirmDlg(null); }}
+          onCancel={() => setConfirmDlg(null)}
         />
       )}
     </div>

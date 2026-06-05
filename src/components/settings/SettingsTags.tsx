@@ -3,6 +3,8 @@ import { useDiaryStore } from '../../stores/diaryStore';
 import { TagConfig, DEFAULT_TAG_CONFIG, TagDomain, TagMethod, TagTopic } from '../../types/tagTypes';
 import { generateId, stripHash } from '../../config/tagSystem';
 import { fetchTagConfig, saveTagConfig } from '../../services/tagSync';
+import { PromptDialog } from '../PromptDialog';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 interface Props {
   onDirtyChange?: (dirty: boolean) => void;
@@ -19,6 +21,8 @@ export function SettingsTags({ onDirtyChange }: Props) {
   const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState('');
+  const [promptDlg, setPromptDlg] = useState<{ title: string; initialValue: string; initialDescription?: string; cb: (name: string, desc?: string) => void } | null>(null);
+  const [confirmDlg, setConfirmDlg] = useState<{ title: string; message?: string; confirmLabel?: string; destructive?: boolean; cb: () => void } | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -67,53 +71,71 @@ export function SettingsTags({ onDirtyChange }: Props) {
   };
 
   const handleReset = () => {
-    if (confirm('确定要恢复默认标签配置吗？自定义标签将全部丢失。')) {
-      setDraft(JSON.parse(JSON.stringify(DEFAULT_TAG_CONFIG)));
-    }
+    setConfirmDlg({
+      title: '恢复默认标签配置？',
+      message: '自定义标签将全部丢失。',
+      confirmLabel: '恢复默认',
+      destructive: true,
+      cb: () => setDraft(JSON.parse(JSON.stringify(DEFAULT_TAG_CONFIG)))
+    });
   };
 
   const addDomain = () => {
-    const name = normalizeTagName(prompt('输入新领域名称：'));
-    if (!name) return;
-    if (hasTagName(draft, name)) return alert('该标签名称已存在');
-    const topicName = normalizeTagName(prompt('输入该领域的第一个主题名称：'));
-    if (!topicName) return alert('每个领域至少需要 1 个主题');
-    if (hasTagName(draft, topicName)) return alert('该标签名称已存在');
-    const description = prompt('领域说明（可选）：')?.trim() || undefined;
-    const topicDescription = prompt('主题说明（可选）：')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      domains: [...draft.domains, {
-        id: generateId(),
-        name,
-        description,
-        order: draft.domains.length,
-        topics: [{ id: generateId(), name: topicName, description: topicDescription, order: 0 }]
-      }]
+    setPromptDlg({
+      title: '添加新领域',
+      initialValue: '',
+      cb: (domainName) => {
+        const name = normalizeTagName(domainName);
+        if (!name) return;
+        if (hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        setPromptDlg({
+          title: `「${name}」的第一个主题`,
+          initialValue: '',
+          cb: (topicName) => {
+            const tName = normalizeTagName(topicName);
+            if (!tName) return alert('每个领域至少需要 1 个主题');
+            if (hasTagName(draft, tName)) return alert('该标签名称已存在');
+            setDraft({
+              ...draft,
+              domains: [...draft.domains, {
+                id: generateId(), name, order: draft.domains.length,
+                topics: [{ id: generateId(), name: tName, order: 0 }]
+              }]
+            });
+          }
+        });
+      }
     });
   };
 
   const editDomain = (id: string) => {
     const domain = draft.domains.find(d => d.id === id);
     if (!domain) return;
-    const name = normalizeTagName(prompt('编辑领域名称：', domain.name));
-    if (!name) return;
-    if (name !== domain.name && hasTagName(draft, name)) return alert('该标签名称已存在');
-    const description = prompt('领域说明（可选）：', domain.description || '')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      domains: draft.domains.map(d => d.id === id ? { ...d, name, description } : d)
+    setPromptDlg({
+      title: '编辑领域名称',
+      initialValue: domain.name,
+      cb: (domainName) => {
+        const name = normalizeTagName(domainName);
+        if (!name) return;
+        if (name !== domain.name && hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        setDraft({
+          ...draft,
+          domains: draft.domains.map(d => d.id === id ? { ...d, name } : d)
+        });
+      }
     });
   };
 
   const deleteDomain = (id: string) => {
-    if (draft.domains.length <= 1) {
-      alert('至少保留 1 个领域');
-      return;
-    }
+    if (draft.domains.length <= 1) { alert('至少保留 1 个领域'); return; }
     const domain = draft.domains.find(d => d.id === id);
-    if (!domain || !confirm(`确定要删除领域「${domain.name}」及其全部主题吗？`)) return;
-    setDraft({ ...draft, domains: draft.domains.filter(d => d.id !== id) });
+    if (!domain) return;
+    setConfirmDlg({
+      title: `确定要删除领域「${domain.name}」及其全部主题吗？`,
+      destructive: true,
+      confirmLabel: '删除',
+      cb: () => setDraft({ ...draft, domains: draft.domains.filter(d => d.id !== id) })
+    });
   };
 
   const moveDomain = (id: string, dir: -1 | 1) => {
@@ -126,51 +148,63 @@ export function SettingsTags({ onDirtyChange }: Props) {
   };
 
   const addTopic = (domainId: string) => {
-    const name = normalizeTagName(prompt('输入新主题名称：'));
-    if (!name) return;
-    const domain = draft.domains.find(d => d.id === domainId);
-    if (!domain) return;
-    if (hasTagName(draft, name)) return alert('该标签名称已存在');
-    const description = prompt('主题说明（可选）：')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      domains: draft.domains.map(d => d.id === domainId ? {
-        ...d, topics: [...d.topics, { id: generateId(), name, description, order: d.topics.length }]
-      } : d)
+    setPromptDlg({
+      title: '添加新主题',
+      initialValue: '',
+      cb: (topicName) => {
+        const name = normalizeTagName(topicName);
+        if (!name) return;
+        if (hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        const domain = draft.domains.find(d => d.id === domainId);
+        if (!domain) return;
+        setDraft({
+          ...draft,
+          domains: draft.domains.map(d => d.id === domainId ? {
+            ...d, topics: [...d.topics, { id: generateId(), name, order: d.topics.length }]
+          } : d)
+        });
+        setExpandedDomain(domainId);
+      }
     });
-    setExpandedDomain(domainId);
   };
 
   const editTopic = (domainId: string, topicId: string) => {
     const domain = draft.domains.find(d => d.id === domainId);
     const topic = domain?.topics.find(t => t.id === topicId);
     if (!topic) return;
-    const name = normalizeTagName(prompt('编辑主题名称：', topic.name));
-    if (!name) return;
-    if (name !== topic.name && hasTagName(draft, name)) return alert('该标签名称已存在');
-    const description = prompt('主题说明（可选）：', topic.description || '')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      domains: draft.domains.map(d => d.id === domainId ? {
-        ...d, topics: d.topics.map(t => t.id === topicId ? { ...t, name, description } : t)
-      } : d)
+    setPromptDlg({
+      title: '编辑主题名称',
+      initialValue: topic.name,
+      cb: (topicName) => {
+        const name = normalizeTagName(topicName);
+        if (!name) return;
+        if (name !== topic.name && hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        setDraft({
+          ...draft,
+          domains: draft.domains.map(d => d.id === domainId ? {
+            ...d, topics: d.topics.map(t => t.id === topicId ? { ...t, name } : t)
+          } : d)
+        });
+      }
     });
   };
 
   const deleteTopic = (domainId: string, topicId: string) => {
     const domain = draft.domains.find(d => d.id === domainId);
     if (!domain) return;
-    if (domain.topics.length <= 1) {
-      alert('每个领域至少保留 1 个主题');
-      return;
-    }
+    if (domain.topics.length <= 1) { alert('每个领域至少保留 1 个主题'); return; }
     const topic = domain.topics.find(t => t.id === topicId);
-    if (!topic || !confirm(`确定要删除主题「${topic.name}」吗？`)) return;
-    setDraft({
-      ...draft,
-      domains: draft.domains.map(d => d.id === domainId ? {
-        ...d, topics: d.topics.filter(t => t.id !== topicId)
-      } : d)
+    if (!topic) return;
+    setConfirmDlg({
+      title: `确定要删除主题「${topic.name}」吗？`,
+      destructive: true,
+      confirmLabel: '删除',
+      cb: () => setDraft({
+        ...draft,
+        domains: draft.domains.map(d => d.id === domainId ? {
+          ...d, topics: d.topics.filter(t => t.id !== topicId)
+        } : d)
+      })
     });
   };
 
@@ -189,33 +223,48 @@ export function SettingsTags({ onDirtyChange }: Props) {
   };
 
   const addMethod = () => {
-    const name = normalizeTagName(prompt('输入新方法名称：'));
-    if (!name) return;
-    if (hasTagName(draft, name)) return alert('该标签名称已存在');
-    const description = prompt('方法说明（可选）：')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      methods: [...draft.methods, { id: generateId(), name, description, order: draft.methods.length }]
+    setPromptDlg({
+      title: '添加新方法',
+      initialValue: '',
+      cb: (methodName) => {
+        const name = normalizeTagName(methodName);
+        if (!name) return;
+        if (hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        setDraft({
+          ...draft,
+          methods: [...draft.methods, { id: generateId(), name, order: draft.methods.length }]
+        });
+      }
     });
   };
 
   const editMethod = (id: string) => {
     const method = draft.methods.find(m => m.id === id);
     if (!method) return;
-    const name = normalizeTagName(prompt('编辑方法名称：', method.name));
-    if (!name) return;
-    if (name !== method.name && hasTagName(draft, name)) return alert('该标签名称已存在');
-    const description = prompt('方法说明（可选）：', method.description || '')?.trim() || undefined;
-    setDraft({
-      ...draft,
-      methods: draft.methods.map(m => m.id === id ? { ...m, name, description } : m)
+    setPromptDlg({
+      title: '编辑方法名称',
+      initialValue: method.name,
+      cb: (methodName) => {
+        const name = normalizeTagName(methodName);
+        if (!name) return;
+        if (name !== method.name && hasTagName(draft, name)) { alert('该标签名称已存在'); return; }
+        setDraft({
+          ...draft,
+          methods: draft.methods.map(m => m.id === id ? { ...m, name } : m)
+        });
+      }
     });
   };
 
   const deleteMethod = (id: string) => {
     const method = draft.methods.find(m => m.id === id);
-    if (!method || !confirm(`确定要删除方法「${method.name}」吗？`)) return;
-    setDraft({ ...draft, methods: draft.methods.filter(m => m.id !== id) });
+    if (!method) return;
+    setConfirmDlg({
+      title: `确定要删除方法「${method.name}」吗？`,
+      destructive: true,
+      confirmLabel: '删除',
+      cb: () => setDraft({ ...draft, methods: draft.methods.filter(m => m.id !== id) })
+    });
   };
 
   const moveMethod = (id: string, dir: -1 | 1) => {
@@ -386,6 +435,26 @@ export function SettingsTags({ onDirtyChange }: Props) {
       >
         恢复默认
       </button>
+
+      {promptDlg && (
+        <PromptDialog
+          title={promptDlg.title}
+          initialValue={promptDlg.initialValue}
+          onConfirm={(name) => { promptDlg.cb(name); setPromptDlg(null); }}
+          onCancel={() => setPromptDlg(null)}
+        />
+      )}
+
+      {confirmDlg && (
+        <ConfirmDialog
+          title={confirmDlg.title}
+          message={confirmDlg.message}
+          confirmLabel={confirmDlg.confirmLabel}
+          destructive={confirmDlg.destructive}
+          onConfirm={() => { confirmDlg.cb(); setConfirmDlg(null); }}
+          onCancel={() => setConfirmDlg(null)}
+        />
+      )}
     </div>
   );
 }
