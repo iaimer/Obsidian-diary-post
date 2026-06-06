@@ -48,10 +48,6 @@ function getAnxietyQuestionIndex(line: string): number {
   return ANXIETY_QUESTIONS.findIndex(question => text.startsWith(question));
 }
 
-function getAnxietyTime(line: string): string | null {
-  return line.match(/\*\*(\d{2}:\d{2})\*\*/)?.[1] ?? null;
-}
-
 function getAnxietyQuestionText(line: string): string {
   return line.trim().replace(/^-\s+/, '').replace(/^\*\*\d{2}:\d{2}\*\*\s*/, '').replace(/^-\s+/, '');
 }
@@ -364,11 +360,9 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
 
 function renderAnxietyRecord(line: string): React.ReactNode {
   const lines = line.split(/\n\n|\n/).filter(l => l.trim());
-  const time = lines.map(getAnxietyTime).find(Boolean);
 
   return (
     <div className="text-sm text-gray-800 dark:text-gray-100">
-      {time && <div className="mb-2 font-medium text-orange-600 dark:text-orange-400">{time}</div>}
       <div className="space-y-2">
         {lines.map((item, index) => {
           const questionIndex = getAnxietyQuestionIndex(item);

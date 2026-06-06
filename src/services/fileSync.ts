@@ -418,8 +418,7 @@ export class FileSyncService {
 
   // 追加焦虑时刻
   async appendAnxiety(content: string, tags: string[] = []): Promise<void> {
-    const time = getTimestamp();
-    const formatted = formatAnxiety(time, content, tags);
+    const formatted = formatAnxiety(content, tags);
     await this.appendToSection(getShanghaiCalendarDate(), DiarySection.ANXIETY, formatted);
   }
 

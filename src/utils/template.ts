@@ -50,7 +50,7 @@ export function formatHappiness(time: string, content: string, tags: string[] = 
 }
 
 // 格式化焦虑时刻
-export function formatAnxiety(_time: string, content: string, tags: string[] = []): string {
+export function formatAnxiety(content: string, tags: string[] = []): string {
   const tagStr = tags.length > 0 ? ' ' + tags.map(t => `#${t}`).join(' ') : '';
   return `${content}${tagStr}`;
 }

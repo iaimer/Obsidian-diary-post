@@ -290,7 +290,6 @@ router.post('/anxiety', async (req, res) => {
   try {
     const { content, tags, operationId } = req.body;
     const date = getRequestDate(req.body.date);
-    const time = getRequestTime(req.body.time, date);
 
     let originalContent: string;
     try {
@@ -306,7 +305,7 @@ router.post('/anxiety', async (req, res) => {
     }
 
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
-    const formattedContent = `- **${time}** ${content}${tagStr}`;
+    const formattedContent = `${content}${tagStr}`;
     const updated = stripOldOpMarkers(appendToSection(originalContent, 'anxiety', formattedContent));
     writeDiary(date, updated);
     if (operationId && validateOperationId(operationId)) {
