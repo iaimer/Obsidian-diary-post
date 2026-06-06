@@ -127,9 +127,22 @@ function isEntryOrBoundary(line: string): boolean {
 
 function findEntryRangeInSection(
   lines: string[], _startIdx: number, endIdx: number,
-  _firstLine: string, firstLineMatches: number[]
+  targetLine: string, firstLineMatches: number[]
 ): { startIndex: number; endIndexExclusive: number } | null {
   if (firstLineMatches.length === 0) return null;
+
+  const targetLines = targetLine.split(/\n\n|\n/).filter(l => l.trim());
+  if (targetLines.length > 1) {
+    const exactMatch = firstLineMatches.find(matchIndex =>
+      targetLines.every((target, offset) =>
+        matchIndex + offset < endIdx && lines[matchIndex + offset].trim() === target.trim()
+      )
+    );
+    if (exactMatch !== undefined) {
+      return { startIndex: exactMatch, endIndexExclusive: exactMatch + targetLines.length };
+    }
+  }
+
   if (firstLineMatches.length > 1) {
     console.warn(`Duplicate entry first line at indices ${firstLineMatches.join(', ')}; using first`);
   }
@@ -343,7 +356,7 @@ export class FileSyncService {
     const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
     if (matches.length === 0) throw new Error('Entry not found in section');
 
-    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, targetLine, matches);
     if (!range) throw new Error('Entry not found in section');
 
     const imageName = section === DiarySection.IMAGES ? extractImageName(firstLine) : null;
@@ -371,7 +384,7 @@ export class FileSyncService {
     const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
     if (matches.length === 0) throw new Error('Entry not found in section');
 
-    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, targetLine, matches);
     if (!range) throw new Error('Entry not found in section');
 
     const newLines = newContent.split('\n');

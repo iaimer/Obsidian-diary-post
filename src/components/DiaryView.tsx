@@ -36,6 +36,63 @@ function groupDiaryLines(lines: string[]): string[] {
   return groups;
 }
 
+const ANXIETY_QUESTIONS = [
+  '今天什么时候我感到焦虑/紧张？',
+  '当时我在担心什么？',
+  '我做了什么？',
+  '这个应对是帮我面对了，还是帮我躲开了？'
+];
+
+function getAnxietyQuestionIndex(line: string): number {
+  const text = line.trim().replace(/^-\s+/, '').replace(/^\*\*\d{2}:\d{2}\*\*\s*/, '').replace(/^-\s+/, '');
+  return ANXIETY_QUESTIONS.findIndex(question => text.startsWith(question));
+}
+
+function getAnxietyTime(line: string): string | null {
+  return line.match(/\*\*(\d{2}:\d{2})\*\*/)?.[1] ?? null;
+}
+
+function getAnxietyQuestionText(line: string): string {
+  return line.trim().replace(/^-\s+/, '').replace(/^\*\*\d{2}:\d{2}\*\*\s*/, '').replace(/^-\s+/, '');
+}
+
+function getAnxietyAnswerText(line: string): string {
+  return line.trim().replace(/^>\s?/, '');
+}
+
+function hasAnxietyAnswer(lines: string[]): boolean {
+  return lines.some(line => line.trim().startsWith('>') && getAnxietyAnswerText(line).length > 0);
+}
+
+function groupAnxietyLines(lines: string[]): string[] {
+  const groups: string[][] = [];
+  let current: string[] = [];
+
+  const pushCurrent = () => {
+    if (current.length > 0) groups.push(current);
+    current = [];
+  };
+
+  for (const line of lines) {
+    const questionIndex = getAnxietyQuestionIndex(line);
+    if (questionIndex === 0 && current.length > 0) pushCurrent();
+
+    if (questionIndex !== -1 || current.length > 0) {
+      current.push(line);
+    } else if (line.trim()) {
+      groups.push([line]);
+    }
+  }
+  pushCurrent();
+
+  return groups
+    .filter(group => {
+      const hasQuestion = group.some(line => getAnxietyQuestionIndex(line) !== -1);
+      return hasQuestion ? hasAnxietyAnswer(group) : group.some(line => line.trim());
+    })
+    .map(group => group.join('\n\n'));
+}
+
 function extractEditableContent(line: string): string {
   let content = line.replace(/^[-<>]\s+/, '');
   content = content.replace(/\*\*\d{2}:\d{2}\*\*\s*/, '');
@@ -303,6 +360,41 @@ function renderMarkdown(line: string, section?: string): React.ReactNode {
     return <span className="text-sm text-gray-700 dark:text-gray-200 break-words whitespace-pre-line" dangerouslySetInnerHTML={{ __html: plainText }} />;
   }
   return <span className="text-sm text-gray-700 dark:text-gray-200 break-words whitespace-pre-line">{line}</span>;
+}
+
+function renderAnxietyRecord(line: string): React.ReactNode {
+  const lines = line.split(/\n\n|\n/).filter(l => l.trim());
+  const time = lines.map(getAnxietyTime).find(Boolean);
+
+  return (
+    <div className="text-sm text-gray-800 dark:text-gray-100">
+      {time && <div className="mb-2 font-medium text-orange-600 dark:text-orange-400">{time}</div>}
+      <div className="space-y-2">
+        {lines.map((item, index) => {
+          const questionIndex = getAnxietyQuestionIndex(item);
+          if (questionIndex !== -1) {
+            return (
+              <div key={`${index}-${item}`} className="font-medium text-gray-700 dark:text-gray-200">
+                {getAnxietyQuestionText(item)}
+              </div>
+            );
+          }
+
+          if (item.trim().startsWith('>')) {
+            const answerText = getAnxietyAnswerText(item);
+            if (!answerText) return null;
+            return (
+              <div key={`${index}-${item}`} className="pl-3 border-l border-orange-200 dark:border-orange-700 text-orange-700 dark:text-orange-300 italic leading-relaxed whitespace-pre-line">
+                {answerText}
+              </div>
+            );
+          }
+
+          return <div key={`${index}-${item}`}>{renderMarkdown(item, 'anxiety')}</div>;
+        })}
+      </div>
+    </div>
+  );
 }
 
 interface DiaryViewProps {}
@@ -594,10 +686,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
     l.trim() && !l.includes('<!--')
   ) || [];
 
-  const hasAnxietyContent = anxiety.some(l =>
-    !(l.startsWith('> ') && l.slice(2).trim() === '') &&
-    !['- 今天什么时候我感到焦虑/紧张？', '- 当时我在担心什么？（具体到一句话)', '- 我做了什么？', '- 这个应对是帮我面对了，还是帮我躲开了？'].includes(l.trim())
-  );
+  const anxietyRecords = groupAnxietyLines(anxiety);
 
   const reflection = diary?.sections.reflection.filter(l =>
     l.trim() && l !== '- ' && !l.includes('<!--') && !l.startsWith('###')
@@ -660,16 +749,16 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       )}
 
       {/* 焦虑时刻 */}
-      {hasAnxietyContent && (
+      {anxietyRecords.length > 0 && (
         <div className="py-3 border-l-2 border-orange-200 dark:border-orange-700 pl-3">
           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">😰 焦虑时刻</h3>
-          <div className="space-y-1">
-            {groupDiaryLines(anxiety).map((line, i) => (
+          <div className="space-y-3">
+            {anxietyRecords.map((line, i) => (
               <EntryRow key={i} line={line} section="anxiety" menuId={`anxiety-${i}`} isOpen={openMenuId === `anxiety-${i}`} onToggle={setOpenMenuId}
-              onEdit={(l,s,firstLine) => { setEditEntry({ line: l, section: s, target: firstLine }); setEditText(extractEditableContent(l)); setEditTags(extractTags(l)); }}
-              onDelete={(l,s,firstLine) => setDeleteEntry({ line: l, section: s, label: '焦虑记录', target: firstLine })}
+              onEdit={(l,s) => { setEditEntry({ line: l, section: s, target: l }); setEditText(l.replace(/\n\n/g, '\n')); setEditTags(''); }}
+              onDelete={(l,s) => setDeleteEntry({ line: l, section: s, label: '焦虑记录', target: l })}
               >
-                {renderMarkdown(line, 'anxiety')}
+                {renderAnxietyRecord(line)}
               </EntryRow>
             ))}
           </div>
@@ -779,7 +868,7 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
       </div>
 
       {/* 空状态 */}
-      {quickNotes.length === 0 && happiness.length === 0 && anxiety.length === 0 && reflection.length === 0 && tomorrow.length === 0 && images.length === 0 && (
+      {quickNotes.length === 0 && happiness.length === 0 && anxietyRecords.length === 0 && reflection.length === 0 && tomorrow.length === 0 && images.length === 0 && (
         <div className="py-6">
           <div className="text-center text-gray-400 dark:text-gray-500 text-sm">
             {error ? '加载失败' : '暂无记录'}
@@ -922,7 +1011,9 @@ const DiaryView = forwardRef<DiaryViewRef, DiaryViewProps>((_, ref) => {
               if (!editEntry || !editText.trim()) return;
               try {
                 const ds = getDataService();
-                const newLine = rebuildLine(editEntry.line, editText.trim(), editTags);
+                const newLine = editEntry.section === 'anxiety'
+                  ? editText.trim()
+                  : rebuildLine(editEntry.line, editText.trim(), editTags);
                 await ds.editEntry(getSectionForLine(editEntry.section), editEntry.target, newLine);
                 closeEdit();
                 useDiaryStore.getState().triggerRefresh();

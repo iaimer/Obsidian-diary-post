@@ -729,10 +729,23 @@ function findSectionBounds(lines: string[], header: string): { start: number; en
 }
 
 function findEntryRangeInSection(
-  lines: string[], startIdx: number, endIdx: number,
-  _firstLine: string, matches: number[]
+  lines: string[], _startIdx: number, endIdx: number,
+  targetLine: string, matches: number[]
 ): { startIndex: number; endIndexExclusive: number } | null {
   if (matches.length === 0) return null;
+
+  const targetLines = targetLine.split(/\n\n|\n/).filter(l => l.trim());
+  if (targetLines.length > 1) {
+    const exactMatch = matches.find(matchIndex =>
+      targetLines.every((target, offset) =>
+        matchIndex + offset < endIdx && lines[matchIndex + offset].trim() === target.trim()
+      )
+    );
+    if (exactMatch !== undefined) {
+      return { startIndex: exactMatch, endIndexExclusive: exactMatch + targetLines.length };
+    }
+  }
+
   if (matches.length > 1) {
     console.warn(`Duplicate entry first line at indices ${matches.join(', ')}; using first`);
   }
@@ -762,7 +775,7 @@ router.post('/delete-entry', async (req, res) => {
     const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
     if (matches.length === 0) return res.status(404).json({ error: '条目未找到' });
 
-    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, line, matches);
     if (!range) return res.status(404).json({ error: '条目未找到' });
 
     const imageName = section === 'images' ? extractImageName(firstLine) : null;
@@ -795,7 +808,7 @@ router.post('/edit-entry', async (req, res) => {
     const matches = findAllMatches(lines, bounds.start + 1, bounds.end, firstLine);
     if (matches.length === 0) return res.status(404).json({ error: '条目未找到' });
 
-    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, firstLine, matches);
+    const range = findEntryRangeInSection(lines, bounds.start + 1, bounds.end, target, matches);
     if (!range) return res.status(404).json({ error: '条目未找到' });
 
     const newLines = replacement.split('\n');
