@@ -138,7 +138,7 @@ router.get('/:date', async (req, res) => {
     
     res.json(entry);
   } catch (error) {
-    res.status(404).json({ error: (error as Error).message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
@@ -307,6 +307,41 @@ router.post('/anxiety', async (req, res) => {
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formattedContent = `${content}${tagStr}`;
     const updated = stripOldOpMarkers(appendToSection(originalContent, 'anxiety', formattedContent));
+    writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// 替换焦虑四问区块
+router.post('/anxiety/replace', async (req, res) => {
+  try {
+    const { content, operationId } = req.body;
+    const date = getRequestDate(req.body.date);
+
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: '内容不能为空' });
+    }
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(date);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
+    const updated = replaceAnxietySection(originalContent, content);
     writeDiary(date, updated);
     if (operationId && validateOperationId(operationId)) {
       recordOperation(date, operationId);
@@ -561,6 +596,55 @@ function updateHabitsSection(content: string, habits: string[]): string {
   const after = lines.slice(endIndex);
   
   return [...before, ...habits, '', ...after].join('\n');
+}
+
+function replaceAnxietySection(content: string, newText: string): string {
+  const lines = content.split('\n');
+  const header = '## 😰 焦虑时刻';
+
+  let startIndex = -1;
+  let endIndex = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(header)) {
+      startIndex = i;
+      break;
+    }
+  }
+
+  if (startIndex === -1) {
+    // Section doesn't exist — create it before the next section or at end
+    const insertHeaders = ['## 🏃 习惯打卡', '## ✍️ 随手记', '## ✨ 每日小确幸', '### 💡 觉察与迭代',
+      '### 🧠 人生教练', '### 🌙 明日寄语', '## 📸 影像记录'];
+    let insertIndex = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+      if (insertHeaders.some(h => lines[i].startsWith(h))) {
+        insertIndex = i;
+        break;
+      }
+    }
+    const newLines = newText.split('\n');
+    const before = lines.slice(0, insertIndex);
+    const after = lines.slice(insertIndex);
+    return [...before, header, ...newLines, '', ...after].join('\n');
+  }
+
+  const allHeaders = ['## 🏃 习惯打卡', '## ✍️ 随手记', '## ✨ 每日小确幸',
+    '## 😰 焦虑时刻', '### 💡 觉察与迭代', '### 🧠 人生教练', '### 🌙 明日寄语', '## 📸 影像记录'];
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) {
+      endIndex = i;
+      break;
+    }
+  }
+
+  if (endIndex === -1) endIndex = lines.length;
+
+  const newLines = newText.split('\n');
+  const before = lines.slice(0, startIndex + 1);
+  const after = lines.slice(endIndex);
+
+  return [...before, ...newLines, '', ...after].join('\n');
 }
 
 // 替换明日寄语中的行动建议（删除旧的带标记的内容，添加新的）
