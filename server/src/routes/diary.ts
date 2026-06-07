@@ -274,6 +274,35 @@ router.post('/reflection', async (req, res) => {
 
     const tagStr = tags?.length > 0 ? ' ' + tags.map((t: string) => `#${t}`).join(' ') : '';
     const formattedContent = `- **${time}** ${content}${tagStr}`;
+
+    // Check for template placeholder: replace single empty "- " bullet on first write
+    const reflectionHeader = '### 💡 觉察与迭代';
+    const lines = originalContent.split('\n');
+    let sectionStart = -1;
+    let sectionEnd = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith(reflectionHeader)) { sectionStart = i; break; }
+    }
+    if (sectionStart !== -1) {
+      const allHeaders = [...Object.values(sectionHeaders), '### 🧠 荔枝喵说', '## 📈 每日复盘'];
+      for (let i = sectionStart + 1; i < lines.length; i++) {
+        if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+      }
+      const sectionLines = lines.slice(sectionStart + 1, sectionEnd);
+      const nonEmpty = sectionLines.filter(l => l.trim());
+      // Only one non-empty line AND it's a bare "-" (trimmed equals "-")
+      if (nonEmpty.length === 1 && nonEmpty[0].trim() === '-') {
+        const idx = sectionStart + 1 + sectionLines.indexOf(nonEmpty[0]);
+        lines[idx] = formattedContent;
+        const updated = stripOldOpMarkers(lines.join('\n'));
+        writeDiary(date, updated);
+        if (operationId && validateOperationId(operationId)) {
+          recordOperation(date, operationId);
+        }
+        return res.json({ success: true });
+      }
+    }
+
     const updated = stripOldOpMarkers(appendToSection(originalContent, 'reflection', formattedContent));
     writeDiary(date, updated);
     if (operationId && validateOperationId(operationId)) {

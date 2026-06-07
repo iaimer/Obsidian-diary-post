@@ -308,6 +308,26 @@ export class FileSyncService {
       }
     }
 
+    // 如果是觉察迭代区块首次写入，用新内容替换空占位行 "-"
+    if (section === DiarySection.REFLECTION) {
+      const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
+      let sectionEnd = lines.length;
+      for (let i = sectionStartIndex + 1; i < lines.length; i++) {
+        if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
+      }
+      const sectionLines = lines.slice(sectionStartIndex + 1, sectionEnd);
+      const nonEmpty = sectionLines.filter(l => l.trim());
+      if (nonEmpty.length === 1 && nonEmpty[0].trim() === '-') {
+        const idx = sectionStartIndex + 1 + sectionLines.indexOf(nonEmpty[0]);
+        lines[idx] = content;
+        await this.writeFile(date, lines.join('\n'));
+        const entry = parseDiary(lines.join('\n'));
+        entry.date = getDateString(date);
+        await cacheDiary(entry);
+        return;
+      }
+    }
+
     // 找到下一个区块的位置（含旧版标题兼容 + 非注册分组标题）
     const allHeaders = [...Object.values(sectionHeaders), LEGACY_LIZHI_SAYS, '## 📈 每日复盘'];
     for (let i = sectionStartIndex + 1; i < lines.length; i++) {
