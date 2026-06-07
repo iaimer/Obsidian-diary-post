@@ -318,6 +318,37 @@ router.post('/anxiety', async (req, res) => {
   }
 });
 
+router.post('/anxiety/replace', async (req, res) => {
+  try {
+    const { content, operationId } = req.body;
+    if (!content) return res.status(400).json({ error: 'content is required' });
+    const date = getRequestDate(req.body.date);
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(date);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    if (operationId && validateOperationId(operationId)) {
+      if (hasOpRecord(date, originalContent, operationId)) {
+        return res.json({ success: true, dedup: true });
+      }
+    }
+
+    const updated = stripOldOpMarkers(replaceAnxietySection(originalContent, content));
+    writeDiary(date, updated);
+    if (operationId && validateOperationId(operationId)) {
+      recordOperation(date, operationId);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // 替换焦虑四问区块
 router.post('/anxiety/replace', async (req, res) => {
   try {
