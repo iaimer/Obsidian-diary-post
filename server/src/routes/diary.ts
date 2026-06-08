@@ -835,6 +835,7 @@ function isEntryOrBoundary(line: string): boolean {
   if (t.startsWith('- ') || t.startsWith('> ')) return true;
   if (t.startsWith('##') || t.startsWith('###')) return true;
   if (t.startsWith('---')) return true;
+  if (t.startsWith('![[')) return true;
   if (/^- \[[ x]\]/.test(t)) return true;
   return false;
 }
