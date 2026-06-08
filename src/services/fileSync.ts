@@ -316,9 +316,9 @@ export class FileSyncService {
         if (allHeaders.some(h => lines[i].startsWith(h))) { sectionEnd = i; break; }
       }
       const sectionLines = lines.slice(sectionStartIndex + 1, sectionEnd);
-      const nonEmpty = sectionLines.filter(l => l.trim());
-      if (nonEmpty.length === 1 && nonEmpty[0].trim() === '-') {
-        const idx = sectionStartIndex + 1 + sectionLines.indexOf(nonEmpty[0]);
+      const emptyBulletIdx = sectionLines.findIndex(l => l.trim() === '-');
+      if (emptyBulletIdx !== -1) {
+        const idx = sectionStartIndex + 1 + emptyBulletIdx;
         lines[idx] = content;
         await this.writeFile(date, lines.join('\n'));
         const entry = parseDiary(lines.join('\n'));

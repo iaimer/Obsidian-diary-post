@@ -169,3 +169,38 @@ export function appendToSection(content: string, section: string, newLine: strin
   
   return lines.join('\n');
 }
+
+export function replaceEmptyBulletInSection(content: string, section: string, newLine: string): string | null {
+  const header = sectionHeaders[section];
+  if (!header) return null;
+
+  const lines = content.split('\n');
+  let sectionStart = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(header)) {
+      sectionStart = i;
+      break;
+    }
+  }
+
+  if (sectionStart === -1) return null;
+
+  const allHeaders = [...Object.values(sectionHeaders), '### 🧠 荔枝喵说', '## 📈 每日复盘'];
+  let sectionEnd = lines.length;
+  for (let i = sectionStart + 1; i < lines.length; i++) {
+    if (allHeaders.some(h => lines[i].startsWith(h))) {
+      sectionEnd = i;
+      break;
+    }
+  }
+
+  const sectionLines = lines.slice(sectionStart + 1, sectionEnd);
+  const emptyBulletIdx = sectionLines.findIndex(l => l.trim() === '-');
+
+  if (emptyBulletIdx === -1) return null;
+
+  const idx = sectionStart + 1 + emptyBulletIdx;
+  lines[idx] = newLine;
+  return lines.join('\n');
+}
