@@ -468,6 +468,106 @@ router.post('/tomorrow/action', async (req, res) => {
   }
 });
 
+// 一键生成人生教练：Flutter 调用此接口，服务端负责读取日记、调 AI、拆分模块、写入 two sections
+router.post('/coach/generate', async (req, res) => {
+  try {
+    const { date, baseUrl, apiKey, model, coachPrompt } = req.body;
+    if (!baseUrl || !apiKey || !model) {
+      return res.status(400).json({ error: 'AI 配置不完整' });
+    }
+
+    const diaryDate = date ? parseShanghaiDate(date) : new Date();
+
+    let originalContent: string;
+    try {
+      originalContent = readDiary(diaryDate);
+    } catch {
+      return res.status(404).json({ error: '日记文件不存在，请先创建' });
+    }
+
+    // Build diary context (same as Web client)
+    const diary = parseDiary(originalContent);
+    const ctx: string[] = [];
+    const addSection = (title: string, items: string[]) => {
+      if (items.length > 0) {
+        ctx.push(`【${title}】`);
+        items.forEach(item => ctx.push(item));
+      }
+    };
+
+    addSection('随手记',
+      diary.sections.quick_notes.filter(l => l.trim() && !l.includes('<!--') && !l.includes('- **HH:MM** 内容 #标签')));
+    addSection('小确幸',
+      diary.sections.happiness.filter(l => l.trim() && !l.includes('<!--') && !l.match(/^>\s*$/) && !l.includes('总有事件值得感恩')));
+    addSection('焦虑时刻',
+      diary.sections.anxiety.filter(l => l.trim() && !l.includes('<!--')));
+    addSection('觉察',
+      diary.sections.reflection.filter(l => l.trim() && !l.includes('<!--') && l !== '- '));
+
+    const diaryContext = ctx.join('\n') || '今天暂无日记内容';
+
+    // Call AI
+    const prompt = (coachPrompt && coachPrompt.trim()) ? coachPrompt :
+      '你是一个理性的人生教练。基于当天日记内容，输出 250-300 字的分析。用第三人称"你"视角。\n\n按以下结构输出，模块间空行分隔：\n\n📌 模式识别\n今天的行为模式或思维惯性\n\n⚠️ 矛盾指出\n温和指出言行不一致的地方\n\n🎯 行动建议\n明天可做的具体小改进\n\n💬 暖心鼓励\n注入一点情绪价值，给继续记录、持续改进的勇气\n\n铁律：\n- 只基于原文，不编造\n- 教练口吻，客观直接，不说教';
+
+    let chatUrl = baseUrl.trim().replace(/\/+$/, '');
+    if (chatUrl.includes('/v1') && !chatUrl.endsWith('/chat/completions')) {
+      chatUrl = `${chatUrl}/chat/completions`;
+    } else if (!chatUrl.includes('/v1') && !chatUrl.endsWith('/chat/completions')) {
+      chatUrl = `${chatUrl}/v1/chat/completions`;
+    }
+
+    const aiResponse = await fetch(chatUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 800,
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: `今天日记内容：\n${diaryContext}` },
+        ],
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(502).json({ error: 'AI 教练生成失败' });
+    }
+
+    const aiData = await aiResponse.json();
+    const rawResult = aiData.choices?.[0]?.message?.content?.trim();
+    if (!rawResult) {
+      return res.status(502).json({ error: 'AI 返回结果为空' });
+    }
+
+    // Split: extract action suggestion module, rest goes to lizhi_says
+    // Match 🎯 行动建议 or numbered variant up to encouragement or end
+    const actionRegex = /(?:^|\n)(?:[-*\s]*)(?:\d+[\.\)、]\s*)?(?:🎯\s*)?(?:可操作的)?行动建议[：:！]?\s*(?:\n|$)([\s\S]*?)(?=(?:\n)(?:[-*\s]*)(?:\d+[\.\)、]\s*)?(?:💬\s*)?(?:暖心鼓励|温暖鼓励|温暖结语)[：:！]?|$)/i;
+    const actionMatch = rawResult.match(actionRegex);
+    const actionContent = actionMatch ? actionMatch[1].trim().replace(/^- /gm, '').trim() : '';
+    const lizhiContent = rawResult;
+
+    if (!lizhiContent.trim()) {
+      return res.status(502).json({ error: '生成结果无效' });
+    }
+
+    // Write to both sections
+    const withCoach = replaceLizhiSaysSection(originalContent, lizhiContent);
+    const result = actionContent
+      ? replaceTomorrowSection(withCoach, actionContent)
+      : withCoach;
+
+    writeDiary(diaryDate, result);
+
+    res.json({ success: true, hasAction: !!actionContent });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // 上传图片（远程模式）：接收 base64 压缩图片，保存到 assets 并追加 WikiLink
 router.post('/image/upload', async (req, res) => {
   try {
